@@ -1,0 +1,118 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Tutorial: Smart Style Sync</title>
+            
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.3;
+        color: #333;
+        margin: 0;
+        padding: 10px;
+    }
+    h1 {
+        color: #2c3e50;
+        font-size: 20px;
+        margin: 10px 0 5px 0;
+    }
+    h2 {
+        color: #3498db;
+        font-size: 16px;
+        margin: 8px 0 4px 0;
+    }
+    p {
+        margin: 0 0 5px 0;
+    }
+    ul,
+    ol {
+        margin: 0 0 5px 0;
+        padding-left: 20px;
+    }
+    li {
+        margin-bottom: 2px;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 5px 0;
+    }
+    table,
+    th,
+    td {
+        border: 1px solid black;
+        font-size: 12px;
+        padding: 2px;
+    }
+</style>
+
+        </head>
+        <body>
+            <h1>Tutorial: Smart Style Sync</h1>
+            <h1>Smart Style Sync Tutorial</h1>
+<p>Smart Style Sync is a powerful JArchi script that allows you to automatically style elements in your ArchiMate views based on their property values. This tutorial will guide you through using the script effectively.</p>
+<h2>Prerequisites</h2>
+<ul>
+<li>Archi with the JArchi plugin installed</li>
+<li>An ArchiMate model with elements that have custom properties</li>
+</ul>
+<h2>Step 1: Prepare Your View</h2>
+<ol>
+<li>Open your ArchiMate model in Archi.</li>
+<li>Select the view you want to style. This view should contain elements with custom properties.</li>
+</ol>
+<h2>Step 2: Run the Script</h2>
+<ol>
+<li>In the Archi menu, go to <code>Scripts &gt; JArchi Scripts Menu</code>.</li>
+<li>In the JArchi Scripts Menu, find and select &quot;Smart Style Sync&quot; under the &quot;Appearance&quot; category.</li>
+<li>Click &quot;Execute&quot; to run the script.</li>
+</ol>
+<h2>Step 3: Select a Property</h2>
+<ol>
+<li>In the &quot;Element Appearance Changer&quot; dialog, you&#39;ll see a dropdown menu labeled &quot;Select Property&quot;.</li>
+<li>Choose the property you want to use for styling your elements. For example, you might select a property like &quot;Status&quot; or &quot;Department&quot;.</li>
+</ol>
+<h2>Step 4: Set Colors for Property Values</h2>
+<ol>
+<li>After selecting a property, you&#39;ll see a table with all unique values for that property found in your view.</li>
+<li>For each value, you can set a border color and a fill color:<ul>
+<li>Click on the &quot;Border Color&quot; cell to open a color picker and choose a border color.</li>
+<li>Click on the &quot;Fill Color&quot; cell to open a color picker and choose a fill color.</li>
+</ul>
+</li>
+<li>Repeat this process for all property values listed in the table.</li>
+</ol>
+<h2>Step 5: Apply Changes</h2>
+<ol>
+<li>Once you&#39;ve set colors for all property values, click &quot;OK&quot; to apply the changes.</li>
+<li>The script will update the appearance of all elements in the view based on their property values and your color selections.</li>
+</ol>
+<h2>Tips and Best Practices</h2>
+<ul>
+<li>Choose contrasting colors for different property values to make elements easily distinguishable.</li>
+<li>Consider using a consistent color scheme across your models for better readability.</li>
+<li>You can run the script multiple times to adjust colors or switch to a different property.</li>
+</ul>
+<blockquote>
+<p><strong>Important Note:</strong>
+Archi has a setting that derives line (border) color from fill colors. If this setting is enabled, changes to line color in this script will not have an effect. To use custom line colors, either:</p>
+<ol>
+<li>Uncheck the &quot;Derive element line colors from fill colors&quot; option in Archi Preferences (Edit &gt; Preferences &gt; Appearance &gt; Colours), or</li>
+<li>Select the elements in your view, go to Properties &gt; Appearance, and uncheck the &quot;Derive from fill colour&quot; option</li>
+</ol>
+</blockquote>
+<h2>Troubleshooting</h2>
+<ul>
+<li>If you don&#39;t see any properties in the dropdown, make sure your elements have custom properties assigned to them.</li>
+<li>If colors aren&#39;t changing, check the note above about Archi&#39;s line color derivation setting.</li>
+<li>If the script doesn&#39;t run, ensure that you have the latest version of JArchi installed and that your script is up to date.</li>
+</ul>
+<p>By using Smart Style Sync, you can quickly create visually consistent and meaningful views that highlight important properties of your ArchiMate elements. Experiment with different properties and color schemes to find what works best for your models!</p>
+
+        </body>
+        </html>
+    

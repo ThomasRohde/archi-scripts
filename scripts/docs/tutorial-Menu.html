@@ -1,0 +1,147 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Tutorial: Menu</title>
+            
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.3;
+        color: #333;
+        margin: 0;
+        padding: 10px;
+    }
+    h1 {
+        color: #2c3e50;
+        font-size: 20px;
+        margin: 10px 0 5px 0;
+    }
+    h2 {
+        color: #3498db;
+        font-size: 16px;
+        margin: 8px 0 4px 0;
+    }
+    p {
+        margin: 0 0 5px 0;
+    }
+    ul,
+    ol {
+        margin: 0 0 5px 0;
+        padding-left: 20px;
+    }
+    li {
+        margin-bottom: 2px;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 5px 0;
+    }
+    table,
+    th,
+    td {
+        border: 1px solid black;
+        font-size: 12px;
+        padding: 2px;
+    }
+</style>
+
+        </head>
+        <body>
+            <h1>Tutorial: Menu</h1>
+            <p>The Menu.ajs script is a powerful tool for JArchi users, providing a graphical user interface to manage and execute JArchi scripts. This tutorial will guide you through setting up, using, and customizing the Menu script to enhance your Archi modeling experience.</p>
+<h2>Features</h2>
+<ul>
+<li>Categorized script organization</li>
+<li>Script descriptions with HTML formatting support</li>
+<li>Execute button for running selected scripts</li>
+<li>Resizable dialog with split-pane interface</li>
+</ul>
+<h2>Prerequisites</h2>
+<p>Before using the Menu script, ensure you have:</p>
+<ol>
+<li>Archi with the JArchi plugin installed</li>
+<li>Basic familiarity with JArchi scripting</li>
+</ol>
+<h2>Setup</h2>
+<ol>
+<li>Place the <code>Menu.ajs</code> file in your JArchi scripts directory.</li>
+<li>Create a <code>menuItems.js</code> file in the same directory to define your script menu structure.</li>
+</ol>
+<h3>menuItems.js Structure</h3>
+<p>The <code>menuItems.js</code> file should export an array of objects, each representing a script:</p>
+<pre><code class="language-javascript">menuItems = [
+  {
+    name: &quot;Script Name&quot;,
+    description: &quot;HTML-formatted description of the script&quot;,
+    script: &quot;ScriptFileName.ajs&quot;,
+    category: &quot;Category Name&quot;
+  },
+  // ... more script objects ...
+];
+</code></pre>
+<p>Example entry:</p>
+<pre><code class="language-javascript">{
+  name: &quot;Export to Confluence&quot;,
+  description: &quot;&lt;h2&gt;Export to Confluence&lt;/h2&gt;&lt;p&gt;This script exports your Archimate model to Confluence.&lt;/p&gt;&quot;,
+  script: &quot;ExportToConfluence.ajs&quot;,
+  category: &quot;Publishing &amp; Exporting&quot;
+}
+</code></pre>
+<h2>Usage</h2>
+<ol>
+<li>Open Archi and ensure the JArchi plugin is active.</li>
+<li>Navigate to the Scripts view in Archi.</li>
+<li>Locate and run the <code>Menu.ajs</code> script.</li>
+<li>The JArchi Script Menu dialog will appear, showing your categorized scripts.</li>
+<li>Browse through the categories in the left panel.</li>
+<li>Click on a specific script to view its description in the right panel.</li>
+<li>Once you&#39;ve selected a script, click &#39;Execute&#39; to run it.</li>
+</ol>
+<h2>Customization</h2>
+<h3>Adding New Scripts</h3>
+<p>To add a new script to the menu:</p>
+<ol>
+<li>Place your new script file (e.g., <code>NewScript.ajs</code>) in the JArchi scripts directory.</li>
+<li>Open <code>menuItems.js</code>.</li>
+<li>Add a new object to the <code>menuItems</code> array:</li>
+</ol>
+<pre><code class="language-javascript">{
+  name: &quot;My New Script&quot;,
+  description: &quot;&lt;h2&gt;My New Script&lt;/h2&gt;&lt;p&gt;Description of what the script does.&lt;/p&gt;&quot;,
+  script: &quot;NewScript.ajs&quot;,
+  category: &quot;My Category&quot;
+}
+</code></pre>
+<h3>Customizing Descriptions</h3>
+<p>You can use HTML in the description field to format your script descriptions. Some tips:</p>
+<ul>
+<li>Use <code>&lt;h2&gt;</code> for subheadings</li>
+<li>Use <code>&lt;p&gt;</code> for paragraphs</li>
+<li>Use <code>&lt;ul&gt;</code> and <code>&lt;li&gt;</code> for bullet points</li>
+<li>Use <code>&lt;code&gt;</code> for inline code snippets</li>
+</ul>
+<h3>Organizing Categories</h3>
+<p>Group related scripts under the same category for better organization. Create new categories as needed by specifying them in the <code>category</code> field of your menu items.</p>
+<h2>Advanced Features</h2>
+<h3>CSS Styling</h3>
+<p>The Menu script includes common CSS styles for the description area. You can customize these styles by modifying the <code>commonStyles</code> constant in the <code>Menu.ajs</code> file.</p>
+<h3>Dialog Customization</h3>
+<p>Advanced users can modify the dialog behavior by editing the <code>menuDialog</code> object in <code>Menu.ajs</code>. This allows for customization of dialog size, layout, and behavior.</p>
+<h2>Troubleshooting</h2>
+<ul>
+<li>If scripts don&#39;t appear in the menu, ensure they are correctly defined in <code>menuItems.js</code>.</li>
+<li>If a script fails to execute, check the Archi console for error messages.</li>
+<li>For layout issues, try adjusting the monitor dimensions used for responsive sizing.</li>
+</ul>
+<h2>Conclusion</h2>
+<p>The Menu.ajs script provides a user-friendly interface for managing and executing your JArchi scripts. By organizing your scripts into categories and providing detailed descriptions, you can create a more efficient workflow for your Archimate modeling tasks.</p>
+<p>Remember to keep your <code>menuItems.js</code> file updated as you add or modify scripts. Happy modeling!</p>
+
+        </body>
+        </html>
+    

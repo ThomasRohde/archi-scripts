@@ -1,0 +1,118 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Tutorial: Where used</title>
+            
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.3;
+        color: #333;
+        margin: 0;
+        padding: 10px;
+    }
+    h1 {
+        color: #2c3e50;
+        font-size: 20px;
+        margin: 10px 0 5px 0;
+    }
+    h2 {
+        color: #3498db;
+        font-size: 16px;
+        margin: 8px 0 4px 0;
+    }
+    p {
+        margin: 0 0 5px 0;
+    }
+    ul,
+    ol {
+        margin: 0 0 5px 0;
+        padding-left: 20px;
+    }
+    li {
+        margin-bottom: 2px;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 5px 0;
+    }
+    table,
+    th,
+    td {
+        border: 1px solid black;
+        font-size: 12px;
+        padding: 2px;
+    }
+</style>
+
+        </head>
+        <body>
+            <h1>Tutorial: Where used</h1>
+            <p>The &quot;Where Used&quot; JArchi script is a powerful tool for Archimate modelers. It helps you quickly find where selected elements are used across your entire model, including in views and relationships. This can be especially useful when you need to understand the impact of changing or removing an element.</p>
+<h2>Features</h2>
+<ol>
+<li>Finds usages of selected elements in views and relationships</li>
+<li>Displays results in a user-friendly dialog</li>
+<li>Allows copying of selected result to clipboard</li>
+</ol>
+<h2>How to Use</h2>
+<ol>
+<li><p><strong>Select Elements</strong>: In your Archi model, select one or more elements you want to find usages for.</p>
+</li>
+<li><p><strong>Run the Script</strong>: Execute the &quot;Where Used&quot; script from the JArchi script menu.</p>
+</li>
+<li><p><strong>View Results</strong>: A dialog will appear showing where the selected elements are used:</p>
+<ul>
+<li>The &quot;Element&quot; column shows the name of the selected element</li>
+<li>The &quot;is referenced here&quot; column shows where it&#39;s used (view name or relationship)</li>
+<li>The &quot;Type&quot; column shows the type of usage (view type or relationship type)</li>
+</ul>
+</li>
+<li><p><strong>Interact with Results</strong>: </p>
+<ul>
+<li>Click on any row to select it</li>
+<li>Press OK to copy the selected item&#39;s name to the clipboard</li>
+<li>Press Cancel to close the dialog without selecting anything</li>
+</ul>
+</li>
+<li><p><strong>Check Console</strong>: The script will log its execution and your selection in the Archi console.</p>
+</li>
+</ol>
+<h2>Understanding the Results</h2>
+<ul>
+<li><p><strong>Views</strong>: If an element is used in a view, the &quot;is referenced here&quot; column will show the view&#39;s name, and the &quot;Type&quot; column will show the view type (e.g., &quot;ArchimateDiagramModel&quot;).</p>
+</li>
+<li><p><strong>Relationships</strong>: If an element is part of a relationship, the &quot;is referenced here&quot; column will show the relationship type and the names of the source and target elements, e.g., &quot;AssociationRelationship (Element1 - Element2)&quot;.</p>
+</li>
+</ul>
+<h2>Tips</h2>
+<ol>
+<li><p>You can select multiple elements before running the script to find usages for all of them at once.</p>
+</li>
+<li><p>The dialog is resizable, so you can adjust it if you need to see more results at once.</p>
+</li>
+<li><p>After selecting a result and pressing OK, the name is copied to your clipboard, making it easy to search for it in your model or documentation.</p>
+</li>
+<li><p>If no usages are found, you&#39;ll see a message in the console saying &quot;Nothing found!&quot;.</p>
+</li>
+</ol>
+<h2>Technical Details</h2>
+<p>This script uses JArchi&#39;s scripting capabilities along with Java&#39;s SWT (Standard Widget Toolkit) to create the user interface. It demonstrates how to:</p>
+<ul>
+<li>Query the Archi model using JArchi&#39;s scripting API</li>
+<li>Create a custom dialog using SWT</li>
+<li>Handle user interactions in the dialog</li>
+<li>Access the system clipboard</li>
+</ul>
+<p>By studying this script, you can learn valuable techniques for creating your own advanced JArchi scripts with graphical user interfaces.</p>
+<h2>Conclusion</h2>
+<p>The &quot;Where Used&quot; script is a valuable addition to any Archimate modeler&#39;s toolkit. It saves time and reduces errors by quickly showing all the places an element is used, helping you understand the impact of changes and maintain the integrity of your models.</p>
+
+        </body>
+        </html>
+    

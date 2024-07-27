@@ -1,0 +1,283 @@
+/**
+ * Where Used JArchi Script
+ * @module WhereUsed
+ * @description This script finds and displays where selected Archimate elements are used
+ * across the model, including in views and relationships.
+ * @version 1.0
+ * @author [Original Author Name]
+ * @lastModifiedBy Claude AI Assistant (Anthropic)
+ * @lastModifiedDate 2024-07-25
+ */
+
+console.show();
+console.clear();
+
+/**
+ * Array to store selected elements
+ * @type {Array<Object>}
+ */
+let source = [];
+
+/**
+ * Populate the source array with selected elements
+ */
+$(selection)
+    .filter("concept")
+    .each((c) => {
+        let element = {
+            obj: c.concept,
+            id: c.concept.id,
+        };
+        source.push(element);
+    });
+
+/**
+ * Array to store matches for selected elements
+ * @type {Array<Object>}
+ */
+let matches = [];
+
+/**
+ * Find matches for each selected element
+ */
+source.forEach((s) => {
+    let name = "";
+    if (s.obj.type.includes("relation")) {
+        let src = s.obj.source;
+        let tgt = s.obj.target;
+        name = `${s.obj.type} (${src.name} - ${tgt.name})`;
+    } else name = s.obj.name;
+    element = s.obj;
+
+    /**
+     * Check views for matches
+     */
+    $("view")
+        .find("concept")
+        .each((e) => {
+            if (e.concept.id == s.id) {
+                let target = {
+                    source: s.obj,
+                    sourceName: name,
+                    target: e.view,
+                    id: e.view.id,
+                    name: e.view.name,
+                    type: e.view.type,
+                };
+                matches.push(target);
+            }
+        });
+
+    /**
+     * Check relationships for matches
+     */
+    $("relationship").each((r) => {
+        let src = r.source;
+        let tgt = r.target;
+        if (src.id == s.id || tgt.id == s.id) {
+            let relationTarget = {
+                source: s.obj,
+                sourceName: name,
+                target: r,
+                id: r.id,
+                name: `${r.type} (${src.name} - ${tgt.name})`,
+                type: r.type,
+            };
+            matches.push(relationTarget);
+        }
+    });
+});
+
+/**
+ * Data structure for the results table
+ * @type {Object}
+ */
+let table = {
+    columns: ["Element", "is referenced here", "Type"],
+    selectors: ["sourceName", "name", "type"],
+    key: "target",
+    rows: matches,
+};
+
+// Import necessary Java types for creating the dialog
+const SWT = Java.type("org.eclipse.swt.SWT");
+const GridDataFactory = Java.type("org.eclipse.jface.layout.GridDataFactory");
+const GridLayoutFactory = Java.type(
+    "org.eclipse.jface.layout.GridLayoutFactory"
+);
+const GridData = Java.type("org.eclipse.swt.layout.GridData");
+const CompositeWidget = Java.type("org.eclipse.swt.widgets.Composite");
+const TableWidget = Java.type("org.eclipse.swt.widgets.Table");
+const TableItemWidget = Java.type("org.eclipse.swt.widgets.TableItem");
+const TableColumnWidget = Java.type("org.eclipse.swt.widgets.TableColumn");
+const LabelWidget = Java.type("org.eclipse.swt.widgets.Label");
+const IMessageProvider = Java.type(
+    "org.eclipse.jface.dialogs.IMessageProvider"
+);
+const SelectionAdapter = Java.type("org.eclipse.swt.events.SelectionAdapter");
+const Dialog = Java.extend(Java.type("org.eclipse.jface.dialogs.Dialog"));
+
+/**
+ * Dialog object for displaying search results
+ * @type {Object}
+ */
+let worksetDialog = {
+    table: {},
+    selected: null,
+    widgets: {},
+
+    /**
+     * Open the dialog
+     * @param {Object} t - Table data
+     * @returns {boolean} True if OK was pressed, false otherwise
+     */
+    open: function (t) {
+        worksetDialog.table = t;
+        return this.dialog.open() == 0; // OK = 0, Cancel = 1, Closed = -1
+    },
+
+    /**
+     * Dialog implementation
+     * @type {Dialog}
+     */
+    dialog: new Dialog(shell, {
+        tableWidget: null,
+        widths: [],
+
+        /**
+         * Configure the dialog shell
+         * @param {Object} newShell - The shell to configure
+         */
+        configureShell: function (newShell) {
+            Java.super(worksetDialog.dialog).configureShell(newShell);
+            newShell.setText("Search result");
+        },
+
+        /**
+         * Handle widget selection
+         * @param {Object} e - Selection event
+         */
+        widgetSelected: function (e) {
+            worksetDialog.selected = worksetDialog.widgets.table
+                .getSelection()[0]
+                .getData();
+        },
+
+        /**
+         * Make the dialog resizable
+         * @returns {boolean} True
+         */
+        isResizable: function () {
+            return true;
+        },
+
+        /**
+         * Create the dialog area
+         * @param {Object} parent - Parent composite
+         * @returns {Object} The created dialog area
+         */
+        createDialogArea: function (parent) {
+            let area = Java.super(worksetDialog.dialog).createDialogArea(
+                parent
+            );
+            let container = area;
+            GridDataFactory.swtDefaults()
+                .align(SWT.FILL, SWT.BEGINNING)
+                .applyTo(container);
+            GridLayoutFactory.swtDefaults()
+                .numColumns(1)
+                .margins(10, 10)
+                .spacing(10, 5)
+                .applyTo(container);
+
+            // Create the table widget
+            this.tableWidget = new TableWidget(
+                container,
+                SWT.VIRTUAL | SWT.BORDER
+            );
+            this.tableWidget.setLinesVisible(true);
+            this.tableWidget.setHeaderVisible(true);
+            const data = new GridData(SWT.FILL, SWT.FILL, true, true);
+            data.heightHint = 400;
+            this.tableWidget.setLayoutData(data);
+            worksetDialog.widgets["table"] = this.tableWidget;
+
+            // Create table columns
+            for (let index = 0; index < table.columns.length; index++) {
+                const column = table.columns[index];
+                const columnWidget = new TableColumnWidget(
+                    this.tableWidget,
+                    SWT.NONE
+                );
+                columnWidget.setText(column);
+                this.widths[index] = Java.super(
+                    worksetDialog.dialog
+                ).convertWidthInCharsToPixels(column.length);
+            }
+
+            // Populate table rows
+            worksetDialog.table.rows.forEach((row) => {
+                let item = new TableItemWidget(this.tableWidget, SWT.NONE);
+                let c = 0;
+                worksetDialog.table.selectors.forEach((column) => {
+                    let w = Java.super(
+                        worksetDialog.dialog
+                    ).convertWidthInCharsToPixels(row[column].length);
+                    if (w > this.widths[c]) this.widths[c] = w;
+                    item.setText(c++, row[column]);
+                    item.setData(row[worksetDialog.table.key]);
+                });
+            });
+
+            // Set column widths
+            for (let index = 0; index < table.columns.length; index++) {
+                this.tableWidget.getColumn(index).setWidth(this.widths[index]);
+            }
+
+            this.tableWidget.addSelectionListener(this);
+
+            // Add a filler widget to prevent clipping at the bottom of the dialog
+            let labeWidget = new LabelWidget(container, SWT.NONE);
+            return area;
+        },
+
+        /**
+         * Handle OK button press
+         */
+        okPressed: function () {
+            Java.super(worksetDialog.dialog).okPressed();
+        },
+    }),
+};
+
+// Open the dialog and handle the result
+if (
+    table.rows.length > 0 &&
+    worksetDialog.open(table) &&
+    worksetDialog.selected
+) {
+    console.log("> Where used script executed.");
+    console.log(`> Selection: ${worksetDialog.selected}`);
+
+    // Copy the selected item's name to the clipboard
+    if (worksetDialog.selected.name) {
+        const JArray = Java.type("java.lang.reflect.Array");
+        const JString = Java.type("java.lang.String");
+        const Clipboard = Java.type("org.eclipse.swt.dnd.Clipboard");
+        const cb = new Clipboard(shell.getDisplay());
+        const textTransfer = Java.type(
+            "org.eclipse.swt.dnd.TextTransfer"
+        ).getInstance();
+        const text = new JString(worksetDialog.selected.name);
+
+        let arrayOfTransfers = JArray.newInstance(
+            Java.type("org.eclipse.swt.dnd.TextTransfer"),
+            1
+        );
+        let arrayOfTexts = JArray.newInstance(JString, 1);
+        arrayOfTransfers[0] = textTransfer;
+        arrayOfTexts[0] = text;
+
+        cb.setContents(arrayOfTexts, arrayOfTransfers);
+    }
+} else if (table.rows.length == 0) console.log("> Nothing found!");

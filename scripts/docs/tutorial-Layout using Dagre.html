@@ -1,0 +1,136 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Tutorial: Layout using Dagre</title>
+            
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.3;
+        color: #333;
+        margin: 0;
+        padding: 10px;
+    }
+    h1 {
+        color: #2c3e50;
+        font-size: 20px;
+        margin: 10px 0 5px 0;
+    }
+    h2 {
+        color: #3498db;
+        font-size: 16px;
+        margin: 8px 0 4px 0;
+    }
+    p {
+        margin: 0 0 5px 0;
+    }
+    ul,
+    ol {
+        margin: 0 0 5px 0;
+        padding-left: 20px;
+    }
+    li {
+        margin-bottom: 2px;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 5px 0;
+    }
+    table,
+    th,
+    td {
+        border: 1px solid black;
+        font-size: 12px;
+        padding: 2px;
+    }
+</style>
+
+        </head>
+        <body>
+            <h1>Tutorial: Layout using Dagre</h1>
+            <p>The Dagre Layout script provides an easy way to automatically organize your Archi views using the Dagre graph layout algorithm. This tutorial will guide you through using the script and customizing the layout settings.</p>
+<h2>Prerequisites</h2>
+<ul>
+<li>Archi with the jArchi plugin installed</li>
+<li>The Dagre Layout script installed in your jArchi scripts folder</li>
+</ul>
+<h2>Using the Dagre Layout Script</h2>
+<ol>
+<li>Open your Archi model and select the view you want to layout.</li>
+<li>Run the Dagre Layout script from the jArchi Scripts menu.</li>
+<li>A dialog will appear with various layout settings.</li>
+</ol>
+<h2>Layout Settings</h2>
+<p>The dialog provides the following settings:</p>
+<ul>
+<li><p><strong>Rank Direction</strong>: Determines the overall flow of the graph.</p>
+<ul>
+<li>TB: Top to Bottom</li>
+<li>BT: Bottom to Top</li>
+<li>LR: Left to Right</li>
+<li>RL: Right to Left</li>
+</ul>
+</li>
+<li><p><strong>Alignment</strong>: Aligns nodes within the same rank.</p>
+<ul>
+<li>UL: Up Left</li>
+<li>UR: Up Right</li>
+<li>DL: Down Left</li>
+<li>DR: Down Right</li>
+</ul>
+</li>
+<li><p><strong>Node Separation</strong>: Pixels between nodes horizontally.</p>
+</li>
+<li><p><strong>Edge Separation</strong>: Pixels between edges horizontally.</p>
+</li>
+<li><p><strong>Rank Separation</strong>: Pixels between ranks (rows or columns).</p>
+</li>
+<li><p><strong>Margin X</strong>: Horizontal margin around the graph.</p>
+</li>
+<li><p><strong>Margin Y</strong>: Vertical margin around the graph.</p>
+</li>
+<li><p><strong>Acyclicer</strong>: Method to make the graph acyclic.</p>
+<ul>
+<li>undefined: No acyclic algorithm applied</li>
+<li>greedy: Uses a greedy heuristic</li>
+</ul>
+</li>
+<li><p><strong>Ranker</strong>: Algorithm to assign ranks to nodes.</p>
+<ul>
+<li>network-simplex: Network Simplex algorithm</li>
+<li>tight-tree: Tight Tree algorithm</li>
+<li>longest-path: Longest Path algorithm</li>
+</ul>
+</li>
+</ul>
+<h2>Applying the Layout</h2>
+<ol>
+<li>Adjust the settings as desired.</li>
+<li>Click the &quot;Layout&quot; button to apply the current settings to your view.</li>
+<li>The view will update to reflect the new layout.</li>
+<li>You can continue adjusting settings and clicking &quot;Layout&quot; to fine-tune the result.</li>
+<li>When satisfied, click &quot;Cancel&quot; to close the dialog.</li>
+</ol>
+<h2>Tips for Best Results</h2>
+<ul>
+<li>Start with the default settings and make small adjustments.</li>
+<li>The &quot;Rank Direction&quot; setting has the most significant impact on the overall layout.</li>
+<li>Increase &quot;Node Separation&quot; and &quot;Rank Separation&quot; for more spread-out layouts.</li>
+<li>Experiment with different &quot;Ranker&quot; algorithms if you&#39;re not satisfied with the initial results.</li>
+</ul>
+<h2>Troubleshooting</h2>
+<ul>
+<li>If the layout seems crowded, try increasing the separation values.</li>
+<li>If nodes are not aligning as expected, try different &quot;Alignment&quot; settings.</li>
+<li>If you encounter cycles in your diagram, try using the &quot;greedy&quot; Acyclicer.</li>
+</ul>
+<p>Remember, the effectiveness of the layout can depend on the complexity and structure of your Archi view. Don&#39;t hesitate to experiment with different settings to achieve the best result for your specific diagram.</p>
+
+        </body>
+        </html>
+    

@@ -1,0 +1,267 @@
+/**
+ * @module ElementAppearanceChanger
+ * @description A script to change the appearance of elements in a view based on their property values
+ */
+
+/**
+ * Element Appearance Changer Script
+ *
+ * Purpose:
+ * This script allows users to change the appearance of elements in an ArchiMate view
+ * based on the values of a selected property. It provides a user-friendly interface
+ * to select a property, view its values, and assign custom border and fill colors
+ * to each unique property value.
+ *
+ * Functionality:
+ * 1. Retrieves all unique property names from elements in the selected view.
+ * 2. Allows the user to select a property from a dropdown menu.
+ * 3. Displays a table with all unique values of the selected property.
+ * 4. Enables the user to set custom border and fill colors for each property value.
+ * 5. Applies the chosen colors to all elements in the view that have the corresponding
+ *    property values.
+ * 6. Displays color squares in the table for visual representation of chosen colors.
+ *
+ * Usage:
+ * 1. Select an ArchiMate view in Archi.
+ * 2. Run this script.
+ * 3. Choose a property from the dropdown menu.
+ * 4. Click on the color cells in the table to set border and fill colors for each
+ *    property value.
+ * 5. Click OK to apply the changes to your Archi model.
+ *
+ * Note: This script requires the JArchi plugin for Archi and uses SWT for the UI.
+ */
+
+const SWT = Java.type("org.eclipse.swt.SWT");
+const GridData = Java.type("org.eclipse.swt.layout.GridData");
+const GridDataFactory = Java.type("org.eclipse.jface.layout.GridDataFactory");
+const GridLayoutFactory = Java.type("org.eclipse.jface.layout.GridLayoutFactory");
+const LabelWidget = Java.type("org.eclipse.swt.widgets.Label");
+const ComboWidget = Java.type("org.eclipse.swt.widgets.Combo");
+const TableWidget = Java.type("org.eclipse.swt.widgets.Table");
+const TableItemWidget = Java.type("org.eclipse.swt.widgets.TableItem");
+const TableColumnWidget = Java.type("org.eclipse.swt.widgets.TableColumn");
+const ColorDialog = Java.type("org.eclipse.swt.widgets.ColorDialog");
+const Dialog = Java.extend(Java.type("org.eclipse.jface.dialogs.Dialog"));
+const IDialogConstants = Java.type("org.eclipse.jface.dialogs.IDialogConstants");
+const Display = Java.type("org.eclipse.swt.widgets.Display");
+const Point = Java.type("org.eclipse.swt.graphics.Point");
+const Color = Java.type("org.eclipse.swt.graphics.Color");
+const GC = Java.type("org.eclipse.swt.graphics.GC");
+const RGB = Java.type("org.eclipse.swt.graphics.RGB");
+
+const appearanceChangerDialog = {
+    selectedView: null,
+    propertyNames: [],
+    selectedProperty: "",
+    propertyValues: [],
+    colorSettings: {},
+    tableWidget: null,
+
+    open: function (view) {
+        this.selectedView = view;
+        this.propertyNames = this.getPropertyNames();
+        return this.dialog.open() === 0; // OK = 0, Cancel = 1
+    },
+
+    getPropertyNames: function () {
+        const properties = new Set();
+        $(this.selectedView)
+            .find("element")
+            .each(function (element) {
+                element.prop().forEach((prop) => properties.add(prop));
+            });
+        return Array.from(properties);
+    },
+
+    updatePropertyValues: function () {
+        this.propertyValues = [];
+        this.colorSettings = {};
+        $(this.selectedView)
+            .find("element")
+            .each((element) => {
+                const value = element.prop(this.selectedProperty);
+                if (value !== undefined) {
+                    const values = Array.isArray(value) ? value : [value];
+                    values.forEach((v) => {
+                        if (!this.propertyValues.includes(v)) {
+                            this.propertyValues.push(v);
+                            this.colorSettings[v] = { border: "#000000", fill: "#FFFFFF" };
+                        }
+                    });
+                }
+            });
+    },
+
+    updateTable: function () {
+        if (!this.tableWidget || this.tableWidget.isDisposed()) {
+            return;
+        }
+        this.tableWidget.removeAll();
+        this.propertyValues.forEach((value) => {
+            if (value !== null && value !== undefined) {
+                const item = new TableItemWidget(this.tableWidget, SWT.NONE);
+                item.setText(0, value.toString());
+                item.setData("borderColor", this.colorSettings[value].border);
+                item.setData("fillColor", this.colorSettings[value].fill);
+            }
+        });
+        this.tableWidget.redraw();
+        this.tableWidget.getParent().layout(true, true);
+    },
+
+    openColorDialog: function (item, column) {
+        const colorDialog = new ColorDialog(shell);
+        const rgb = colorDialog.open();
+        if (rgb) {
+            const hexColor =
+                "#" +
+                rgb.red.toString(16).padStart(2, "0") +
+                rgb.green.toString(16).padStart(2, "0") +
+                rgb.blue.toString(16).padStart(2, "0");
+            const propertyValue = item.getText(0);
+            if (column === 1) {
+                this.colorSettings[propertyValue].border = hexColor;
+                item.setData("borderColor", hexColor);
+            } else {
+                this.colorSettings[propertyValue].fill = hexColor;
+                item.setData("fillColor", hexColor);
+            }
+            this.tableWidget.redraw();
+        }
+    },
+
+    dialog: new Dialog(shell, {
+        configureShell: function (newShell) {
+            Java.super(appearanceChangerDialog.dialog).configureShell(newShell);
+            newShell.setText("Element Appearance Changer");
+        },
+
+        createDialogArea: function (parent) {
+            const area = Java.super(appearanceChangerDialog.dialog).createDialogArea(parent);
+            GridLayoutFactory.swtDefaults().numColumns(2).applyTo(area);
+
+            new LabelWidget(area, SWT.NONE).setText("Select Property:");
+            const propertyCombo = new ComboWidget(area, SWT.READ_ONLY);
+            propertyCombo.setItems(appearanceChangerDialog.propertyNames);
+            GridDataFactory.fillDefaults().grab(true, false).applyTo(propertyCombo);
+
+            appearanceChangerDialog.tableWidget = new TableWidget(area, SWT.BORDER | SWT.FULL_SELECTION | SWT.V_SCROLL);
+            appearanceChangerDialog.tableWidget.setHeaderVisible(true);
+            appearanceChangerDialog.tableWidget.setLinesVisible(true);
+            const tableGridData = new GridData(SWT.FILL, SWT.FILL, true, true);
+            tableGridData.heightHint = 200;
+            tableGridData.horizontalSpan = 2;
+            appearanceChangerDialog.tableWidget.setLayoutData(tableGridData);
+
+            const columns = ["Property Value", "Border Color", "Fill Color"];
+            columns.forEach((col) => {
+                const column = new TableColumnWidget(appearanceChangerDialog.tableWidget, SWT.NONE);
+                column.setText(col);
+                column.setWidth(150);
+            });
+
+            appearanceChangerDialog.tableWidget.addListener(SWT.PaintItem, function (event) {
+                const gc = event.gc;
+                const item = event.item;
+                const index = event.index;
+
+                if (index === 1 || index === 2) {
+                    const colorHex = index === 1 ? item.getData("borderColor") : item.getData("fillColor");
+                    const rgb = new RGB(
+                        parseInt(colorHex.substr(1, 2), 16),
+                        parseInt(colorHex.substr(3, 2), 16),
+                        parseInt(colorHex.substr(5, 2), 16)
+                    );
+                    const color = new Color(Display.getCurrent(), rgb);
+
+                    const squareSize = 16;
+                    const squareY = event.y + (event.height - squareSize) / 2;
+                    gc.setBackground(color);
+                    gc.fillRectangle(event.x + 5, squareY, squareSize, squareSize);
+                    gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
+                    gc.drawRectangle(event.x + 5, squareY, squareSize, squareSize);
+
+                    gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_LIST_FOREGROUND));
+                    gc.drawString(
+                        colorHex,
+                        event.x + squareSize + 15,
+                        event.y + (event.height - gc.textExtent(colorHex).y) / 2,
+                        true
+                    );
+
+                    color.dispose();
+                }
+            });
+
+            propertyCombo.addSelectionListener({
+                widgetSelected: function (e) {
+                    appearanceChangerDialog.selectedProperty = propertyCombo.getText();
+                    appearanceChangerDialog.updatePropertyValues();
+
+                    Display.getCurrent().timerExec(100, function () {
+                        appearanceChangerDialog.updateTable();
+                    });
+                },
+            });
+
+            appearanceChangerDialog.tableWidget.addListener(SWT.MouseDown, function (event) {
+                try {
+                    const point = new Point(event.x, event.y);
+                    const item = appearanceChangerDialog.tableWidget.getItem(point);
+                    if (item === null) {
+                        return;
+                    }
+
+                    let columnIndex = -1;
+                    let accumulatedWidth = 0;
+                    for (let i = 0; i < appearanceChangerDialog.tableWidget.getColumnCount(); i++) {
+                        accumulatedWidth += appearanceChangerDialog.tableWidget.getColumn(i).getWidth();
+                        if (point.x < accumulatedWidth) {
+                            columnIndex = i;
+                            break;
+                        }
+                    }
+
+                    if (columnIndex === 1 || columnIndex === 2) {
+                        appearanceChangerDialog.openColorDialog(item, columnIndex);
+                    }
+                } catch (error) {
+                    // Error handling
+                }
+            });
+
+            return area;
+        },
+
+        okPressed: function () {
+            appearanceChangerDialog.applyChanges();
+            Java.super(appearanceChangerDialog.dialog).okPressed();
+        },
+    }),
+
+    applyChanges: function () {
+        $(this.selectedView)
+            .find("element")
+            .each((element) => {
+                const value = element.prop(this.selectedProperty);
+                if (value !== undefined) {
+                    const values = Array.isArray(value) ? value : [value];
+                    values.forEach((v) => {
+                        if (this.colorSettings[v]) {
+                            element.fillColor = this.colorSettings[v].fill;
+                            element.lineColor = this.colorSettings[v].border;
+                        }
+                    });
+                }
+            });
+    },
+};
+
+// Main script execution
+const selectedView = $(selection).filter("archimate-diagram-model").first();
+if (selectedView) {
+    appearanceChangerDialog.open(selectedView);
+} else {
+    // No view selected
+}

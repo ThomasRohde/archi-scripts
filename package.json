@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "build": "node jsdoc-runner.js"
+  },
+  "dependencies": {
+    "marked": "^13.0.2"
+  }
+}
