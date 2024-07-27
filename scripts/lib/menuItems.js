@@ -98,4 +98,31 @@ const menuItems = [
         category: "Appearance",
         tutorial: "Smart Style Sync",
     },
+    {
+        name: "Model Health Check",
+        description: `
+        <h2>Model Health Check</h2>
+        <p>This script performs a comprehensive health check on your ArchiMate model, providing insights and recommendations for improvement.</p>
+        <h3>Features:</h3>
+        <ul>
+            <li>Analyzes model structure and content</li>
+            <li>Identifies unused elements and missing documentation</li>
+            <li>Assesses view complexity</li>
+            <li>Provides a summary of element types</li>
+            <li>Offers recommendations for model improvement</li>
+        </ul>
+        <h3>Usage:</h3>
+        <ol>
+            <li>Open your ArchiMate model in Archi</li>
+            <li>Run the "Model Health Check" script</li>
+            <li>Review the results in the dialog box</li>
+            <li>Navigate through different tabs for detailed information</li>
+            <li>Consider the recommendations for improving your model</li>
+        </ol>
+        <p>This script is invaluable for maintaining high-quality, well-structured ArchiMate models and identifying areas for improvement.</p>
+    `,
+        script: "Model Health Check.ajs",
+        category: "Analysis",
+        tutorial: "Model Health Check",
+    },
 ];

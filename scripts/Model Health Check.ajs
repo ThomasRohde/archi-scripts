@@ -1,0 +1,250 @@
+/**
+ * @module ModelHealthCheck
+ * @description A comprehensive model health check utility for Archi
+ * @version 1.6
+ * @author Claude AI Assistant
+ * @lastModifiedDate 2024-07-27
+ */
+
+(function() {
+    // Import necessary Java types
+    const SWT = Java.type('org.eclipse.swt.SWT');
+    const GridDataFactory = Java.type('org.eclipse.jface.layout.GridDataFactory');
+    const GridLayoutFactory = Java.type('org.eclipse.jface.layout.GridLayoutFactory');
+    const TitleAreaDialog = Java.type('org.eclipse.jface.dialogs.TitleAreaDialog');
+    const TabFolder = Java.type('org.eclipse.swt.widgets.TabFolder');
+    const TabItem = Java.type('org.eclipse.swt.widgets.TabItem');
+    const Table = Java.type('org.eclipse.swt.widgets.Table');
+    const TableItem = Java.type('org.eclipse.swt.widgets.TableItem');
+    const TableColumn = Java.type('org.eclipse.swt.widgets.TableColumn');
+    const Label = Java.type('org.eclipse.swt.widgets.Label');
+    const Text = Java.type('org.eclipse.swt.widgets.Text');
+    const Button = Java.type('org.eclipse.swt.widgets.Button');
+    const Composite = Java.type('org.eclipse.swt.widgets.Composite');
+    const MessageDialog = Java.type('org.eclipse.jface.dialogs.MessageDialog');
+    const Display = Java.type('org.eclipse.swt.widgets.Display');
+    const IMessageProvider = Java.type("org.eclipse.jface.dialogs.IMessageProvider");
+    const Color = Java.type('org.eclipse.swt.graphics.Color');
+    const RGB = Java.type('org.eclipse.swt.graphics.RGB');
+    const Font = Java.type('org.eclipse.swt.graphics.Font');
+    const FontData = Java.type('org.eclipse.swt.graphics.FontData');
+
+    const modelHealthCheck = {
+        model: null,
+        results: {
+            elements: 0,
+            relationships: 0,
+            views: 0,
+            unusedElements: [],
+            missingDocumentation: [],
+            viewComplexity: [],
+            elementTypes: {}
+        },
+
+        run: function() {
+            this.model = $.model;
+            if (!this.model) {
+                console.error("No model found.");
+                return;
+            }
+
+            this.analyzeModel();
+            this.showDialog();
+        },
+
+        analyzeModel: function() {
+            this.results.elements = $('element').size();
+            this.results.relationships = $('relationship').size();
+            this.results.views = $('view').size();
+
+            $('element').each(element => {
+                if ($(element).viewRefs().size() === 0) {
+                    this.results.unusedElements.push(element);
+                }
+                if (!element.documentation) {
+                    this.results.missingDocumentation.push(element);
+                }
+                this.results.elementTypes[element.type] = (this.results.elementTypes[element.type] || 0) + 1;
+            });
+
+            $('view').each(view => {
+                this.results.viewComplexity.push({
+                    name: view.name,
+                    elements: $(view).children('element').size(),
+                    relationships: $(view).children('relationship').size()
+                });
+            });
+        },
+
+        showDialog: function() {
+            this.dialog.open();
+        },
+
+        dialog: new (Java.extend(TitleAreaDialog))(shell, {
+            configureShell: function(newShell) {
+                Java.super(modelHealthCheck.dialog).configureShell(newShell);
+                newShell.setText("Model Health Check");
+                newShell.setSize(800, 600);
+            },
+
+            createDialogArea: function(parent) {
+                const area = Java.super(modelHealthCheck.dialog).createDialogArea(parent);
+                GridDataFactory.fillDefaults().grab(true, true).applyTo(area);
+
+                modelHealthCheck.dialog.setTitle("Model Health Check");
+                modelHealthCheck.dialog.setMessage("Model health check completed. Review the results and recommendations.", IMessageProvider.INFORMATION);
+
+                const tabFolder = new TabFolder(area, SWT.NONE);
+                GridDataFactory.fillDefaults().grab(true, true).applyTo(tabFolder);
+
+                modelHealthCheck.createSummaryTab(tabFolder);
+                modelHealthCheck.createUnusedElementsTab(tabFolder);
+                modelHealthCheck.createViewComplexityTab(tabFolder);
+                modelHealthCheck.createRecommendationsTab(tabFolder);
+
+                return area;
+            }
+        }),
+
+        createSummaryTab: function(tabFolder) {
+            const tab = new TabItem(tabFolder, SWT.NONE);
+            tab.setText("Summary");
+
+            const composite = new Composite(tabFolder, SWT.NONE);
+            tab.setControl(composite);
+            GridLayoutFactory.fillDefaults().numColumns(2).margins(10, 10).applyTo(composite);
+
+            this.createLabel(composite, "Total Elements:", this.results.elements);
+            this.createLabel(composite, "Total Relationships:", this.results.relationships);
+            this.createLabel(composite, "Total Views:", this.results.views);
+            this.createLabel(composite, "Unused Elements:", this.results.unusedElements.length);
+            this.createLabel(composite, "Elements Missing Documentation:", this.results.missingDocumentation.length);
+
+            const elementTypesText = new Text(composite, SWT.MULTI | SWT.BORDER | SWT.V_SCROLL);
+            GridDataFactory.fillDefaults().span(2, 1).grab(true, true).hint(SWT.DEFAULT, 100).applyTo(elementTypesText);
+            elementTypesText.setText(this.getElementTypesBreakdown());
+            elementTypesText.setEditable(false);
+        },
+
+        createUnusedElementsTab: function(tabFolder) {
+            const tab = new TabItem(tabFolder, SWT.NONE);
+            tab.setText("Unused Elements");
+
+            const composite = new Composite(tabFolder, SWT.NONE);
+            tab.setControl(composite);
+            GridLayoutFactory.fillDefaults().margins(10, 10).applyTo(composite);
+
+            const table = new Table(composite, SWT.BORDER | SWT.FULL_SELECTION);
+            table.setHeaderVisible(true);
+            table.setLinesVisible(true);
+            GridDataFactory.fillDefaults().grab(true, true).applyTo(table);
+
+            const columns = ["Name", "Type", "ID"];
+            columns.forEach(col => {
+                const column = new TableColumn(table, SWT.NONE);
+                column.setText(col);
+                column.setWidth(200);
+            });
+
+            this.results.unusedElements.forEach(element => {
+                const item = new TableItem(table, SWT.NONE);
+                item.setText([element.name, element.type, element.id]);
+            });
+        },
+
+        createViewComplexityTab: function(tabFolder) {
+            const tab = new TabItem(tabFolder, SWT.NONE);
+            tab.setText("View Complexity");
+
+            const composite = new Composite(tabFolder, SWT.NONE);
+            tab.setControl(composite);
+            GridLayoutFactory.fillDefaults().margins(10, 10).applyTo(composite);
+
+            const table = new Table(composite, SWT.BORDER | SWT.FULL_SELECTION);
+            table.setHeaderVisible(true);
+            table.setLinesVisible(true);
+            GridDataFactory.fillDefaults().grab(true, true).applyTo(table);
+
+            const columns = ["View Name", "Elements", "Relationships", "Complexity Score"];
+            columns.forEach(col => {
+                const column = new TableColumn(table, SWT.NONE);
+                column.setText(col);
+                column.setWidth(150);
+            });
+
+            this.results.viewComplexity.forEach(view => {
+                const item = new TableItem(table, SWT.NONE);
+                const complexityScore = view.elements + view.relationships;
+                item.setText([view.name, view.elements.toString(), view.relationships.toString(), complexityScore.toString()]);
+                
+                if (complexityScore > 50) {
+                    item.setForeground(3, new Color(Display.getCurrent(), new RGB(255, 0, 0)));
+                } else if (complexityScore > 30) {
+                    item.setForeground(3, new Color(Display.getCurrent(), new RGB(255, 165, 0)));
+                } else {
+                    item.setForeground(3, new Color(Display.getCurrent(), new RGB(0, 128, 0)));
+                }
+            });
+        },
+
+        createRecommendationsTab: function(tabFolder) {
+            const tab = new TabItem(tabFolder, SWT.NONE);
+            tab.setText("Recommendations");
+
+            const composite = new Composite(tabFolder, SWT.NONE);
+            tab.setControl(composite);
+            GridLayoutFactory.fillDefaults().margins(10, 10).applyTo(composite);
+
+            const recommendations = [
+                "Clean up unused elements to improve model clarity.",
+                "Add documentation to elements missing it for better understanding.",
+                "Consider breaking down complex views (>50 elements) into smaller, more focused views.",
+                "Ensure all relationships are bidirectional where appropriate.",
+                "Validate that all elements are properly connected within their respective layers."
+            ];
+
+            recommendations.forEach(rec => {
+                const label = new Label(composite, SWT.WRAP);
+                label.setText("• " + rec);
+                GridDataFactory.fillDefaults().grab(true, false).applyTo(label);
+            });
+
+            const actionButton = new Button(composite, SWT.PUSH);
+            actionButton.setText("Generate Detailed Report");
+            GridDataFactory.fillDefaults().align(SWT.CENTER, SWT.CENTER).applyTo(actionButton);
+            actionButton.addListener(SWT.Selection, e => this.generateDetailedReport());
+        },
+
+        createLabel: function(parent, text, value) {
+            const label = new Label(parent, SWT.NONE);
+            label.setText(text);
+            GridDataFactory.fillDefaults().applyTo(label);
+
+            const valueLabel = new Label(parent, SWT.NONE);
+            valueLabel.setText(value.toString());
+            GridDataFactory.fillDefaults().applyTo(valueLabel);
+
+            const boldFont = new Font(Display.getCurrent(), new FontData(valueLabel.getFont().getFontData()[0].getName(), 10, SWT.BOLD));
+            valueLabel.setFont(boldFont);
+        },
+
+        getElementTypesBreakdown: function() {
+            let breakdown = "Element Types Breakdown:\n\n";
+            for (let type in this.results.elementTypes) {
+                breakdown += `${type}: ${this.results.elementTypes[type]}\n`;
+            }
+            return breakdown;
+        },
+
+        generateDetailedReport: function() {
+            MessageDialog.openInformation(
+                shell,
+                "Report Generation",
+                "A detailed report would be generated here. This could include in-depth analysis, charts, and recommendations."
+            );
+        }
+    };
+
+    // Run the model health check
+    modelHealthCheck.run();
+})();

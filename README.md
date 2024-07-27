@@ -15,12 +15,32 @@ This repository contains a collection of JArchi scripts designed to enhance and 
 
 - Archi (latest version recommended)
 - jArchi plugin installed and activated in Archi
+- Node.js and npm (for managing dependencies)
 
 ## Installation
 
-1. Ensure you have Archi installed with the jArchi plugin activated.
-2. Clone this repository or download the script files.
-3. Place the `.ajs` files in your Archi scripts directory.
+### Installing Node.js Dependencies
+
+1. Navigate to the `scripts` directory in the cloned repository.
+2. Run the following command to install the required Node.js modules:
+   ```
+   npm install
+   ```
+
+### Installing Scripts
+
+You have two options for installing the scripts:
+
+#### Option 1: Cloning the Repository and Setting Scripts Preference
+
+1. Clone this repository to your local machine.
+2. Open Archi and go to Edit > Preferences > JArchi.
+3. Set the "Scripts folder" preference to point to the `scripts` directory in the cloned repository.
+
+#### Option 2: Copying Scripts to Existing Scripts Directory
+
+1. Clone this repository or download the script files.
+2. Copy everything from the `scripts` directory in the cloned repository to your Archi scripts directory:
    - On Windows: `%APPDATA%\Archi4\scripts`
    - On macOS: `~/Library/Application Support/Archi4/scripts`
    - On Linux: `~/.archi4/scripts`
@@ -33,6 +53,16 @@ This repository contains a collection of JArchi scripts designed to enhance and 
 4. Double-click on a script to run it, or right-click for more options.
 
 For a complete list and description of available scripts, please refer to the [Script Catalog](SCRIPT_CATALOG.md).
+
+## Available Scripts
+
+- **Where Used**: Find where selected elements are used within your Archimate model.
+- **Dagre Layout**: Automatically arrange elements in your Archi view using the Dagre graph layout algorithm.
+- **Smart Style Sync**: Change the appearance of elements in an ArchiMate view based on their property values.
+
+## Documentation
+
+Each script comes with its own documentation and tutorial. You can access these by selecting a script in the JArchi Scripts Menu and clicking the "View Tutorial" button.
 
 ## Contributing
 

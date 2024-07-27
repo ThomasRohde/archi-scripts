@@ -1,0 +1,140 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Tutorial: Model Health Check</title>
+            
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.3;
+        color: #333;
+        margin: 0;
+        padding: 10px;
+    }
+    h1 {
+        color: #2c3e50;
+        font-size: 20px;
+        margin: 10px 0 5px 0;
+    }
+    h2 {
+        color: #3498db;
+        font-size: 16px;
+        margin: 8px 0 4px 0;
+    }
+    p {
+        margin: 0 0 5px 0;
+    }
+    ul,
+    ol {
+        margin: 0 0 5px 0;
+        padding-left: 20px;
+    }
+    li {
+        margin-bottom: 2px;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 5px 0;
+    }
+    table,
+    th,
+    td {
+        border: 1px solid black;
+        font-size: 12px;
+        padding: 2px;
+    }
+</style>
+
+        </head>
+        <body>
+            <h1>Tutorial: Model Health Check</h1>
+            <h1>Model Health Check Tutorial</h1>
+<p>The Model Health Check script is a powerful tool for analyzing and improving your ArchiMate models in Archi. This tutorial will guide you through using the script and interpreting its results.</p>
+<h2>Prerequisites</h2>
+<ul>
+<li>Archi with the JArchi plugin installed</li>
+<li>An ArchiMate model to analyze</li>
+</ul>
+<h2>Running the Script</h2>
+<ol>
+<li>Open your ArchiMate model in Archi.</li>
+<li>In the Archi menu, go to <code>Scripts &gt; JArchi Scripts Menu</code>.</li>
+<li>In the JArchi Scripts Menu, find and select &quot;Model Health Check&quot; under the &quot;Analysis&quot; category.</li>
+<li>Click &quot;Execute&quot; to run the script.</li>
+</ol>
+<h2>Understanding the Results</h2>
+<p>The Model Health Check dialog presents its findings in four tabs:</p>
+<h3>1. Summary Tab</h3>
+<p>This tab provides an overview of your model&#39;s composition:</p>
+<ul>
+<li>Total Elements</li>
+<li>Total Relationships</li>
+<li>Total Views</li>
+<li>Number of Unused Elements</li>
+<li>Elements Missing Documentation</li>
+<li>Breakdown of Element Types</li>
+</ul>
+<p>Review these numbers to get a quick sense of your model&#39;s size and completeness.</p>
+<h3>2. Unused Elements Tab</h3>
+<p>This tab lists all elements that are not used in any view. Consider whether these elements are necessary or if they can be removed to streamline your model.</p>
+<h3>3. View Complexity Tab</h3>
+<p>This tab shows the complexity of each view in your model:</p>
+<ul>
+<li>View Name</li>
+<li>Number of Elements</li>
+<li>Number of Relationships</li>
+<li>Complexity Score (sum of elements and relationships)</li>
+</ul>
+<p>The Complexity Score is color-coded:</p>
+<ul>
+<li>Green: Low complexity (30 or fewer)</li>
+<li>Orange: Medium complexity (31-50)</li>
+<li>Red: High complexity (over 50)</li>
+</ul>
+<p>Consider breaking down views with high complexity scores into multiple, more focused views.</p>
+<h3>4. Recommendations Tab</h3>
+<p>This tab provides general recommendations for improving your model, such as:</p>
+<ul>
+<li>Cleaning up unused elements</li>
+<li>Adding missing documentation</li>
+<li>Breaking down complex views</li>
+<li>Ensuring proper relationships</li>
+<li>Validating element connections</li>
+</ul>
+<h2>Acting on the Results</h2>
+<ol>
+<li><p><strong>Unused Elements</strong>: Review the list and decide whether to:</p>
+<ul>
+<li>Delete truly unused elements</li>
+<li>Incorporate overlooked elements into appropriate views</li>
+</ul>
+</li>
+<li><p><strong>Missing Documentation</strong>: Systematically add documentation to elements that lack it, prioritizing key components of your architecture.</p>
+</li>
+<li><p><strong>View Complexity</strong>: For views with high complexity scores:</p>
+<ul>
+<li>Consider creating sub-views or alternate views that focus on specific aspects</li>
+<li>Review if all elements in the view are necessary</li>
+</ul>
+</li>
+<li><p><strong>Element Type Balance</strong>: Check if the distribution of element types aligns with your modeling goals and ArchiMate best practices.</p>
+</li>
+<li><p><strong>General Recommendations</strong>: Work through the list of recommendations, addressing each point to improve your model&#39;s overall quality and clarity.</p>
+</li>
+</ol>
+<h2>Best Practices</h2>
+<ul>
+<li>Run the Model Health Check regularly, especially before major reviews or after significant changes to your model.</li>
+<li>Use the script&#39;s findings as a guide, but always apply your domain knowledge and modeling expertise when making changes.</li>
+<li>Consider setting internal standards for view complexity and documentation completeness based on the script&#39;s metrics.</li>
+</ul>
+<p>By consistently using the Model Health Check script and acting on its recommendations, you can maintain a high-quality, well-structured ArchiMate model that effectively communicates your architecture.</p>
+
+        </body>
+        </html>
+    
