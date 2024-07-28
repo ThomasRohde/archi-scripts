@@ -1,9 +1,9 @@
 /**
- * @module ModelHealthCheck
- * @description A comprehensive model health check utility for Archi
- * @version 1.6
+ * @module EnhancedModelHealthCheck
+ * @description A comprehensive model health check utility for Archi with chart visualizations
+ * @version 2.0
  * @author Claude AI Assistant
- * @lastModifiedDate 2024-07-27
+ * @lastModifiedDate 2024-07-28
  */
 
 (function () {
@@ -18,7 +18,6 @@
     const TableItem = Java.type("org.eclipse.swt.widgets.TableItem");
     const TableColumn = Java.type("org.eclipse.swt.widgets.TableColumn");
     const Label = Java.type("org.eclipse.swt.widgets.Label");
-    const Text = Java.type("org.eclipse.swt.widgets.Text");
     const Button = Java.type("org.eclipse.swt.widgets.Button");
     const Composite = Java.type("org.eclipse.swt.widgets.Composite");
     const MessageDialog = Java.type("org.eclipse.jface.dialogs.MessageDialog");
@@ -26,8 +25,13 @@
     const IMessageProvider = Java.type("org.eclipse.jface.dialogs.IMessageProvider");
     const Color = Java.type("org.eclipse.swt.graphics.Color");
     const RGB = Java.type("org.eclipse.swt.graphics.RGB");
-    const Font = Java.type("org.eclipse.swt.graphics.Font");
-    const FontData = Java.type("org.eclipse.swt.graphics.FontData");
+    const IDialogConstants = Java.type("org.eclipse.jface.dialogs.IDialogConstants");
+
+    console.clear();
+    console.show();
+
+    // Import the chartjsUtility module
+    const chartjsUtility = require("./lib/chartjsUtility");
 
     const modelHealthCheck = {
         model: null,
@@ -83,7 +87,7 @@
         dialog: new (Java.extend(TitleAreaDialog))(shell, {
             configureShell: function (newShell) {
                 Java.super(modelHealthCheck.dialog).configureShell(newShell);
-                newShell.setText("Model Health Check");
+                newShell.setText("Enhanced Model Health Check");
                 newShell.setSize(1200, 800);
             },
 
@@ -91,7 +95,7 @@
                 const area = Java.super(modelHealthCheck.dialog).createDialogArea(parent);
                 GridDataFactory.fillDefaults().grab(true, true).applyTo(area);
 
-                modelHealthCheck.dialog.setTitle("Model Health Check");
+                modelHealthCheck.dialog.setTitle("Enhanced Model Health Check");
                 modelHealthCheck.dialog.setMessage(
                     "Model health check completed. Review the results and recommendations.",
                     IMessageProvider.INFORMATION
@@ -101,11 +105,20 @@
                 GridDataFactory.fillDefaults().grab(true, true).applyTo(tabFolder);
 
                 modelHealthCheck.createSummaryTab(tabFolder);
+                modelHealthCheck.createElementTypesTab(tabFolder);
                 modelHealthCheck.createUnusedElementsTab(tabFolder);
                 modelHealthCheck.createViewComplexityTab(tabFolder);
                 modelHealthCheck.createRecommendationsTab(tabFolder);
 
                 return area;
+            },
+
+            createButtonsForButtonBar: function (parent) {
+                Java.super(modelHealthCheck.dialog).createButton(parent, IDialogConstants.OK_ID, "Close", true);
+            },
+
+            okPressed: function () {
+                Java.super(modelHealthCheck.dialog).okPressed();
             },
 
             createHelpControl: function (parent) {
@@ -121,18 +134,96 @@
 
             const composite = new Composite(tabFolder, SWT.NONE);
             tab.setControl(composite);
-            GridLayoutFactory.fillDefaults().numColumns(2).margins(10, 10).applyTo(composite);
+            GridLayoutFactory.fillDefaults().numColumns(1).margins(10, 10).applyTo(composite);
 
-            this.createLabel(composite, "Total Elements:", this.results.elements);
-            this.createLabel(composite, "Total Relationships:", this.results.relationships);
-            this.createLabel(composite, "Total Views:", this.results.views);
-            this.createLabel(composite, "Unused Elements:", this.results.unusedElements.length);
-            this.createLabel(composite, "Elements Missing Documentation:", this.results.missingDocumentation.length);
+            const chartConfig = {
+                type: "doughnut",
+                data: {
+                    labels: ["Elements", "Relationships", "Views"],
+                    datasets: [
+                        {
+                            data: [this.results.elements, this.results.relationships, this.results.views],
+                            backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56"],
+                        },
+                    ],
+                },
+                options: {
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: "Model Composition",
+                        },
+                    },
+                },
+            };
 
-            const elementTypesText = new Text(composite, SWT.MULTI | SWT.BORDER | SWT.V_SCROLL);
-            GridDataFactory.fillDefaults().span(2, 1).grab(true, true).hint(SWT.DEFAULT, 100).applyTo(elementTypesText);
-            elementTypesText.setText(this.getElementTypesBreakdown());
-            elementTypesText.setEditable(false);
+            const chartBrowser = chartjsUtility.createChartWidget(composite, chartConfig);
+            GridDataFactory.fillDefaults().grab(true, true).hint(SWT.DEFAULT, 400).applyTo(chartBrowser);
+        },
+
+        createElementTypesTab: function (tabFolder) {
+            const tab = new TabItem(tabFolder, SWT.NONE);
+            tab.setText("Element Types");
+
+            const composite = new Composite(tabFolder, SWT.NONE);
+            tab.setControl(composite);
+            GridLayoutFactory.fillDefaults().numColumns(1).margins(10, 10).applyTo(composite);
+
+            const labels = Object.keys(this.results.elementTypes);
+            const data = Object.values(this.results.elementTypes);
+
+            const chartConfig = {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Count',
+                        data: data,
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Element Types Distribution'
+                        },
+                        legend: {
+                            display: false  // Hide legend as it's not needed for this chart
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                autoSkip: false,
+                                maxRotation: 90,
+                                minRotation: 0
+                            }
+                        },
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    onHover: null,  // Disable hover effects
+                    hover: {
+                        mode: null  // Disable hover mode
+                    },
+                    animation: {
+                        duration: 0  // Disable animations for better performance
+                    }
+                }
+            };
+
+            const chartBrowser = chartjsUtility.createChartWidget(composite, chartConfig);
+            GridDataFactory.fillDefaults().grab(true, true).hint(SWT.DEFAULT, 400).applyTo(chartBrowser);
         },
 
         createUnusedElementsTab: function (tabFolder) {
@@ -167,38 +258,53 @@
 
             const composite = new Composite(tabFolder, SWT.NONE);
             tab.setControl(composite);
-            GridLayoutFactory.fillDefaults().margins(10, 10).applyTo(composite);
+            GridLayoutFactory.fillDefaults().numColumns(1).margins(10, 10).applyTo(composite);
 
-            const table = new Table(composite, SWT.BORDER | SWT.FULL_SELECTION);
-            table.setHeaderVisible(true);
-            table.setLinesVisible(true);
-            GridDataFactory.fillDefaults().grab(true, true).applyTo(table);
+            const labels = this.results.viewComplexity.map((view) => view.name);
+            const elementData = this.results.viewComplexity.map((view) => view.elements);
+            const relationshipData = this.results.viewComplexity.map((view) => view.relationships);
 
-            const columns = ["View Name", "Elements", "Relationships", "Complexity Score"];
-            columns.forEach((col) => {
-                const column = new TableColumn(table, SWT.NONE);
-                column.setText(col);
-                column.setWidth(150);
-            });
+            const chartConfig = {
+                type: "bar",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "Elements",
+                            data: elementData,
+                            backgroundColor: "rgba(75, 192, 192, 0.6)",
+                            borderColor: "rgba(75, 192, 192, 1)",
+                            borderWidth: 1,
+                        },
+                        {
+                            label: "Relationships",
+                            data: relationshipData,
+                            backgroundColor: "rgba(255, 99, 132, 0.6)",
+                            borderColor: "rgba(255, 99, 132, 1)",
+                            borderWidth: 1,
+                        },
+                    ],
+                },
+                options: {
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: "View Complexity",
+                        },
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                        },
+                        y: {
+                            stacked: true,
+                        },
+                    },
+                },
+            };
 
-            this.results.viewComplexity.forEach((view) => {
-                const item = new TableItem(table, SWT.NONE);
-                const complexityScore = view.elements + view.relationships;
-                item.setText([
-                    view.name,
-                    view.elements.toString(),
-                    view.relationships.toString(),
-                    complexityScore.toString(),
-                ]);
-
-                if (complexityScore > 50) {
-                    item.setForeground(3, new Color(Display.getCurrent(), new RGB(255, 0, 0)));
-                } else if (complexityScore > 30) {
-                    item.setForeground(3, new Color(Display.getCurrent(), new RGB(255, 165, 0)));
-                } else {
-                    item.setForeground(3, new Color(Display.getCurrent(), new RGB(0, 128, 0)));
-                }
-            });
+            const chartBrowser = chartjsUtility.createChartWidget(composite, chartConfig);
+            GridDataFactory.fillDefaults().grab(true, true).hint(SWT.DEFAULT, 400).applyTo(chartBrowser);
         },
 
         createRecommendationsTab: function (tabFolder) {
@@ -229,37 +335,6 @@
             actionButton.addListener(SWT.Selection, (e) => this.generateDetailedReport());
         },
 
-        createLabel: function (parent, text, value) {
-            const label = new Label(parent, SWT.NONE);
-            label.setText(text);
-            GridDataFactory.fillDefaults().applyTo(label);
-
-            const valueLabel = new Label(parent, SWT.NONE);
-            valueLabel.setText(value.toString());
-            GridDataFactory.fillDefaults().applyTo(valueLabel);
-
-            const boldFont = new Font(
-                Display.getCurrent(),
-                new FontData(valueLabel.getFont().getFontData()[0].getName(), 10, SWT.BOLD)
-            );
-            valueLabel.setFont(boldFont);
-            valueLabel.addDisposeListener((e) => boldFont.dispose());
-        },
-
-        createHelpControl: function (parent) {
-            const help = Java.super(modelHealthCheck.dialog).createHelpControl(parent);
-            help.setVisible(false);
-            return help;
-        },
-
-        getElementTypesBreakdown: function () {
-            let breakdown = "Element Types Breakdown:\n\n";
-            for (let type in this.results.elementTypes) {
-                breakdown += `${type}: ${this.results.elementTypes[type]}\n`;
-            }
-            return breakdown;
-        },
-
         generateDetailedReport: function () {
             MessageDialog.openInformation(
                 shell,
@@ -269,6 +344,6 @@
         },
     };
 
-    // Run the model health check
+    // Run the enhanced model health check
     modelHealthCheck.run();
 })();
