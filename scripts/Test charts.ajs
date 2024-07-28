@@ -1,0 +1,125 @@
+/**
+ * @name Chart Utility Test
+ * @version 1.0
+ * @description Test script to demonstrate using chartjsUtility module with various chart types
+ */
+
+(function() {
+    console.clear();
+    console.show();
+
+    // Import necessary Java types and our utility module
+    const SWT = Java.type('org.eclipse.swt.SWT');
+    const GridLayout = Java.type('org.eclipse.swt.layout.GridLayout');
+    const GridData = Java.type('org.eclipse.swt.layout.GridData');
+    const Label = Java.type('org.eclipse.swt.widgets.Label');
+    const Combo = Java.type('org.eclipse.swt.widgets.Combo');
+    const Composite = Java.type('org.eclipse.swt.widgets.Composite');
+    const TitleAreaDialog = Java.type('org.eclipse.jface.dialogs.TitleAreaDialog');
+    const IDialogConstants = Java.type('org.eclipse.jface.dialogs.IDialogConstants');
+    const chartjsUtility = require('./lib/chartjsUtility');
+
+    // Function to generate random data
+    function generateRandomData(count) {
+        return Array.from({length: count}, () => Math.floor(Math.random() * 100));
+    }
+
+    // Function to generate random labels
+    function generateRandomLabels(count) {
+        return Array.from({length: count}, (_, i) => `Label ${i + 1}`);
+    }
+
+    // Available chart types
+    const chartTypes = ['bar', 'line', 'pie', 'doughnut', 'polarArea', 'radar'];
+
+    // Function to create chart configuration
+    function createChartConfig(type) {
+        const labels = generateRandomLabels(5);
+        const data = generateRandomData(5);
+        
+        return {
+            type: type,
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Random Data',
+                    data: data,
+                    backgroundColor: chartjsUtility.generateColors(data.length),
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: `${type.charAt(0).toUpperCase() + type.slice(1)} Chart Example`
+                    }
+                }
+            }
+        };
+    }
+
+    // Create a custom dialog
+    const customDialog = {
+        chartBrowser: null,
+        
+        dialog: new (Java.extend(TitleAreaDialog))(shell, {
+            createDialogArea: function(parent) {
+                const area = Java.super(customDialog.dialog).createDialogArea(parent);
+                const container = new Composite(area, SWT.NONE);
+                container.setLayoutData(new GridData(GridData.FILL_BOTH));
+                container.setLayout(new GridLayout(2, false));
+
+                new Label(container, SWT.NONE).setText("Select Chart Type:");
+                const combo = new Combo(container, SWT.READ_ONLY);
+                combo.setItems(chartTypes);
+                combo.select(0);  // Select the first item by default
+                combo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+                customDialog.chartBrowser = chartjsUtility.createChartWidget(container, createChartConfig(chartTypes[0]));
+                customDialog.chartBrowser.setLayoutData(new GridData(GridData.FILL_BOTH));
+                customDialog.chartBrowser.getLayoutData().horizontalSpan = 2;
+
+                combo.addListener(SWT.Selection, function(event) {
+                    const selectedChartType = combo.getText();
+                    const newChartConfig = createChartConfig(selectedChartType);
+                    customDialog.updateChart(newChartConfig);
+                });
+
+                return area;
+            },
+
+            configureShell: function(newShell) {
+                Java.super(customDialog.dialog).configureShell(newShell);
+                newShell.setText("Chart Utility Test");
+                newShell.setSize(1200, 800);
+            },
+
+            createButtonsForButtonBar: function(parent) {
+                Java.super(customDialog.dialog).createButton(
+                    parent, 
+                    IDialogConstants.OK_ID, 
+                    "Close", 
+                    true
+                );
+            }
+        }),
+
+        open: function() {
+            return this.dialog.open();
+        },
+
+        updateChart: function(newConfig) {
+            const htmlContent = chartjsUtility.generateChartHtml(chartjsUtility.enhanceChartConfig(newConfig));
+            const tempFile = chartjsUtility.createTempHtmlFile(htmlContent);
+            this.chartBrowser.setUrl(tempFile.toURI().toString());
+        }
+    };
+
+    // Open the dialog
+    customDialog.open();
+
+    console.log("Chart utility test dialog opened. Close the dialog to end the script.");
+})();

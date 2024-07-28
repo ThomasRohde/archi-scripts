@@ -170,67 +170,6 @@ const chartjsUtility = {
     },
 
     /**
-     * Creates a pie chart
-     * @param {Composite} parent - The parent composite for the Browser widget
-     * @param {string} title - The chart title
-     * @param {string[]} labels - The labels for each slice of the pie
-     * @param {number[]} data - The data values for each slice of the pie
-     * @returns {Browser} The Browser widget containing the pie chart
-     */
-    createPieChart: function (parent, title, labels, data) {
-        const chartConfig = {
-            type: 'pie',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: data,
-                    backgroundColor: this.generateColors(data.length)
-                }]
-            },
-            options: {
-                plugins: {
-                    title: {
-                        display: true,
-                        text: title
-                    }
-                }
-            }
-        };
-        return this.createChartWidget(parent, chartConfig);
-    },
-
-    /**
-     * Creates a bar chart
-     * @param {Composite} parent - The parent composite for the Browser widget
-     * @param {string} title - The chart title
-     * @param {string[]} labels - The labels for each bar
-     * @param {number[]} data - The data values for each bar
-     * @returns {Browser} The Browser widget containing the bar chart
-     */
-    createBarChart: function (parent, title, labels, data) {
-        const chartConfig = {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: title,
-                    data: data,
-                    backgroundColor: this.generateColors(data.length)
-                }]
-            },
-            options: {
-                plugins: {
-                    title: {
-                        display: true,
-                        text: title
-                    }
-                }
-            }
-        };
-        return this.createChartWidget(parent, chartConfig);
-    },
-
-    /**
      * Generates an array of distinct colors
      * @param {number} count - The number of colors to generate
      * @returns {string[]} An array of color strings
