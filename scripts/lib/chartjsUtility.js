@@ -2,7 +2,8 @@
 
 /**
  * @module chartjsUtility
- * @description A utility module for creating Chart.js charts in Eclipse SWT Browser widgets, with OS-specific browser selection
+ * @description A utility module for creating Chart.js charts in Eclipse SWT Browser widgets, with OS-specific browser selection and improved chart configurations
+ * @version 1.2
  */
 
 const SWT = Java.type("org.eclipse.swt.SWT");
@@ -24,7 +25,6 @@ const chartjsUtility = {
         } else if (os.includes("mac")) {
             return SWT.WEBKIT;
         }
-        // For any other OS, use the default
         return SWT.NONE;
     },
 
@@ -35,15 +35,80 @@ const chartjsUtility = {
      * @returns {Browser} The Browser widget containing the chart
      */
     createChartWidget: function (parent, chartConfig) {
-        const browserStyle = this.getBrowserStyle();
-        const browser = new Browser(parent, browserStyle);
-
-        const htmlContent = this.generateChartHtml(chartConfig);
+        const browser = new Browser(parent, this.getBrowserStyle());
+        const htmlContent = this.generateChartHtml(this.enhanceChartConfig(chartConfig));
         const tempFile = this.createTempHtmlFile(htmlContent);
-
         browser.setUrl(tempFile.toURI().toString());
-
         return browser;
+    },
+
+    /**
+     * Enhances the chart configuration with improved default options
+     * @param {Object} chartConfig - The original Chart.js configuration object
+     * @returns {Object} The enhanced Chart.js configuration object
+     */
+    enhanceChartConfig: function (chartConfig) {
+        const defaultOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                },
+            },
+            onHover: null,
+            hover: {
+                mode: null,
+            },
+            animation: {
+                duration: 0,
+            },
+        };
+
+        // Add scales only for non-pie charts
+        if (chartConfig.type !== 'pie' && chartConfig.type !== 'doughnut') {
+            defaultOptions.scales = {
+                x: {
+                    ticks: {
+                        autoSkip: false,
+                        maxRotation: 90,
+                        minRotation: 0,
+                    },
+                },
+                y: {
+                    beginAtZero: true,
+                },
+            };
+        }
+
+        // Deep merge the default options with the provided chart config
+        const mergedConfig = JSON.parse(JSON.stringify(chartConfig)); // Deep clone
+        this.deepMerge(mergedConfig.options, defaultOptions);
+
+        return mergedConfig;
+    },
+
+    /**
+     * Deep merges two objects
+     * @param {Object} target - The target object
+     * @param {Object} source - The source object
+     */
+    deepMerge: function (target, source) {
+        for (const key in source) {
+            if (source.hasOwnProperty(key)) {
+                if (source[key] instanceof Object && !Array.isArray(source[key])) {
+                    if (!target[key]) Object.assign(target, { [key]: {} });
+                    this.deepMerge(target[key], source[key]);
+                } else {
+                    Object.assign(target, { [key]: source[key] });
+                }
+            }
+        }
     },
 
     /**
@@ -79,12 +144,8 @@ const chartjsUtility = {
             <script>
                 const ctx = document.getElementById('myChart').getContext('2d');
                 const chartConfig = ${JSON.stringify(chartConfig)};
-                chartConfig.options = chartConfig.options || {};
-                chartConfig.options.responsive = true;
-                chartConfig.options.maintainAspectRatio = false;
                 let myChart = new Chart(ctx, chartConfig);
 
-                // Resize chart when window is resized
                 window.addEventListener('resize', function() {
                     myChart.resize();
                 });
@@ -107,6 +168,81 @@ const chartjsUtility = {
         writer.close();
         return tempFile;
     },
+
+    /**
+     * Creates a pie chart
+     * @param {Composite} parent - The parent composite for the Browser widget
+     * @param {string} title - The chart title
+     * @param {string[]} labels - The labels for each slice of the pie
+     * @param {number[]} data - The data values for each slice of the pie
+     * @returns {Browser} The Browser widget containing the pie chart
+     */
+    createPieChart: function (parent, title, labels, data) {
+        const chartConfig = {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: this.generateColors(data.length)
+                }]
+            },
+            options: {
+                plugins: {
+                    title: {
+                        display: true,
+                        text: title
+                    }
+                }
+            }
+        };
+        return this.createChartWidget(parent, chartConfig);
+    },
+
+    /**
+     * Creates a bar chart
+     * @param {Composite} parent - The parent composite for the Browser widget
+     * @param {string} title - The chart title
+     * @param {string[]} labels - The labels for each bar
+     * @param {number[]} data - The data values for each bar
+     * @returns {Browser} The Browser widget containing the bar chart
+     */
+    createBarChart: function (parent, title, labels, data) {
+        const chartConfig = {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: title,
+                    data: data,
+                    backgroundColor: this.generateColors(data.length)
+                }]
+            },
+            options: {
+                plugins: {
+                    title: {
+                        display: true,
+                        text: title
+                    }
+                }
+            }
+        };
+        return this.createChartWidget(parent, chartConfig);
+    },
+
+    /**
+     * Generates an array of distinct colors
+     * @param {number} count - The number of colors to generate
+     * @returns {string[]} An array of color strings
+     */
+    generateColors: function (count) {
+        const colors = [];
+        for (let i = 0; i < count; i++) {
+            const hue = (i * 137.508) % 360;  // Use golden angle approximation
+            colors.push(`hsl(${hue}, 70%, 60%)`);
+        }
+        return colors;
+    }
 };
 
 // Export the module
