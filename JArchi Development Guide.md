@@ -147,15 +147,7 @@ try {
 
 ## Best Practices
 
-1. **Undo Support**: Wrap model-changing operations in a single transaction for proper undo support:
-
-```javascript
-model.withTransaction("My Script Operation", function() {
-    // Perform model changes here
-});
-```
-
-2. **Progress Reporting**: For long-running scripts, use progress dialogs to keep the user informed:
+1. **Progress Reporting**: For long-running scripts, use progress dialogs to keep the user informed:
 
 ```javascript
 window.showProgressDialog("Processing", function(progressBar) {
@@ -164,7 +156,7 @@ window.showProgressDialog("Processing", function(progressBar) {
 });
 ```
 
-3. **Script Metadata**: Include metadata in your scripts for better organization and discoverability:
+2. **Script Metadata**: Include metadata in your scripts for better organization and discoverability:
 
 ```javascript
 /**
@@ -176,7 +168,7 @@ window.showProgressDialog("Processing", function(progressBar) {
  */
 ```
 
-4. **Performance Optimization**: For large models, consider using batch operations and avoiding unnecessary model traversals:
+3. **Performance Optimization**: For large models, consider using batch operations and avoiding unnecessary model traversals:
 
 ```javascript
 const elements = $("element");
@@ -185,7 +177,7 @@ elements.each(function(element) {
 });
 ```
 
-5. **Use jArchi Collections**: When working with elements, views, or relationships, wrap them in jArchi collections to use collection methods:
+4. **Use jArchi Collections**: When working with elements, views, or relationships, wrap them in jArchi collections to use collection methods:
 
 ```javascript
 $(element).viewRefs().size();
