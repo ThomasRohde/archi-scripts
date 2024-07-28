@@ -6,8 +6,6 @@
  * @lastModifiedDate 2024-07-28
  */
 
-(function () {
-    // Import necessary Java types
     const SWT = Java.type("org.eclipse.swt.SWT");
     const GridDataFactory = Java.type("org.eclipse.jface.layout.GridDataFactory");
     const GridLayoutFactory = Java.type("org.eclipse.jface.layout.GridLayoutFactory");
@@ -346,4 +344,3 @@
 
     // Run the enhanced model health check
     modelHealthCheck.run();
-})();

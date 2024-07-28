@@ -4,15 +4,6 @@ This guide outlines conventions, best practices, and learnings for developing sc
 
 ## Script Structure and Conventions
 
-### Module Pattern
-Use the module pattern to encapsulate script functionality:
-
-```javascript
-(function() {
-    // Script code here
-})();
-```
-
 ### Console Clearing
 For top-level scripts (not in lib), always begin by clearing the console:
 
