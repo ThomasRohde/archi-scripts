@@ -130,7 +130,7 @@ function updateConfluencePage(confluenceSettings, pageId, parentId, pageTitle, p
 }
 
 function getAttachmentInfo(confluenceSettings, pageId, fileName) {
-    const urlPath = `/wiki/rest/api/content/${pageId}/child/attachment?filename=${encodeURIComponent(fileName)}`;
+    const urlPath = `/wiki/rest/api/content/${pageId}/child/attachment?filename=${encodeURIComponent(fileName)}&expand=version`;
     const url = new URL(confluenceSettings.baseUrl + urlPath);
     
     const connection = url.openConnection();
@@ -158,8 +158,7 @@ function getAttachmentInfo(confluenceSettings, pageId, fileName) {
     return {
         id: attachmentInfo.id,
         title: attachmentInfo.title,
-        // Extract version from the download URL
-        version: parseInt(attachmentInfo._links.download.match(/version=(\d+)/)[1])
+        version: attachmentInfo.version.number
     };
 }
 
@@ -212,7 +211,11 @@ function attachFile(confluenceSettings, pageId, fileName, fileContent, fileType,
     }
 
     const response = JSON.parse(readResponseToString(connection.getInputStream()));
-    return response.results[0].version.number;
+    return {
+        id: response.results[0].id,
+        title: response.results[0].title,
+        version: response.results[0].version.number
+    };
 }
 
 function readConfluenceSettings() {
