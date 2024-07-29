@@ -1,0 +1,137 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Tutorial: Publish View to Confluence</title>
+            
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.3;
+        color: #333;
+        margin: 0;
+        padding: 10px;
+    }
+    h1 {
+        color: #2c3e50;
+        font-size: 20px;
+        margin: 10px 0 5px 0;
+    }
+    h2 {
+        color: #3498db;
+        font-size: 16px;
+        margin: 8px 0 4px 0;
+    }
+    p {
+        margin: 0 0 5px 0;
+    }
+    ul,
+    ol {
+        margin: 0 0 5px 0;
+        padding-left: 20px;
+    }
+    li {
+        margin-bottom: 2px;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 5px 0;
+    }
+    table,
+    th,
+    td {
+        border: 1px solid black;
+        font-size: 12px;
+        padding: 2px;
+    }
+</style>
+
+        </head>
+        <body>
+            <h1>Tutorial: Publish View to Confluence</h1>
+            <h1>Publish View to Confluence Tutorial</h1>
+<h2>Overview</h2>
+<p>The &quot;Publish View to Confluence&quot; script is a powerful tool that allows you to seamlessly publish your ArchiMate views from Archi directly to Atlassian Confluence. This integration streamlines the process of documenting and sharing your architecture models with your team or stakeholders.</p>
+<h2>Features</h2>
+<ul>
+<li>Publishes the selected view as a high-quality PNG image</li>
+<li>Creates or updates a Confluence page with the view name as the title</li>
+<li>Includes view documentation if available</li>
+<li>Generates a table of all elements in the view with their properties</li>
+<li>Automatically handles page creation or updating</li>
+</ul>
+<h2>Prerequisites</h2>
+<p>Before using this script, ensure that:</p>
+<ol>
+<li>You have the JArchi plugin installed and activated in Archi.</li>
+<li>You have configured your Confluence settings using the &quot;Confluence Settings&quot; script.</li>
+<li>You have an active internet connection to reach your Confluence instance.</li>
+<li>You have the necessary permissions to create or update pages in the specified Confluence space.</li>
+</ol>
+<h2>Step-by-Step Guide</h2>
+<h3>1. Configure Confluence Settings</h3>
+<p>If you haven&#39;t already set up your Confluence settings:</p>
+<ol>
+<li>Go to the JArchi Scripts menu.</li>
+<li>Run the &quot;Confluence Settings&quot; script.</li>
+<li>Enter your Confluence username, API token, space key, and base URL.</li>
+<li>Click &quot;Save&quot; to store your settings.</li>
+</ol>
+<h3>2. Select a View</h3>
+<ol>
+<li>Open your ArchiMate model in Archi.</li>
+<li>In the model tree, select the view you want to publish to Confluence.</li>
+</ol>
+<h3>3. Run the Script</h3>
+<ol>
+<li>Go to the JArchi Scripts menu.</li>
+<li>Find and select &quot;Publish View to Confluence&quot; under the &quot;Integration&quot; category.</li>
+<li>Click &quot;Execute&quot; to run the script.</li>
+</ol>
+<h3>4. Monitor the Process</h3>
+<ol>
+<li>The script will start executing, and you&#39;ll see progress messages in the console.</li>
+<li>Wait for the script to complete the publishing process.</li>
+<li>Check the console for confirmation messages and the Confluence page URL.</li>
+</ol>
+<h3>5. Verify the Published Page</h3>
+<ol>
+<li>Once the script completes, open the provided Confluence page URL in your web browser.</li>
+<li>Verify that the page contains:<ul>
+<li>The correct view name as the page title</li>
+<li>The view documentation (if available)</li>
+<li>A high-quality PNG image of your view</li>
+<li>A table listing all elements in the view with their properties</li>
+</ul>
+</li>
+</ol>
+<h2>Best Practices</h2>
+<ol>
+<li><p><strong>Organize Your Views</strong>: Ensure your views are well-organized and properly named in Archi before publishing.</p>
+</li>
+<li><p><strong>Add View Documentation</strong>: Include clear and concise documentation for your views in Archi. This documentation will be included in the Confluence page.</p>
+</li>
+<li><p><strong>Use Meaningful Property Names</strong>: Since the script publishes element properties, use clear and meaningful names for your custom properties in Archi.</p>
+</li>
+<li><p><strong>Regular Updates</strong>: If you make changes to your view in Archi, re-run the script to update the Confluence page. The script will automatically update existing pages.</p>
+</li>
+<li><p><strong>Version Control</strong>: Consider using Confluence&#39;s versioning feature to track changes to your published views over time.</p>
+</li>
+</ol>
+<h2>Troubleshooting</h2>
+<ul>
+<li>If the script fails to publish, check your Confluence settings and ensure you have the correct permissions.</li>
+<li>If the image quality is poor, try adjusting the scale factor in the script (default is 2).</li>
+<li>If certain elements or properties are not appearing, verify that they are actually present in the selected view.</li>
+</ul>
+<h2>Conclusion</h2>
+<p>The &quot;Publish View to Confluence&quot; script bridges the gap between your ArchiMate models in Archi and your documentation in Confluence. By automating this process, you can ensure that your architecture documentation is always up-to-date and easily accessible to your team.</p>
+<p>Remember to keep your Archi models and views well-maintained, and use this script regularly to keep your Confluence documentation in sync with your latest architectural designs.</p>
+
+        </body>
+        </html>
+    

@@ -150,4 +150,36 @@ const menuItems = [
         category: "Integration",
         tutorial: "Confluence Settings"
     },
+    {
+        name: "Publish View to Confluence",
+        description: `
+            <h2>Publish View to Confluence</h2>
+            <p>This script allows you to publish the currently selected view to a Confluence page, including the view diagram and element properties.</p>
+            <h3>Features:</h3>
+            <ul>
+                <li>Publishes the selected view as a high-quality PNG image</li>
+                <li>Creates or updates a Confluence page with the view name as the title</li>
+                <li>Includes view documentation if available</li>
+                <li>Generates a table of all elements in the view with their properties</li>
+                <li>Automatically handles page creation or updating</li>
+            </ul>
+            <h3>Usage:</h3>
+            <ol>
+                <li>Select a view in your Archi model</li>
+                <li>Ensure Confluence settings are configured correctly</li>
+                <li>Run the "Publish View to Confluence" script</li>
+                <li>Wait for the script to complete the publishing process</li>
+                <li>Check the console for confirmation and the Confluence page URL</li>
+            </ol>
+            <h3>Prerequisites:</h3>
+            <ul>
+                <li>Confluence settings must be configured using the "Confluence Settings" script</li>
+                <li>Active internet connection to reach your Confluence instance</li>
+            </ul>
+            <p>This script streamlines the process of documenting your ArchiMate views in Confluence, making it easier to share and collaborate on architecture models.</p>
+        `,
+        script: "Publish View to Confluence.ajs",
+        category: "Integration",
+        tutorial: "Publish View to Confluence"
+    }
 ];
