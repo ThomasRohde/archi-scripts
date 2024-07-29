@@ -49,7 +49,7 @@ async function publishViewToConfluence() {
 
         // Prepare image content
         const imageFileName = `${pageTitle.replace(/[^a-z0-9]/gi, "_").toLowerCase()}_diagram.png`;
-        const imageContent = `<ac:image ac:align="center" ac:layout="center" ac:alt="${pageTitle} Diagram">
+        const imageContent = `<ac:image ac:align="center" ac:layout="center" ac:alt="${pageTitle} Diagram" ac:width="600">
     <ri:attachment ri:filename="${imageFileName}" />
 </ac:image>`;
 
