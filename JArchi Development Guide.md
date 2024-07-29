@@ -134,6 +134,8 @@ console.log("Operation completed successfully");
 console.error("An error occurred: " + errorMessage);
 ```
 
+Never have more than 1 argument for console.error(). 
+
 ### Try-Catch Blocks
 Wrap code that may throw errors in try-catch blocks:
 
@@ -211,4 +213,131 @@ Use JSDoc comments for functions and modules:
  */
 ```
 
-By following these updated conventions and best practices, you can create more maintainable, efficient, and user-friendly JArchi scripts. Remember to always test your scripts thoroughly and consider the user experience when developing new features or improvements.
+## Avoid Immediately Invoked Function Expressions (IIFEs) in Top-Level Scripts
+
+Unlike in browser-based JavaScript, where IIFEs are often used to avoid polluting the global scope, JArchi scripts do not require this pattern. Each script runs in its own context, so there's no need for additional encapsulation.
+
+### Do:
+```javascript
+console.clear();
+console.show();
+
+// Your script code here
+const myFunction = function() {
+    // Function implementation
+};
+
+// Script execution
+myFunction();
+```
+
+### Don't:
+```javascript
+(function() {
+    console.clear();
+    console.show();
+
+    // Your script code here
+    const myFunction = function() {
+        // Function implementation
+    };
+
+    // Script execution
+    myFunction();
+})();
+```
+
+The exception to this rule is the `Menu.ajs` script, which does use an IIFE for specific reasons related to its functionality.
+
+# Module Structure and Exports in JArchi
+
+When creating modules for JArchi scripts, it's important to structure them correctly for compatibility and ease of use. JArchi uses a CommonJS-like module system, which means we use `module.exports` for exporting functionality and `require()` for importing.
+
+## Exporting from a Module
+
+When creating a module (e.g., in a `.js` file in the `lib` directory), use `module.exports` to expose functions or objects to other scripts. Here's the recommended pattern:
+
+```javascript
+// myModule.js
+
+function someFunction() {
+    // Function implementation
+}
+
+function anotherFunction() {
+    // Function implementation
+}
+
+// Export an object containing all the functions you want to make available
+module.exports = {
+    someFunction: someFunction,
+    anotherFunction: anotherFunction
+};
+```
+
+For modules with a single export, you can also use this pattern:
+
+```javascript
+// singleExportModule.js
+
+module.exports = function() {
+    // Module implementation
+};
+```
+
+## Importing and Using Modules
+
+To use a module in another script, use the `require()` function:
+
+```javascript
+const myModule = require('./lib/myModule');
+
+// Use the exported functions
+myModule.someFunction();
+myModule.anotherFunction();
+```
+
+For modules with a single export:
+
+```javascript
+const singleFunction = require('./lib/singleExportModule');
+
+// Use the exported function
+singleFunction();
+```
+
+## Important Notes
+
+1. Do not use ES6 module syntax (`import`/`export`) as it's not supported in JArchi's JavaScript environment.
+
+2. Avoid using the `export` keyword anywhere in your JArchi scripts or modules.
+
+3. Always use relative paths with `require()`, starting with `./` for files in the same directory or `../` to move up directories.
+
+4. When working with JArchi's built-in modules or Java interop, continue to use `Java.type()` as needed.
+
+## Example: Restructuring a Complex Module
+
+For a complex module with multiple functions, like our `confluenceIntegration.js`, structure it like this:
+
+```javascript
+// confluenceIntegration.js
+
+// ... (all function implementations)
+
+function updateConfluencePage() { /* ... */ }
+function getPageInfo() { /* ... */ }
+function attachFile() { /* ... */ }
+function readConfluenceSettings() { /* ... */ }
+
+// Export all functions at the end of the file
+module.exports = {
+    updateConfluencePage: updateConfluencePage,
+    getPageInfo: getPageInfo,
+    attachFile: attachFile,
+    readConfluenceSettings: readConfluenceSettings
+};
+```
+
+By following these guidelines, you'll ensure that your JArchi scripts and modules are structured correctly, making them easier to maintain and use across your project.
+

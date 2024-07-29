@@ -125,4 +125,29 @@ const menuItems = [
         category: "Analysis",
         tutorial: "Model Health Check",
     },
+    {
+        name: "Confluence Settings",
+        description: `
+            <h2>Confluence Settings</h2>
+            <p>This script allows you to configure the settings for Confluence integration with jArchi.</p>
+            <h3>Features:</h3>
+            <ul>
+                <li>Set Confluence username and API token</li>
+                <li>Configure personal access token for authentication</li>
+                <li>Set default space key for Confluence operations</li>
+                <li>Specify Confluence base URL</li>
+                <li>Toggle between Confluence Cloud and Server instances</li>
+            </ul>
+            <h3>Usage:</h3>
+            <ol>
+                <li>Run the "Confluence Settings" script from the JArchi Scripts Menu</li>
+                <li>Fill in the required fields in the dialog</li>
+                <li>Click "Save" to store the settings or "Cancel" to discard changes</li>
+            </ol>
+            <p>These settings will be used by other Confluence integration scripts to connect to your Confluence instance.</p>
+        `,
+        script: "Confluence Settings.ajs",
+        category: "Integration",
+        tutorial: "Confluence Settings"
+    },
 ];

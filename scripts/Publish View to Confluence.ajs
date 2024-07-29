@@ -1,0 +1,97 @@
+/**
+ * @module PublishViewToConfluence
+ * @description Publishes the currently selected view to a Confluence page
+ * @version 1.5
+ * @author Claude AI Assistant
+ * @lastModifiedDate 2024-07-29
+ */
+
+console.clear();
+console.show();
+
+const confluenceIntegration = require('./lib/confluenceIntegration');
+
+async function publishViewToConfluence() {
+    try {
+        // Get the selected view
+        const selectedView = $(selection).filter("archimate-diagram-model").first();
+        if (!selectedView) {
+            console.error("No view selected. Please select a view and run the script again.");
+            return;
+        }
+
+        const confluenceSettings = confluenceIntegration.readConfluenceSettings();
+        if (!confluenceSettings.baseUrl || !confluenceSettings.spaceKey || !confluenceSettings.username || !confluenceSettings.apiToken) {
+            console.error("Confluence settings are not properly configured. Please run the Confluence Settings script first.");
+            return;
+        }
+
+        const pageTitle = selectedView.name;
+        console.log(`Publishing view "${pageTitle}" to Confluence...`);
+
+        // Render view as PNG
+        const viewImage = $.model.renderViewAsBase64(selectedView, "PNG", {scale: 2, margin: 20});
+
+        // Generate HTML content
+        let pageContents = `<h1>${pageTitle}</h1>`;
+        
+        // Add view documentation
+        if (selectedView.documentation) {
+            pageContents += `<h2>View Documentation</h2><p>${selectedView.documentation}</p>`;
+        }
+
+        // Prepare image content
+        const imageFileName = `${pageTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_diagram.png`;
+        const imageContent = `<ac:image ac:align="center" ac:layout="center" ac:alt="${pageTitle} Diagram">
+    <ri:attachment ri:filename="${imageFileName}" />
+</ac:image>`;
+
+        pageContents += `<h2>View Diagram</h2>${imageContent}`;
+
+        // Generate table of elements and their properties
+        pageContents += `<h2>Elements</h2><table><tbody><tr><th>Name</th><th>Type</th><th>Properties</th></tr>`;
+        $(selectedView).find("element").each(element => {
+            const properties = element.prop();
+            const propertyString = properties.map(prop => `${prop}: ${element.prop(prop)}`).join(', ');
+            pageContents += `<tr><td>${element.name}</td><td>${element.type}</td><td>${propertyString}</td></tr>`;
+        });
+        pageContents += `</tbody></table>`;
+
+        // Check if page exists
+        const pageInfo = await confluenceIntegration.getPageInfo(confluenceSettings, pageTitle);
+
+        // Create or update the page
+        const result = await confluenceIntegration.updateConfluencePage(
+            confluenceSettings,
+            pageInfo ? pageInfo.pageId : '',
+            '',  // No parent page
+            pageTitle,
+            pageInfo ? pageInfo.pageVersion + 1 : 1,
+            pageContents
+        );
+
+        console.log(`Page "${pageTitle}" ${pageInfo ? 'updated' : 'created'} successfully. Page ID: ${result.pageId}, Version: ${result.pageVersion}`);
+
+        // Get existing attachment info
+        const attachmentInfo = await confluenceIntegration.getAttachmentInfo(confluenceSettings, result.pageId, imageFileName);
+
+        // Attach or update the image file
+        const attachmentComment = "View diagram";
+        const attachmentVersion = await confluenceIntegration.attachFile(
+            confluenceSettings,
+            result.pageId,
+            imageFileName,
+            viewImage,
+            "image",
+            attachmentComment,
+            attachmentInfo ? attachmentInfo.id : null
+        );
+
+        console.log(`Image "${imageFileName}" ${attachmentInfo ? 'updated' : 'attached'} successfully. Attachment version: ${attachmentVersion}`);
+
+    } catch (error) {
+        console.error("An error occurred:", error.message);
+    }
+}
+
+publishViewToConfluence();
