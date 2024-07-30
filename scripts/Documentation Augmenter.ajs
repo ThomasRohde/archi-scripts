@@ -1,0 +1,138 @@
+// File: OllamaDocumentationGenerator.ajs
+
+const { OllamaClient, Message, GenerateOptions, ROLES } = require('./lib/ollamaClient');
+const modelTraversal = require('./lib/modelTraversal');
+
+console.clear();
+console.show();
+
+const ollama = new OllamaClient();
+const MODEL = 'llama3.1'; // Adjust this to the model you want to use
+
+async function generateViewDocumentation(view) {
+    console.log(`Generating documentation for view: ${view.name}`);
+
+    // Step 1 & 2: Create system context
+    const systemContext = createSystemContext(view);
+
+    // Step 3: Generate view documentation
+    const viewDocumentation = await generateDocumentation(
+        systemContext, 
+        "Generate concise, factual documentation for this view. Focus on its purpose, key components, and relationships. Use a technical tone."
+    );
+    console.log("View documentation generated.");
+
+    // Step 4 & 5: Generate documentation for elements
+    const updates = await generateElementDocumentation(view, systemContext, viewDocumentation);
+    console.log("Documentation generation complete.");
+
+    return updates;
+}
+
+function createSystemContext(view) {
+    let context = `View Name: ${view.name}\n`;
+    context += `View Documentation: ${view.documentation || 'None'}\n\n`;
+    context += "Elements and Relationships:\n";
+
+    modelTraversal.traverse({
+        viewElementHandler: (element) => {
+            context += `- Element: ${element.name} (${element.type})\n`;
+            context += `  Documentation: ${element.documentation || 'None'}\n`;
+            if (element.prop()) {
+                context += `  Properties: ${JSON.stringify(element.prop())}\n`;
+            }
+        },
+        viewRelationshipHandler: (relationship) => {
+            context += `- Relationship: ${relationship.name || 'Unnamed'} (${relationship.type})\n`;
+            context += `  Source: ${relationship.source.name}, Target: ${relationship.target.name}\n`;
+            context += `  Documentation: ${relationship.documentation || 'None'}\n`;
+            if (relationship.prop()) {
+                context += `  Properties: ${JSON.stringify(relationship.prop())}\n`;
+            }
+        }
+    }, view);
+
+    return context;
+}
+
+async function generateDocumentation(context, prompt) {
+    const messages = [
+        new Message(ROLES.SYSTEM, "You are a technical documentation assistant. Provide concise, factual information in a technical tone. Focus on accuracy and relevance."),
+        new Message(ROLES.SYSTEM, context),
+        new Message(ROLES.USER, prompt)
+    ];
+
+    const options = new GenerateOptions({
+        temperature: 0.3, // Lowered for more consistent, factual output
+        topK: 40,
+        topP: 0.9,
+        stream: false
+    });
+
+    const response = await ollama.generateChatCompletion(MODEL, messages, options);
+    const tokensPerSecond = calculateTokensPerSecond(response);
+    console.log(`Generation stats: ${tokensPerSecond.toFixed(2)} tokens/s`);
+    return response.message.content;
+}
+
+function calculateTokensPerSecond(response) {
+    const evalCount = response.eval_count;
+    const evalDurationNs = response.eval_duration;
+    const evalDurationSeconds = evalDurationNs / 1e9; // Convert nanoseconds to seconds
+    return evalCount / evalDurationSeconds;
+}
+
+async function generateElementDocumentation(view, systemContext, viewDocumentation) {
+    const updates = {
+        view: { id: view.id, documentation: viewDocumentation },
+        elements: [],
+        relationships: []
+    };
+
+    const items = [];
+    modelTraversal.traverse({
+        viewElementHandler: (element) => {
+            items.push({ type: 'element', item: element });
+        },
+        viewRelationshipHandler: (relationship) => {
+            items.push({ type: 'relationship', item: relationship });
+        }
+    }, view);
+
+    const totalItems = items.length;
+    console.log(`Total items to process: ${totalItems}`);
+
+    for (let i = 0; i < items.length; i++) {
+        const { type, item } = items[i];
+        const itemName = type === 'element' ? item.name : (item.name || `${item.source.name} -> ${item.target.name}`);
+        console.log(`Processing ${type}: ${itemName} (${i + 1}/${totalItems})`);
+
+        const prompt = `Generate concise, factual documentation for the ${type}: ${itemName} (${item.type}). 
+                        Include relevant technical details and its role within the system. 
+                        If appropriate, suggest potential properties as key-value pairs.`;
+
+        const content = await generateDocumentation(systemContext + "\n" + viewDocumentation, prompt);
+
+        if (type === 'element') {
+            updates.elements.push({ id: item.id, documentation: content });
+        } else {
+            updates.relationships.push({ id: item.id, documentation: content });
+        }
+    }
+
+    return updates;
+}
+
+// Main execution
+const selectedView = $(selection).filter("archimate-diagram-model").first();
+
+if (selectedView) {
+    generateViewDocumentation(selectedView)
+        .then(updates => {
+            console.log("Generated documentation updates:");
+            console.log(JSON.stringify(updates, null, 2));
+        })
+        .catch(error => console.error("Error:", error));
+} else {
+    console.error("No view selected. Please select a view and run the script again.");
+}
