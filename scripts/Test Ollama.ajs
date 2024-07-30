@@ -1,0 +1,34 @@
+const { OllamaClient, Message, GenerateOptions, ROLES } = require('./lib/ollamaClient');
+
+const ollama = new OllamaClient();
+
+console.clear();
+console.show();
+
+// Generate a chat completion
+const messages = [
+    new Message(ROLES.SYSTEM, "You are a helpful assistant."),
+    new Message(ROLES.USER, "What's the weather like today?")
+];
+
+const options = new GenerateOptions({
+    temperature: 0.7,
+    topK: 40,
+    topP: 0.9,
+    stream: false
+});
+
+ollama.generateChatCompletion('llama3.1', messages, options)
+    .then(response => console.log(JSON.stringify(response, null, 2)))
+    .catch(error => console.error(error));
+
+// List models
+ollama.listModels()
+    .then(models => {
+        models.forEach(model => {
+            console.log(`Model: ${model.name}`);
+            console.log(`Format: ${model.details.format}`);
+            console.log(`Quantization: ${model.details.quantization_level}`);
+        });
+    })
+    .catch(error => console.error(error));
