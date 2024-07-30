@@ -97,7 +97,7 @@ class OllamaClient {
             baseURL: baseURL,
             headers: {
                 'Content-Type': 'application/json'
-            }
+            },
         });
     }
 

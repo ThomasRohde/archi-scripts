@@ -8,7 +8,7 @@ console.show();
 // Generate a chat completion
 const messages = [
     new Message(ROLES.SYSTEM, "You are a helpful assistant."),
-    new Message(ROLES.USER, "What's the weather like today?")
+    new Message(ROLES.USER, "Please tell me three jokes about IT Architects?")
 ];
 
 const options = new GenerateOptions({
