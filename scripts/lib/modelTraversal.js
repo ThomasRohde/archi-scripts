@@ -1,8 +1,11 @@
+// File: modelTraversal.js
+
 /**
  * @module modelTraversal
- * @description A flexible library for traversing Archi models and views
- * @version 2.0
- * @lastModifiedDate 2024-08-01
+ * @description A flexible library for traversing Archi models and views, with integrated tests
+ * @version 1.1
+ * @author Claude AI Assistant
+ * @lastModifiedDate 2024-07-30
  */
 
 const modelTraversal = {
@@ -15,7 +18,8 @@ const modelTraversal = {
         if (startingPoint === undefined || $(startingPoint).is("model")) {
             this.traverseModel(handlers);
         } else if ($(startingPoint).is("view")) {
-            this.handleView(startingPoint, handlers);
+            this.handleElement(startingPoint, handlers.viewHandler);
+            this.traverseView(startingPoint, handlers);
         } else {
             console.error("Invalid starting point. Must be a model, view, or undefined.");
         }
@@ -26,40 +30,41 @@ const modelTraversal = {
      * @param {Object} handlers - Object containing handler functions for different element types
      */
     traverseModel: function (handlers) {
-        // Traverse folders
-        $("folder").each((folder) => this.handleElement(folder, handlers.folderHandler));
-        
-        // Traverse elements
-        $("element").each((element) => this.handleElement(element, handlers.elementHandler));
-        
-        // Traverse relationships
-        $("relationship").each((relationship) => this.handleElement(relationship, handlers.relationshipHandler));
-        
-        // Traverse views
-        $("view").each((view) => this.handleView(view, handlers));
+        this.traverseHierarchy($("folder"), handlers.folderHandler);
+        this.traverseHierarchy($("element"), handlers.elementHandler);
+        this.traverseHierarchy($("relationship"), handlers.relationshipHandler);
+        this.traverseHierarchy($("view"), (view) => this.traverseView(view, handlers));
     },
 
     /**
-     * Handle a view and its contents
-     * @param {Object} view - The view to handle
+     * Traverse a hierarchy of elements
+     * @param {Object} elements - The elements to traverse
+     * @param {Function} handler - The handler function to use
+     */
+    traverseHierarchy: function (elements, handler) {
+        elements.each((element) => {
+            this.handleElement(element, handler);
+        });
+    },
+
+    /**
+     * Traverse a specific view
+     * @param {Object} node - The view to traverse
      * @param {Object} handlers - Object containing handler functions for different element types
      */
-    handleView: function (view, handlers) {
-        // Call the viewHandler first
-        this.handleElement(view, handlers.viewHandler);
-        
-        // Then traverse the contents of the view
-        $(view).children().each((child) => {
+    traverseView: function (node, handlers) {
+        $(node).children().each((child) => {
             if ($(child).is("element")) {
-                this.handleElement(child, handlers.viewElementHandler || handlers.elementHandler);
+                this.handleElement(child, handlers.viewElementHandler);
+                // Recursively traverse nested elements
+                this.traverseView(child, handlers);
             } else if ($(child).is("relationship")) {
-                this.handleElement(child, handlers.viewRelationshipHandler || handlers.relationshipHandler);
+                this.handleElement(child, handlers.viewRelationshipHandler);
             } else if ($(child).is("diagram-model-group") || $(child).is("diagram-model-note")) {
                 this.handleElement(child, handlers.diagramObjectHandler);
-                // Recursively handle nested diagram objects
-                this.handleView(child, handlers);
+                // Recursively traverse nested diagram objects
+                this.traverseView(child, handlers);
             }
-            // Add more conditions for other types of view objects if needed
         });
     },
 
@@ -112,7 +117,7 @@ const modelTraversal = {
 
         // Test 2: Traverse a specific view
         console.log("\nTest 2: Traversing a specific view");
-        const testView = $("view").first();
+        const testView = $(selection).filter("archimate-diagram-model").first();
         if (testView) {
             this.traverse(testHandlers, testView);
         } else {
@@ -128,3 +133,6 @@ const modelTraversal = {
 };
 
 module.exports = modelTraversal;
+
+// Uncomment the following line to run tests when the script is executed
+// modelTraversal.runTests();

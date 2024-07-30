@@ -47,7 +47,6 @@ function createSystemContext(view) {
             }
         }
     }, view);
-
     return context;
 }
 
