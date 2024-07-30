@@ -165,8 +165,20 @@ async function generateElementDocumentation(view, systemContext, viewDocumentati
         const documentation = await generateDocumentation(systemContext + "\n" + viewDocumentation, docPrompt);
 
         if (type === 'element') {
-            const propPrompt = `Based on the ${type} '${itemName}' (${item.type}) and its context, suggest relevant properties as key-value pairs. 
-                                Focus on technical attributes that provide valuable metadata. Output as JSON.`;
+            const propPrompt = `
+Analyze the element '${itemName}' (${type}) in the context of the current view. Generate 3-5 relevant properties as simple name-value pairs. Each property should have a concise name and a short string or numerical value. Focus on technical or business attributes that provide valuable metadata for enterprise architecture. 
+
+Format your response strictly as a JSON object with property names as keys and their values as strings or numbers. For example:
+
+{
+  "Cost": "USD 1000",
+  "Priority": "High",
+  "Implementation Time": "6 months",
+  "Data Sensitivity": "Confidential",
+  "Scalability": 8
+}
+
+Ensure all property names are clear and self-explanatory. Avoid complex or nested structures.`
             
             const properties = await generateProperties(systemContext + "\n" + viewDocumentation, propPrompt);
 
