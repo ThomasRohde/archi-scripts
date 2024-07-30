@@ -12,17 +12,13 @@ const MODEL = 'llama3.1'; // Adjust this to the model you want to use
 async function generateViewDocumentation(view) {
     console.log(`Generating documentation for view: ${view.name}`);
 
-    // Step 1 & 2: Create system context
     const systemContext = createSystemContext(view);
-
-    // Step 3: Generate view documentation
     const viewDocumentation = await generateDocumentation(
         systemContext, 
-        "Generate concise, factual documentation for this view. Focus on its purpose, key components, and relationships. Use a technical tone."
+        "Analyze the view and provide a concise technical summary. Focus on its purpose, key components, and significant relationships."
     );
     console.log("View documentation generated.");
 
-    // Step 4 & 5: Generate documentation for elements
     const updates = await generateElementDocumentation(view, systemContext, viewDocumentation);
     console.log("Documentation generation complete.");
 
@@ -57,13 +53,13 @@ function createSystemContext(view) {
 
 async function generateDocumentation(context, prompt) {
     const messages = [
-        new Message(ROLES.SYSTEM, "You are a technical documentation assistant. Provide concise, factual information in a technical tone. Focus on accuracy and relevance."),
+        new Message(ROLES.SYSTEM, "You are a technical documentation assistant for enterprise architecture. Provide concise, factual information in a professional tone. Focus on accuracy, relevance, and technical insights."),
         new Message(ROLES.SYSTEM, context),
         new Message(ROLES.USER, prompt)
     ];
 
     const options = new GenerateOptions({
-        temperature: 0.3, // Lowered for more consistent, factual output
+        temperature: 0.2,
         topK: 40,
         topP: 0.9,
         stream: false
@@ -72,13 +68,69 @@ async function generateDocumentation(context, prompt) {
     const response = await ollama.generateChatCompletion(MODEL, messages, options);
     const tokensPerSecond = calculateTokensPerSecond(response);
     console.log(`Generation stats: ${tokensPerSecond.toFixed(2)} tokens/s`);
-    return response.message.content;
+    return response.message.content.trim();
 }
 
+async function generateProperties(context, prompt) {
+    const messages = [
+        new Message(ROLES.SYSTEM, "You are a technical metadata generator for enterprise architecture elements. Provide concise, relevant properties as JSON."),
+        new Message(ROLES.SYSTEM, context),
+        new Message(ROLES.USER, prompt)
+    ];
+
+    const options = new GenerateOptions({
+        temperature: 0.2,
+        topK: 40,
+        topP: 0.9,
+        stream: false,
+        format: 'json'
+    });
+
+    const response = await ollama.generateChatCompletion(MODEL, messages, options);
+    const tokensPerSecond = calculateTokensPerSecond(response);
+    console.log(`Properties generation stats: ${tokensPerSecond.toFixed(2)} tokens/s`);
+    return safeJSONParse(response.message.content);
+}
+
+function safeJSONParse(str) {
+    try {
+        // First, try parsing the string as-is
+        return JSON.parse(str);
+    } catch (e) {
+        console.log("Initial JSON parsing failed. Attempting to clean and parse...");
+        
+        // Remove any text before the first '{' and after the last '}'
+        let cleaned = str.substring(str.indexOf('{'), str.lastIndexOf('}') + 1);
+        
+        // Replace any single quotes with double quotes
+        cleaned = cleaned.replace(/'/g, '"');
+        
+        // Attempt to parse again
+        try {
+            return JSON.parse(cleaned);
+        } catch (e) {
+            console.log("Cleaned JSON parsing failed. Attempting to fix common issues...");
+            
+            // Fix common JSON issues
+            cleaned = cleaned
+                // Ensure property names are double-quoted
+                .replace(/(\w+)(?=\s*:)/g, '"$1"')
+                // Remove trailing commas
+                .replace(/,\s*([\]}])/g, '$1');
+            
+            try {
+                return JSON.parse(cleaned);
+            } catch (e) {
+                console.error("All JSON parsing attempts failed. Returning an empty object.");
+                return {};
+            }
+        }
+    }
+}
 function calculateTokensPerSecond(response) {
     const evalCount = response.eval_count;
     const evalDurationNs = response.eval_duration;
-    const evalDurationSeconds = evalDurationNs / 1e9; // Convert nanoseconds to seconds
+    const evalDurationSeconds = evalDurationNs / 1e9;
     return evalCount / evalDurationSeconds;
 }
 
@@ -107,16 +159,27 @@ async function generateElementDocumentation(view, systemContext, viewDocumentati
         const itemName = type === 'element' ? item.name : (item.name || `${item.source.name} -> ${item.target.name}`);
         console.log(`Processing ${type}: ${itemName} (${i + 1}/${totalItems})`);
 
-        const prompt = `Generate concise, factual documentation for the ${type}: ${itemName} (${item.type}). 
-                        Include relevant technical details and its role within the system. 
-                        If appropriate, suggest potential properties as key-value pairs.`;
+        const docPrompt = `Analyze the ${type} '${itemName}' (${item.type}) within the context of the view. 
+                           Provide a concise technical description focusing on its role, significance, and key characteristics.`;
 
-        const content = await generateDocumentation(systemContext + "\n" + viewDocumentation, prompt);
+        const documentation = await generateDocumentation(systemContext + "\n" + viewDocumentation, docPrompt);
 
         if (type === 'element') {
-            updates.elements.push({ id: item.id, documentation: content });
+            const propPrompt = `Based on the ${type} '${itemName}' (${item.type}) and its context, suggest relevant properties as key-value pairs. 
+                                Focus on technical attributes that provide valuable metadata. Output as JSON.`;
+            
+            const properties = await generateProperties(systemContext + "\n" + viewDocumentation, propPrompt);
+
+            updates.elements.push({ 
+                id: item.id, 
+                documentation: documentation,
+                properties: properties
+            });
         } else {
-            updates.relationships.push({ id: item.id, documentation: content });
+            updates.relationships.push({ 
+                id: item.id, 
+                documentation: documentation 
+            });
         }
     }
 
