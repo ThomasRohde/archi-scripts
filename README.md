@@ -52,13 +52,14 @@ You have two options for installing the scripts:
 3. You should see the newly added scripts in the list.
 4. Double-click on a script to run it, or right-click for more options.
 
-For a complete list and description of available scripts, please refer to the [Script Catalog](SCRIPT_CATALOG.md).
-
 ## Available Scripts
 
 - **Where Used**: Find where selected elements are used within your Archimate model.
 - **Dagre Layout**: Automatically arrange elements in your Archi view using the Dagre graph layout algorithm.
 - **Smart Style Sync**: Change the appearance of elements in an ArchiMate view based on their property values.
+- **Model Health Check**: Perform a comprehensive health check on your ArchiMate model, providing insights and recommendations for improvement.
+- **Confluence Settings**: Configure the settings for Confluence integration with jArchi.
+- **Publish View to Confluence**: Publish the currently selected view to a Confluence page.
 
 ## Documentation
 
