@@ -181,5 +181,30 @@ const menuItems = [
         script: "Publish View to Confluence.ajs",
         category: "Integration",
         tutorial: "Publish View to Confluence"
-    }
+    },
+    {
+        name: "Documentation Augmenter",
+        description: `
+            <h2>Documentation Augmenter</h2>
+            <p>This script uses AI to automatically generate and enhance documentation for your ArchiMate views and elements.</p>
+            <h3>Features:</h3>
+            <ul>
+                <li>Generates comprehensive documentation for the selected view</li>
+                <li>Creates or updates documentation for individual elements within the view</li>
+                <li>Utilizes the Ollama AI model for intelligent content generation</li>
+                <li>Preserves existing documentation structure and formatting</li>
+            </ul>
+            <h3>Usage:</h3>
+            <ol>
+                <li>Select an ArchiMate view in your model</li>
+                <li>Run the "Documentation Augmenter" script</li>
+                <li>Wait for the script to generate and apply documentation</li>
+                <li>Review and refine the generated documentation as needed</li>
+            </ol>
+            <p>This script requires Ollama to be installed and running on your local machine. Please refer to the tutorial for detailed setup instructions and requirements.</p>
+        `,
+        script: "Documentation Augmenter.ajs",
+        category: "Documentation",
+        tutorial: "Documentation Augmenter"
+    },
 ];

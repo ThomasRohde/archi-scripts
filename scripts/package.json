@@ -15,6 +15,7 @@
   "description": "",
   "dependencies": {
     "chroma-js": "^2.4.2",
-    "dagre": "^0.8.5"
+    "dagre": "^0.8.5",
+    "marked": "^13.0.3"
   }
 }

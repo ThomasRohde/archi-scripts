@@ -1,7 +1,7 @@
 /**
  * @module PublishViewToConfluence
- * @description Publishes the currently selected view to a Confluence page using the updated apiClient module
- * @version 2.3
+ * @description Publishes the currently selected view to a Confluence page with enhanced structure, Markdown support, and expandable element sections
+ * @version 3.1
  * @author Claude AI Assistant
  * @lastModifiedDate 2024-07-31
  */
@@ -10,6 +10,7 @@ console.clear();
 console.show();
 
 const apiClient = require("./lib/apiClient");
+const marked = require('./node_modules/marked/marked.min');
 
 function readConfluenceSettings() {
     const preferenceStore = workbench.getPreferenceStore();
@@ -27,7 +28,6 @@ const confluenceApi = apiClient.create({
         password: readConfluenceSettings().apiToken
     },
     baseURL: readConfluenceSettings().baseUrl,
-    debug: true,
     headers: {
         'X-Atlassian-Token': 'no-check'
     }
@@ -101,40 +101,9 @@ async function updateConfluencePage(pageId, pageTitle, pageVersion, pageContents
     }
 }   
 
-async function getAttachmentInfo(pageId, fileName) {
-    try {
-        const response = await confluenceApi.get(`/wiki/rest/api/content/${pageId}/child/attachment`, {
-            params: {
-                filename: fileName,
-                expand: 'version'
-            }
-        });
-
-        if (response.data.results.length === 0) {
-            return null;
-        }
-
-        const attachmentInfo = response.data.results[0];
-        return {
-            id: attachmentInfo.id,
-            title: attachmentInfo.title,
-            version: attachmentInfo.version.number
-        };
-    } catch (error) {
-        console.error("Error getting attachment info:", error.message);
-        throw error;
-    }
-}
-
 async function attachFile(pageId, fileName, fileContent, fileType, comment) {
     try {
-        const attachmentInfo = await getAttachmentInfo(pageId, fileName);
-        
-        const url = attachmentInfo
-            ? `/wiki/rest/api/content/${pageId}/child/attachment/${attachmentInfo.id}/data`
-            : `/wiki/rest/api/content/${pageId}/child/attachment`;
-
-        const method = attachmentInfo ? 'POST' : 'POST';
+        const url = `/wiki/rest/api/content/${pageId}/child/attachment`;
 
         const response = await confluenceApi.uploadFile(url, {
             name: fileName,
@@ -143,7 +112,7 @@ async function attachFile(pageId, fileName, fileContent, fileType, comment) {
             comment: comment,
             contentType: fileType === "image" ? "image/png" : "text/plain"
         }, {
-            method: method,
+            method: 'POST',
             headers: {
                 'X-Atlassian-Token': 'no-check'
             }
@@ -158,6 +127,40 @@ async function attachFile(pageId, fileName, fileContent, fileType, comment) {
         console.error("Error attaching file:", error.message);
         throw error;
     }
+}
+
+function preprocessMarkdown(content) {
+    // Replace single newlines with two spaces followed by a newline
+    // This ensures that Markdown creates a line break
+    return content.replace(/(?<!\n)\n(?!\n)/g, "  \n");
+}
+
+function processMarkdown(content) {
+    const preprocessed = preprocessMarkdown(content);
+    return marked.parse(preprocessed);
+}
+
+function generateElementContent(element) {
+    let content = `<ac:structured-macro ac:name="expand">
+        <ac:parameter ac:name="title">${element.name} (${element.type})</ac:parameter>
+        <ac:rich-text-body>`;
+    
+    if (element.documentation) {
+        content += processMarkdown(element.documentation);
+    }
+    
+    const properties = element.prop();
+    if (properties.length > 0) {
+        content += '<h4>Properties</h4><table><tbody><tr><th>Property</th><th>Value</th></tr>';
+        properties.forEach(prop => {
+            content += `<tr><td>${prop}</td><td>${element.prop(prop)}</td></tr>`;
+        });
+        content += '</tbody></table>';
+    }
+    
+    content += '</ac:rich-text-body></ac:structured-macro>';
+    
+    return content;
 }
 
 async function publishViewToConfluence() {
@@ -180,24 +183,24 @@ async function publishViewToConfluence() {
         const viewImage = $.model.renderViewAsBase64(selectedView, "PNG", { scale: 2, margin: 20 });
 
         let pageContents = `<h1>${pageTitle}</h1>`;
-        if (selectedView.documentation) {
-            pageContents += `<h2>View Documentation</h2><p>${selectedView.documentation}</p>`;
-        }
 
+        // View Diagram
         const imageFileName = `${pageTitle.replace(/[^a-z0-9]/gi, "_").toLowerCase()}_diagram.png`;
         const imageContent = `<ac:image ac:align="center" ac:layout="center" ac:alt="${pageTitle} Diagram">
             <ri:attachment ri:filename="${imageFileName}" />
         </ac:image>`;
-
         pageContents += `<h2>View Diagram</h2>${imageContent}`;
 
-        pageContents += `<h2>Elements</h2><table><tbody><tr><th>Name</th><th>Type</th><th>Properties</th></tr>`;
+        // View Documentation
+        if (selectedView.documentation) {
+            pageContents += `<h2>View Documentation</h2>${processMarkdown(selectedView.documentation)}`;
+        }
+
+        // Elements
+        pageContents += `<h2>Elements</h2>`;
         $(selectedView).find("element").each((element) => {
-            const properties = element.prop();
-            const propertyString = properties.map((prop) => `${prop}: ${element.prop(prop)}`).join(", ");
-            pageContents += `<tr><td>${element.name}</td><td>${element.type}</td><td>${propertyString}</td></tr>`;
+            pageContents += generateElementContent(element);
         });
-        pageContents += `</tbody></table>`;
 
         let pageInfo = await getPageInfo(pageTitle);
         if (!pageInfo) {
@@ -225,7 +228,7 @@ async function publishViewToConfluence() {
             attachmentComment
         );
 
-        console.log(`Image "${imageFileName}" ${attachmentResult.version > 1 ? "updated" : "attached"} successfully. Attachment ID: ${attachmentResult.id}, Version: ${attachmentResult.version}`);
+        console.log(`Image "${imageFileName}" attached successfully. Attachment ID: ${attachmentResult.id}, Version: ${attachmentResult.version}`);
     } catch (error) {
         console.error("An error occurred:", error.message);
     }

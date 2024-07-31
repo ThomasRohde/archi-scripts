@@ -1,0 +1,154 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Tutorial: Documentation Augmenter</title>
+            
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.3;
+        color: #333;
+        margin: 0;
+        padding: 10px;
+    }
+    h1 {
+        color: #2c3e50;
+        font-size: 20px;
+        margin: 10px 0 5px 0;
+    }
+    h2 {
+        color: #3498db;
+        font-size: 16px;
+        margin: 8px 0 4px 0;
+    }
+    p {
+        margin: 0 0 5px 0;
+    }
+    ul,
+    ol {
+        margin: 0 0 5px 0;
+        padding-left: 20px;
+    }
+    li {
+        margin-bottom: 2px;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 5px 0;
+    }
+    table,
+    th,
+    td {
+        border: 1px solid black;
+        font-size: 12px;
+        padding: 2px;
+    }
+</style>
+
+        </head>
+        <body>
+            <h1>Tutorial: Documentation Augmenter</h1>
+            <p>The Documentation Augmenter is a powerful JArchi script that uses AI to automatically generate and enhance documentation for your ArchiMate views and elements. This tutorial will guide you through the setup process and usage of this script.</p>
+<h2>Prerequisites</h2>
+<p>Before using the Documentation Augmenter, ensure you have the following:</p>
+<ol>
+<li>Archi with the JArchi plugin installed</li>
+<li>Ollama installed on your local machine</li>
+<li>A computer that meets Ollama&#39;s system requirements</li>
+</ol>
+<h3>Ollama System Requirements</h3>
+<ul>
+<li><strong>Operating System</strong>: Linux (Ubuntu 18.04 or later), macOS (11 Big Sur or later), or Windows</li>
+<li><strong>RAM</strong>: At least 8 GB for running 7B models, 16 GB for 13B models, and 32 GB for 33B models</li>
+<li><strong>Disk Space</strong>: 12 GB for installing Ollama and base models, plus additional space for storing model data</li>
+<li><strong>CPU</strong>: Any modern CPU with at least 4 cores is recommended, 8 cores for 13B models</li>
+<li><strong>GPU (optional)</strong>: A GPU is not required but can improve performance, especially for larger models. Supported GPUs include NVIDIA RTX 40/30 series, AMD Vega 64, RX 6000/7000 series, etc.</li>
+</ul>
+<h2>Setup</h2>
+<ol>
+<li><p><strong>Install Ollama</strong>:</p>
+<ul>
+<li>For Linux: Run the following command in your terminal:<pre><code>curl https://ollama.ai/install.sh | sh
+</code></pre>
+</li>
+<li>For macOS and Windows: Download the installer from the <a href="https://ollama.ai">official Ollama website</a>.</li>
+</ul>
+</li>
+<li><p><strong>Download the required model</strong>:</p>
+<ul>
+<li>Open a terminal or command prompt.</li>
+<li>Run the following command to download the Llama 2 model:<pre><code>ollama run llama2
+</code></pre>
+</li>
+<li>Wait for the model to download and initialize.</li>
+</ul>
+</li>
+<li><p><strong>Configure the script</strong>:</p>
+<ul>
+<li>Open the &quot;Documentation Augmenter.ajs&quot; script in a text editor.</li>
+<li>Locate the <code>MODEL</code> constant near the top of the script.</li>
+<li>Ensure it is set to &#39;llama2&#39; or adjust it to match the model you downloaded:<pre><code class="language-javascript">const MODEL = &#39;llama2&#39;;
+</code></pre>
+</li>
+</ul>
+</li>
+</ol>
+<h2>Usage</h2>
+<ol>
+<li><p><strong>Open your ArchiMate model</strong> in Archi.</p>
+</li>
+<li><p><strong>Select the view</strong> you want to document.</p>
+</li>
+<li><p><strong>Run the Documentation Augmenter script</strong>:</p>
+<ul>
+<li>Go to <code>Scripts &gt; JArchi Scripts Menu</code>.</li>
+<li>Find and select &quot;Documentation Augmenter&quot; under the &quot;Documentation&quot; category.</li>
+<li>Click &quot;Execute&quot; to run the script.</li>
+</ul>
+</li>
+<li><p><strong>Wait for the script to complete</strong>:</p>
+<ul>
+<li>The script will analyze the selected view and its elements.</li>
+<li>It will generate documentation for the view and each element.</li>
+<li>Progress will be displayed in the console.</li>
+</ul>
+</li>
+<li><p><strong>Review the generated documentation</strong>:</p>
+<ul>
+<li>Once the script completes, open the properties of the view and its elements.</li>
+<li>Review the generated documentation in the &quot;Documentation&quot; field.</li>
+<li>Make any necessary adjustments or refinements to the AI-generated content.</li>
+</ul>
+</li>
+</ol>
+<h2>Customization</h2>
+<p>You can customize the behavior of the Documentation Augmenter by modifying the following settings in the script:</p>
+<ul>
+<li><code>GENERATE_RELATIONSHIP_DOCS</code>: Set to <code>true</code> if you want to generate documentation for relationships as well (default is <code>false</code>).</li>
+<li><code>GenerateOptions</code>: Adjust the <code>temperature</code>, <code>topK</code>, and <code>topP</code> values to control the AI&#39;s creativity and randomness.</li>
+</ul>
+<h2>Troubleshooting</h2>
+<p>If you encounter any issues:</p>
+<ol>
+<li><strong>Ensure Ollama is running</strong>: Open a terminal and run <code>ollama serve</code> to start the Ollama server.</li>
+<li><strong>Check the console output</strong>: Look for any error messages in the Archi console.</li>
+<li><strong>Verify model availability</strong>: Make sure the specified model (e.g., &#39;llama3.1&#39;) is downloaded and available in Ollama.</li>
+<li><strong>Restart Archi</strong>: Sometimes, restarting Archi can resolve connectivity issues with Ollama.</li>
+</ol>
+<h2>Best Practices</h2>
+<ol>
+<li><strong>Review and refine</strong>: Always review the AI-generated documentation and make necessary adjustments.</li>
+<li><strong>Iterative approach</strong>: Run the script multiple times on the same view, refining the results each time.</li>
+<li><strong>Consistent naming</strong>: Use clear and consistent naming for your ArchiMate elements to improve the quality of generated documentation.</li>
+<li><strong>Provide context</strong>: The more complete your model is, the better the AI can understand and document it.</li>
+</ol>
+<p>By following this tutorial, you should be able to set up and use the Documentation Augmenter effectively, enhancing your ArchiMate model&#39;s documentation with AI-generated insights.</p>
+
+        </body>
+        </html>
+    
