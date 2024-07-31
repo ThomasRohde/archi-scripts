@@ -18,7 +18,8 @@ async function generateViewDocumentation(view) {
     const systemContext = createSystemContext(view);
     const viewDocumentation = await generateDocumentation(
         systemContext, 
-        "Analyze the view and provide a concise technical summary. Focus on its purpose, key components, and significant relationships."
+        "Analyze the view and provide a concise technical summary. Focus on its purpose, key components, and significant relationships.",
+        true
     );
     console.log("View documentation generated.");
 
@@ -47,10 +48,34 @@ function createSystemContext(view) {
     return context;
 }
 
-async function generateDocumentation(context, prompt) {
+async function generateDocumentation(context, prompt, isView) {
+    const structurePrompt = isView ? `
+        Please structure the documentation for this view as follows:
+        1. Purpose and general description
+        2. Scope
+        3. Key Components
+        4. Relationships
+        5. Business Context
+        6. Technical Implications
+        7. Assumptions and Constraints
+        8. Related Views
+        9. Change History
+    ` : `
+        Please structure the documentation for this element as follows:
+        1. Name and Type
+        2. Purpose and description
+        3. Key Attributes
+        4. Relationships
+        5. Business Impact
+        6. Technical Details
+        7. Risks and Issues
+        8. Future Considerations
+    `;
+
     const messages = [
         new Message(ROLES.SYSTEM, "You are a technical documentation assistant for enterprise architecture. Provide concise, factual information in a professional tone. Focus on accuracy, relevance, and technical insights."),
         new Message(ROLES.SYSTEM, context),
+        new Message(ROLES.SYSTEM, structurePrompt),
         new Message(ROLES.USER, prompt)
     ];
 
@@ -100,7 +125,7 @@ async function generateElementDocumentation(view, systemContext, viewDocumentati
         const docPrompt = `Analyze the ${type} '${itemName}' (${item.type}) within the context of the view. 
                            Provide a concise technical description focusing on its role, significance, and key characteristics.`;
 
-        const documentation = await generateDocumentation(systemContext + "\n" + viewDocumentation, docPrompt);
+        const documentation = await generateDocumentation(systemContext + "\n" + viewDocumentation, docPrompt, false);
 
         if (type === 'element') {
             updates.elements.push({ 
