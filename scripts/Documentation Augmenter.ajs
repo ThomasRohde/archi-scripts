@@ -1,4 +1,4 @@
-// File: OllamaDocumentationGenerator.ajs
+// File: Documentation Augmenter.ajs
 
 const { OllamaClient, Message, GenerateOptions, ROLES } = require('./lib/ollamaClient');
 const modelTraversal = require('./lib/modelTraversal');
@@ -8,6 +8,9 @@ console.show();
 
 const ollama = new OllamaClient();
 const MODEL = 'llama3.1'; // Adjust this to the model you want to use
+
+// Flag to control relationship documentation generation
+const GENERATE_RELATIONSHIP_DOCS = false; // Set to true if you want to generate relationship documentation
 
 async function generateViewDocumentation(view) {
     console.log(`Generating documentation for view: ${view.name}`);
@@ -34,17 +37,11 @@ function createSystemContext(view) {
         viewElementHandler: (element) => {
             context += `- Element: ${element.name} (${element.type})\n`;
             context += `  Documentation: ${element.documentation || 'None'}\n`;
-            if (element.prop()) {
-                context += `  Properties: ${JSON.stringify(element.prop())}\n`;
-            }
         },
         viewRelationshipHandler: (relationship) => {
             context += `- Relationship: ${relationship.name || 'Unnamed'} (${relationship.type})\n`;
             context += `  Source: ${relationship.source.name}, Target: ${relationship.target.name}\n`;
             context += `  Documentation: ${relationship.documentation || 'None'}\n`;
-            if (relationship.prop()) {
-                context += `  Properties: ${JSON.stringify(relationship.prop())}\n`;
-            }
         }
     }, view);
     return context;
@@ -65,72 +62,12 @@ async function generateDocumentation(context, prompt) {
     });
 
     const response = await ollama.generateChatCompletion(MODEL, messages, options);
-    const tokensPerSecond = calculateTokensPerSecond(response);
-    console.log(`Generation stats: ${tokensPerSecond.toFixed(2)} tokens/s`);
-    return response.message.content.trim();
-}
-
-async function generateProperties(context, prompt) {
-    const messages = [
-        new Message(ROLES.SYSTEM, "You are a technical metadata generator for enterprise architecture elements. Provide concise, relevant properties as JSON."),
-        new Message(ROLES.SYSTEM, context),
-        new Message(ROLES.USER, prompt)
-    ];
-
-    const options = new GenerateOptions({
-        temperature: 0.2,
-        topK: 40,
-        topP: 0.9,
-        stream: false,
-        format: 'json'
-    });
-
-    const response = await ollama.generateChatCompletion(MODEL, messages, options);
-    const tokensPerSecond = calculateTokensPerSecond(response);
-    console.log(`Properties generation stats: ${tokensPerSecond.toFixed(2)} tokens/s`);
-    return safeJSONParse(response.message.content);
-}
-
-function safeJSONParse(str) {
-    try {
-        // First, try parsing the string as-is
-        return JSON.parse(str);
-    } catch (e) {
-        console.log("Initial JSON parsing failed. Attempting to clean and parse...");
-        
-        // Remove any text before the first '{' and after the last '}'
-        let cleaned = str.substring(str.indexOf('{'), str.lastIndexOf('}') + 1);
-        
-        // Replace any single quotes with double quotes
-        cleaned = cleaned.replace(/'/g, '"');
-        
-        // Attempt to parse again
-        try {
-            return JSON.parse(cleaned);
-        } catch (e) {
-            console.log("Cleaned JSON parsing failed. Attempting to fix common issues...");
-            
-            // Fix common JSON issues
-            cleaned = cleaned
-                // Ensure property names are double-quoted
-                .replace(/(\w+)(?=\s*:)/g, '"$1"')
-                // Remove trailing commas
-                .replace(/,\s*([\]}])/g, '$1');
-            
-            try {
-                return JSON.parse(cleaned);
-            } catch (e) {
-                console.error("All JSON parsing attempts failed. Returning an empty object.");
-                return {};
-            }
-        }
-    }
-}
-function calculateTokensPerSecond(response) {
-    const evalCount = response.eval_count;
-    const evalDurationNs = response.eval_duration;
-    const evalDurationSeconds = evalDurationNs / 1e9;
-    return evalCount / evalDurationSeconds;
+    let documentation = response.message.content.trim();
+    
+    // Ensure paragraph breaks are preserved by using double newlines
+    documentation = documentation.replace(/\n/g, '\n\n');
+    
+    return documentation;
 }
 
 async function generateElementDocumentation(view, systemContext, viewDocumentation) {
@@ -146,7 +83,9 @@ async function generateElementDocumentation(view, systemContext, viewDocumentati
             items.push({ type: 'element', item: element });
         },
         viewRelationshipHandler: (relationship) => {
-            items.push({ type: 'relationship', item: relationship });
+            if (GENERATE_RELATIONSHIP_DOCS) {
+                items.push({ type: 'relationship', item: relationship });
+            }
         }
     }, view);
 
@@ -164,32 +103,16 @@ async function generateElementDocumentation(view, systemContext, viewDocumentati
         const documentation = await generateDocumentation(systemContext + "\n" + viewDocumentation, docPrompt);
 
         if (type === 'element') {
-            const propPrompt = `
-Analyze the element '${itemName}' (${type}) in the context of the current view. Generate 3-5 relevant properties as simple name-value pairs. Each property should have a concise name and a short string or numerical value. Focus on technical or business attributes that provide valuable metadata for enterprise architecture. 
-
-Format your response strictly as a JSON object with property names as keys and their values as strings or numbers. For example:
-
-{
-  "Cost": "USD 1000",
-  "Priority": "High",
-  "Implementation Time": "6 months",
-  "Data Sensitivity": "Confidential",
-  "Scalability": 8
-}
-
-Ensure all property names are clear and self-explanatory. Avoid complex or nested structures.`
-            
-            const properties = await generateProperties(systemContext + "\n" + viewDocumentation, propPrompt);
-
             updates.elements.push({ 
                 id: item.id, 
-                documentation: documentation,
-                properties: properties
+                updates: {
+                    documentation: documentation
+                }
             });
         } else {
             updates.relationships.push({ 
                 id: item.id, 
-                documentation: documentation 
+                updates: { documentation: documentation }
             });
         }
     }
@@ -197,16 +120,81 @@ Ensure all property names are clear and self-explanatory. Avoid complex or neste
     return updates;
 }
 
+function formatDocumentation(text) {
+    // Replace multiple newlines with a single newline
+    return text.replace(/\n+/g, '\n').trim();
+}
+
+function applyUpdates(updates) {
+    console.log("Applying updates...");
+    
+    // Update view
+    if (updates.view && updates.view.id) {
+        let view = $('#' + updates.view.id);
+        if (view.size() > 0) {
+            if (updates.view.documentation) {
+                view.first().documentation = formatDocumentation(updates.view.documentation);
+            }
+            console.log("View updated: " + view.first().name);
+        } else {
+            console.error("View not found: " + updates.view.id);
+        }
+    }
+    
+    // Update elements
+    if (updates.elements && Array.isArray(updates.elements)) {
+        updates.elements.forEach(elementUpdate => {
+            let element = $('#' + elementUpdate.id);
+            if (element.size() > 0) {
+                if (elementUpdate.updates.documentation) {
+                    element.first().documentation = formatDocumentation(elementUpdate.updates.documentation);
+                }
+                console.log("Element updated: " + element.first().name);
+            } else {
+                console.error("Element not found: " + elementUpdate.id);
+            }
+        });
+    }
+    
+    // Update relationships
+    if (GENERATE_RELATIONSHIP_DOCS && updates.relationships && Array.isArray(updates.relationships)) {
+        updates.relationships.forEach(relationshipUpdate => {
+            let relationship = $('#' + relationshipUpdate.id);
+            if (relationship.size() > 0) {
+                if (relationshipUpdate.updates.documentation) {
+                    relationship.first().documentation = formatDocumentation(relationshipUpdate.updates.documentation);
+                }
+                console.log("Relationship updated: " + (relationship.first().name || "Unnamed relationship"));
+            } else {
+                console.error("Relationship not found: " + relationshipUpdate.id);
+            }
+        });
+    }
+    
+    console.log("Updates applied successfully.");
+}
+
+async function generateAndApplyDocumentation(view) {
+    try {
+        console.log(`Generating and applying documentation for view: ${view.name}`);
+        
+        const updates = await generateViewDocumentation(view);
+        
+        console.log("Generated documentation updates:");
+       
+        applyUpdates(updates);
+        
+        console.log("Documentation generation and application complete.");
+    } catch (error) {
+        console.error("Error: " + error.toString());
+    }
+}
+
 // Main execution
 const selectedView = $(selection).filter("archimate-diagram-model").first();
 
 if (selectedView) {
-    generateViewDocumentation(selectedView)
-        .then(updates => {
-            console.log("Generated documentation updates:");
-            console.log(JSON.stringify(updates, null, 2));
-        })
-        .catch(error => console.error("Error:", error));
+    generateAndApplyDocumentation(selectedView);
 } else {
     console.error("No view selected. Please select a view and run the script again.");
 }
