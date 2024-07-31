@@ -32,7 +32,14 @@ const { OllamaClient } = require('./lib/ollamaClient');
 const DEFAULT_MODELS = ['llama3.1'];
 let OLLAMA_MODELS = [];
 
+// Flag to indicate if Ollama is installed and should be used
+const OLLAMA_INSTALLED = true; // Set this to false if Ollama is not installed
+
 function fetchOllamaModels() {
+    if (!OLLAMA_INSTALLED) {
+        console.log("Ollama is not installed. Skipping model fetch.");
+        return Promise.resolve([]);
+    }
     console.log("Fetching Ollama models...");
     const ollama = new OllamaClient('http://localhost:11434');
     return ollama.listModels()
