@@ -58,8 +58,9 @@ You have two options for installing the scripts:
 - **Dagre Layout**: Automatically arrange elements in your Archi view using the Dagre graph layout algorithm.
 - **Smart Style Sync**: Change the appearance of elements in an ArchiMate view based on their property values.
 - **Model Health Check**: Perform a comprehensive health check on your ArchiMate model, providing insights and recommendations for improvement.
-- **Confluence Settings**: Configure the settings for Confluence integration with jArchi.
+- **Settings**: Configure various settings.
 - **Publish View to Confluence**: Publish the currently selected view to a Confluence page.
+- **Documentation Augmenter.ajs**: Automatically create or augment the documentation of a view using a locally installed Ollama LLM.
 
 ## Documentation
 
