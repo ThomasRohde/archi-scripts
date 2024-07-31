@@ -130,6 +130,14 @@ const menuItems = [
         description: `
             <h2>Settings</h2>
             <p>This script allows you to configure various settings for jArchi integrations and features.</p>
+            <p>
+            <b>NOTE!</b> If you don't have Ollama installed, please edit <code>Setting.ajs</code>:
+            <p>
+            <code>
+            const OLLAMA_INSTALLED = true; // Set this to false if Ollama is not installed
+            </code>
+            </p)
+            </p>
             <h3>Features:</h3>
             <ul>
                 <li>Configure Confluence integration settings</li>
