@@ -1,4 +1,10 @@
-// File: Documentation Augmenter.ajs
+/**
+ * @module DocumentationAugmenter
+ * @description A script to automatically generate and enhance documentation for ArchiMate views and elements using AI
+ * @version 2.0
+ * @author Claude AI Assistant
+ * @lastModifiedDate 2024-07-31
+ */
 
 const { OllamaClient, Message, GenerateOptions, ROLES } = require('./lib/ollamaClient');
 const modelTraversal = require('./lib/modelTraversal');
@@ -6,8 +12,16 @@ const modelTraversal = require('./lib/modelTraversal');
 console.clear();
 console.show();
 
-const ollama = new OllamaClient();
-const MODEL = 'llama3.1'; // Adjust this to the model you want to use
+// Load settings from preference store
+const preferenceStore = workbench.getPreferenceStore();
+const MODEL = preferenceStore.getString('docAugmenterModel') || 'llama3.1';
+const BASE_URL = preferenceStore.getString('docAugmenterBaseUrl') || 'http://localhost:11434';
+const TEMPERATURE = parseFloat(preferenceStore.getString('docAugmenterTemperature') || '0.7');
+const TOP_K = parseInt(preferenceStore.getString('docAugmenterTopK') || '40');
+const TOP_P = parseFloat(preferenceStore.getString('docAugmenterTopP') || '0.9');
+
+// Initialize Ollama client with the configured base URL
+const ollama = new OllamaClient(BASE_URL);
 
 // Flag to control relationship documentation generation
 const GENERATE_RELATIONSHIP_DOCS = false; // Set to true if you want to generate relationship documentation
@@ -80,9 +94,9 @@ async function generateDocumentation(context, prompt, isView) {
     ];
 
     const options = new GenerateOptions({
-        temperature: 0.2,
-        topK: 40,
-        topP: 0.9,
+        temperature: TEMPERATURE,
+        top_k: TOP_K,
+        top_p: TOP_P,
         stream: false
     });
 

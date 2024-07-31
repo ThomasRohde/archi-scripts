@@ -125,6 +125,22 @@ class OllamaClient {
         return response.data;
     }
 
+    async generateChatCompletionWithTools(model, messages, tools, options = {}) {
+        const generateOptions = new GenerateOptions(options);
+        const formattedMessages = messages.map(msg => {
+            if (msg instanceof Message) return msg;
+            return new Message(msg.role, msg.content, msg.images, msg.toolCalls);
+        });
+        const response = await this.api.post('/api/chat', {
+            model,
+            messages: formattedMessages,
+            tools,
+            ...generateOptions
+        });
+        console.log(JSON.stringify(response, null, 3))
+        return response.data;
+    }
+
     async listModels() {
         const response = await this.api.get('/api/tags');
         return response.data.models.map(model => ({

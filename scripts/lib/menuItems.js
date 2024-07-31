@@ -126,29 +126,29 @@ const menuItems = [
         tutorial: "Model Health Check",
     },
     {
-        name: "Confluence Settings",
+        name: "Settings",
         description: `
-            <h2>Confluence Settings</h2>
-            <p>This script allows you to configure the settings for Confluence integration with jArchi.</p>
+            <h2>Settings</h2>
+            <p>This script allows you to configure various settings for jArchi integrations and features.</p>
             <h3>Features:</h3>
             <ul>
-                <li>Set Confluence username and API token</li>
-                <li>Configure personal access token for authentication</li>
-                <li>Set default space key for Confluence operations</li>
-                <li>Specify Confluence base URL</li>
-                <li>Toggle between Confluence Cloud and Server instances</li>
+                <li>Configure Confluence integration settings</li>
+                <li>Set up Documentation Augmenter preferences</li>
+                <li>Manage AI model selection and parameters</li>
+                <li>Customize other jArchi integration options</li>
             </ul>
             <h3>Usage:</h3>
             <ol>
-                <li>Run the "Confluence Settings" script from the JArchi Scripts Menu</li>
-                <li>Fill in the required fields in the dialog</li>
+                <li>Run the "Settings" script from the JArchi Scripts Menu</li>
+                <li>Navigate through the different tabs to configure various settings</li>
+                <li>Fill in the required fields in each section</li>
                 <li>Click "Save" to store the settings or "Cancel" to discard changes</li>
             </ol>
-            <p>These settings will be used by other Confluence integration scripts to connect to your Confluence instance.</p>
+            <p>These settings will be used by various jArchi scripts and integrations to customize their behavior and connect to external services.</p>
         `,
-        script: "Confluence Settings.ajs",
-        category: "Integration",
-        tutorial: "Confluence Settings"
+        script: "Settings.ajs",
+        category: "Configuration",
+        tutorial: "Settings"
     },
     {
         name: "Publish View to Confluence",

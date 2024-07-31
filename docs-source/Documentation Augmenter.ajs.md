@@ -1,3 +1,5 @@
+# Documentation Augmenter Tutorial
+
 The Documentation Augmenter is a powerful JArchi script that uses AI to automatically generate and enhance documentation for your ArchiMate views and elements. This tutorial will guide you through the setup process and usage of this script.
 
 ## Prerequisites
@@ -33,13 +35,17 @@ Before using the Documentation Augmenter, ensure you have the following:
      ```
    - Wait for the model to download and initialize.
 
-3. **Configure the script**:
-   - Open the "Documentation Augmenter.ajs" script in a text editor.
-   - Locate the `MODEL` constant near the top of the script.
-   - Ensure it is set to 'llama2' or adjust it to match the model you downloaded:
-     ```javascript
-     const MODEL = 'llama2';
-     ```
+3. **Configure the script settings**:
+   - In Archi, go to `Scripts > JArchi Scripts Menu`.
+   - Find and select "Integration Settings" under the appropriate category.
+   - Click "Execute" to open the settings dialog.
+   - In the settings dialog, navigate to the "Documentation Augmenter" tab.
+   - Configure the following settings:
+     - **Model**: Select the model you want to use (e.g., 'llama2').
+     - **Temperature**: Set the temperature value (e.g., 0.7).
+     - **Top K**: Set the Top K value (e.g., 40).
+     - **Top P**: Set the Top P value (e.g., 0.9).
+   - Click "Save" to apply the settings.
 
 ## Usage
 
@@ -64,10 +70,12 @@ Before using the Documentation Augmenter, ensure you have the following:
 
 ## Customization
 
-You can customize the behavior of the Documentation Augmenter by modifying the following settings in the script:
+You can customize the behavior of the Documentation Augmenter by modifying the settings in the Settings dialog:
 
-- `GENERATE_RELATIONSHIP_DOCS`: Set to `true` if you want to generate documentation for relationships as well (default is `false`).
-- `GenerateOptions`: Adjust the `temperature`, `topK`, and `topP` values to control the AI's creativity and randomness.
+- **Model**: Choose from available Ollama models.
+- **Temperature**: Adjust to control the AI's creativity (higher values increase randomness).
+- **Top K**: Set the number of top tokens to consider for each generation step.
+- **Top P**: Adjust the cumulative probability threshold for token selection.
 
 ## Troubleshooting
 
@@ -75,8 +83,9 @@ If you encounter any issues:
 
 1. **Ensure Ollama is running**: Open a terminal and run `ollama serve` to start the Ollama server.
 2. **Check the console output**: Look for any error messages in the Archi console.
-3. **Verify model availability**: Make sure the specified model (e.g., 'llama3.1') is downloaded and available in Ollama.
-4. **Restart Archi**: Sometimes, restarting Archi can resolve connectivity issues with Ollama.
+3. **Verify model availability**: Make sure the specified model is downloaded and available in Ollama.
+4. **Check settings**: Ensure the settings in the Integration Settings dialog are correct.
+5. **Restart Archi**: Sometimes, restarting Archi can resolve connectivity issues with Ollama.
 
 ## Best Practices
 
@@ -84,5 +93,6 @@ If you encounter any issues:
 2. **Iterative approach**: Run the script multiple times on the same view, refining the results each time.
 3. **Consistent naming**: Use clear and consistent naming for your ArchiMate elements to improve the quality of generated documentation.
 4. **Provide context**: The more complete your model is, the better the AI can understand and document it.
+5. **Experiment with settings**: Try different temperature, Top K, and Top P values to find the best output for your needs.
 
 By following this tutorial, you should be able to set up and use the Documentation Augmenter effectively, enhancing your ArchiMate model's documentation with AI-generated insights.
