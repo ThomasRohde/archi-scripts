@@ -137,7 +137,6 @@ class OllamaClient {
             tools,
             ...generateOptions
         });
-        console.log(JSON.stringify(response, null, 3))
         return response.data;
     }
 
