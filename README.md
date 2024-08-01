@@ -60,7 +60,7 @@ You have two options for installing the scripts:
 - **Model Health Check**: Perform a comprehensive health check on your ArchiMate model, providing insights and recommendations for improvement.
 - **Settings**: Configure various settings.
 - **Publish View to Confluence**: Publish the currently selected view to a Confluence page.
-- **Documentation Augmenter.ajs**: Automatically create or augment the documentation of a view using a locally installed Ollama LLM.
+- **Documentation Augmenter**: Automatically create or augment the documentation of a view using a locally installed Ollama LLM.
 
 ## Documentation
 

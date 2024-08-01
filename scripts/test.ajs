@@ -1,0 +1,38 @@
+console.clear();
+console.show();
+
+try {
+    console.log("Starting HttpClient test...");
+
+    const System = Java.type("java.lang.System");
+    const HttpClient = Java.type("java.net.http.HttpClient");
+    const HttpRequest = Java.type("java.net.http.HttpRequest");
+    const HttpResponse = Java.type("java.net.http.HttpResponse");
+    const URI = Java.type("java.net.URI");
+
+    console.log("Creating HttpClient...");
+    const client = HttpClient.newBuilder()
+        .version(HttpClient.Version.HTTP_2)
+        .build();
+
+    console.log("Building request...");
+    const request = HttpRequest.newBuilder()
+        .uri(URI.create("https://api.github.com/users/octocat"))
+        .header("Accept", "application/vnd.github.v3+json")
+        .GET()
+        .build();
+
+    console.log("Executing request...");
+    const response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+    console.log("Processing response...");
+    console.log("Response code: " + response.statusCode());
+    console.log("Response body: " + response.body());
+
+    console.log("HttpClient test completed successfully.");
+} catch (error) {
+    console.error("Error: " + error);
+    if (error.stack) {
+        console.error("Stack trace: " + error.stack);
+    }
+}
