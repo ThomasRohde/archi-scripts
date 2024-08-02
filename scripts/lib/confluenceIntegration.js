@@ -27,7 +27,6 @@ const confluenceApi = apiClient.create({
     headers: {
         'X-Atlassian-Token': 'no-check'
     },
-    debug: true
 });
 
 async function getPageInfo(pageTitle, opts = {}) {
@@ -106,7 +105,7 @@ async function updateConfluencePage(pageId, parentId, pageTitle, pageVersion, pa
 
 async function getAttachmentInfo(pageId, fileName, opts = {}) {
     try {
-        const response = await confluenceApi.get(`/wiki/rest/api/content/${pageId}/child/attachment`, {
+        const response = await confluenceApi.get(`/wiki/api/v2/pages/${pageId}/attachments`, {
             params: {
                 filename: fileName,
                 expand: 'version'
@@ -114,16 +113,17 @@ async function getAttachmentInfo(pageId, fileName, opts = {}) {
             ...opts
         });
 
-        if (response.data.results.length === 0) {
-            return null;
+        if (response.data.results && response.data.results.length > 0) {
+            const attachment = response.data.results.find(a => a.title === fileName);
+            if (attachment) {
+                return {
+                    id: attachment.id,
+                    title: attachment.title,
+                    version: attachment.version.number
+                };
+            }
         }
-
-        const attachmentInfo = response.data.results[0];
-        return {
-            id: attachmentInfo.id,
-            title: attachmentInfo.title,
-            version: attachmentInfo.version.number
-        };
+        return null;
     } catch (error) {
         if (error.response && error.response.status === 404) {
             return null;
