@@ -31,24 +31,24 @@ const confluenceApi = apiClient.create({
 
 async function getPageInfo(pageTitle, opts = {}) {
     try {
-        const response = await confluenceApi.get('/wiki/rest/api/content', {
+        const response = await confluenceApi.get('/wiki/api/v2/pages', {
             params: {
                 title: pageTitle,
                 spaceKey: readConfluenceSettings().spaceKey,
+                status: 'current',
                 expand: 'version'
             },
             ...opts
         });
 
-        if (response.data.results.length === 0) {
-            return null;
+        if (response.data.results && response.data.results.length > 0) {
+            const pageInfo = response.data.results[0];
+            return {
+                pageId: pageInfo.id,
+                pageVersion: pageInfo.version.number
+            };
         }
-
-        const pageInfo = response.data.results[0];
-        return {
-            pageId: pageInfo.id,
-            pageVersion: parseInt(pageInfo.version.number)
-        };
+        return null;
     } catch (error) {
         if (error.response && error.response.status === 404) {
             return null;
