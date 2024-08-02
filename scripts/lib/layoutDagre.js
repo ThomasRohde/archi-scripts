@@ -42,7 +42,7 @@ function layoutDagre(view, options = {}) {
 
     // Add nodes and edges to the graph
     $(view).children().each((child) => {
-        if (child.type.includes("relationship")) {
+        if (child.type.includes("relationship") || child.type === "diagram-model-connection") {
             g.setEdge(child.source.id, child.target.id);
         } else {
             g.setNode(child.id, { 
