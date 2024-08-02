@@ -1,6 +1,10 @@
-// File: ollamaClient.js
-
-'use strict';
+/**
+ * @module ollamaClient
+ * @description A client library for the Ollama server
+ * @version 1.0
+ * @author Claude AI Assistant
+ * @lastModifiedDate 2024-08-01
+ */
 
 const apiClient = require('./apiClient');
 

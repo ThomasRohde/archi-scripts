@@ -1,18 +1,21 @@
 /**
  * @module apiClient
- * @description A robust HTTP client for making API requests in JArchi scripts, inspired by Axios with Confluence compatibility
- * @version 2.3
+ * @description A robust HTTP client for making API requests in JArchi scripts, using JDK 17's HttpClient
+ * @version 4.1
  * @author Claude AI Assistant
- * @lastModifiedDate 2024-07-31
+ * @lastModifiedDate 2024-08-01
  */
 
-const HttpURLConnection = Java.type("java.net.HttpURLConnection");
-const BufferedReader = Java.type("java.io.BufferedReader");
-const InputStreamReader = Java.type("java.io.InputStreamReader");
-const OutputStreamWriter = Java.type("java.io.OutputStreamWriter");
-const DataOutputStream = Java.type("java.io.DataOutputStream");
-const URL = Java.type("java.net.URL");
+const HttpClient = Java.type("java.net.http.HttpClient");
+const HttpRequest = Java.type("java.net.http.HttpRequest");
+const HttpResponse = Java.type("java.net.http.HttpResponse");
+const URI = Java.type("java.net.URI");
+const BodyPublishers = Java.type("java.net.http.HttpRequest.BodyPublishers");
+const BodyHandlers = Java.type("java.net.http.HttpResponse.BodyHandlers");
+const Duration = Java.type("java.time.Duration");
 const Base64 = Java.type("java.util.Base64");
+const ByteArrayOutputStream = Java.type("java.io.ByteArrayOutputStream");
+const DataOutputStream = Java.type("java.io.DataOutputStream");
 
 const apiClient = {
     create: function(defaultConfig = {}) {
@@ -29,6 +32,9 @@ const apiClient = {
             },
             ...defaultConfig
         };
+        instance.httpClient = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_2)
+            .build();
         return instance;
     },
 
@@ -37,56 +43,58 @@ const apiClient = {
             try {
                 config = { ...this.defaults, ...config };
                 const fullUrl = this.buildUrl(config.baseURL, config.url, config.params);
-                const url = new URL(fullUrl);
-                const connection = url.openConnection();
-                connection.setRequestMethod(config.method.toUpperCase());
+                
+                let requestBody;
+                let contentType;
 
-                this.setRequestProperties(connection, config);
+                if (config.fileUpload) {
+                    const fileUploadData = this.handleFileUpload(config.fileUpload);
+                    requestBody = fileUploadData.body;
+                    contentType = fileUploadData.contentType;
+                } else {
+                    requestBody = this.createRequestBody(config);
+                    contentType = config.headers['Content-Type'] || 'application/json';
+                }
+
+                let requestBuilder = HttpRequest.newBuilder()
+                    .uri(URI.create(fullUrl))
+                    .method(config.method.toUpperCase(), requestBody);
+
+                this.setRequestProperties(requestBuilder, config);
+                requestBuilder.header("Content-Type", contentType);
 
                 if (config.timeout > 0) {
-                    connection.setConnectTimeout(config.timeout);
-                    connection.setReadTimeout(config.timeout);
+                    requestBuilder.timeout(Duration.ofMillis(config.timeout));
                 }
 
                 if (config.debug) {
                     console.log("Request URL:", fullUrl);
-                    console.log("Request Method:", connection.getRequestMethod());
-                    console.log("Request Headers:", connection.getRequestProperties());
+                    console.log("Request Method:", config.method.toUpperCase());
+                    console.log("Request Headers:", requestBuilder.build().headers().map());
                 }
 
-                if (config.data) {
-                    connection.setDoOutput(true);
-                    connection.setRequestProperty("Content-Type", "application/json");
-                    this.writeRequestBody(connection, config.data);
-                }
+                const response = this.httpClient.send(requestBuilder.build(), BodyHandlers.ofString());
 
-                if (config.fileUpload) {
-                    this.handleFileUpload(connection, config.fileUpload);
-                }
-
-                const statusCode = connection.getResponseCode();
-
-                if (config.debug) {
-                    console.log("Response Status Code:", statusCode);
-                }
-
-                const responseBody = this.readResponseBody(connection);
-                const contentType = connection.getContentType();
-
-                const response = {
-                    status: statusCode,
-                    statusText: connection.getResponseMessage(),
-                    headers: this.parseHeaders(connection.getHeaderFields()),
-                    data: this.parseResponseBody(responseBody, contentType),
+                const parsedResponse = {
+                    status: response.statusCode(),
+                    statusText: this.getStatusText(response.statusCode()),
+                    headers: this.parseHeaders(response.headers()),
+                    data: this.parseResponseBody(response.body(), response.headers().firstValue("Content-Type").orElse(null)),
                     config: config,
-                    request: connection
+                    request: requestBuilder.build()
                 };
 
-                if (config.validateStatus(statusCode)) {
-                    resolve(response);
+                if (config.debug) {
+                    console.log("Response Status:", parsedResponse.status);
+                    console.log("Response Headers:", parsedResponse.headers);
+                    console.log("Response Data:", parsedResponse.data);
+                }
+
+                if (config.validateStatus(parsedResponse.status)) {
+                    resolve(parsedResponse);
                 } else {
-                    const error = new Error(`Request failed with status code ${statusCode}`);
-                    error.response = response;
+                    const error = new Error(`Request failed with status code ${parsedResponse.status}`);
+                    error.response = parsedResponse;
                     reject(error);
                 }
             } catch (error) {
@@ -95,14 +103,45 @@ const apiClient = {
         });
     },
 
-    writeRequestBody: function(connection, data) {
-        const writer = new OutputStreamWriter(connection.getOutputStream());
-        const payload = typeof data === 'string' ? data : JSON.stringify(data);
-        writer.write(payload);
-        writer.flush();
-        writer.close();
+    createRequestBody: function(config) {
+        if (config.data) {
+            const payload = typeof config.data === 'string' ? config.data : JSON.stringify(config.data);
+            return BodyPublishers.ofString(payload);
+        }
+        return BodyPublishers.noBody();
     },
 
+    handleFileUpload: function(fileUpload) {
+        const boundary = "*****" + Math.random().toString(36).substring(2);
+        const CRLF = "\r\n";
+        const outputStream = new ByteArrayOutputStream();
+        const writer = new DataOutputStream(outputStream);
+
+        writer.writeBytes("--" + boundary + CRLF);
+        writer.writeBytes("Content-Disposition: form-data; name=\"comment\"" + CRLF + CRLF);
+        writer.writeBytes(fileUpload.comment + CRLF);
+
+        writer.writeBytes("--" + boundary + CRLF);
+        writer.writeBytes("Content-Disposition: form-data; name=\"file\"; filename=\"" + fileUpload.name + "\"" + CRLF);
+        writer.writeBytes("Content-Type: " + fileUpload.contentType + CRLF + CRLF);
+
+        if (fileUpload.type === "image") {
+            writer.write(Base64.getDecoder().decode(fileUpload.content));
+        } else {
+            writer.write(fileUpload.content.getBytes());
+        }
+
+        writer.writeBytes(CRLF);
+        writer.writeBytes("--" + boundary + "--" + CRLF);
+
+        writer.flush();
+        writer.close();
+
+        return {
+            body: BodyPublishers.ofByteArray(outputStream.toByteArray()),
+            contentType: "multipart/form-data; boundary=" + boundary
+        };
+    },
 
     buildUrl: function(baseURL, url, params) {
         let fullUrl = baseURL ? (baseURL + url) : url;
@@ -115,14 +154,18 @@ const apiClient = {
         return fullUrl;
     },
 
-    setRequestProperties: function(connection, config) {
+    setRequestProperties: function(requestBuilder, config) {
         for (const [key, value] of Object.entries(this.defaults.headers)) {
-            connection.setRequestProperty(key, value);
+            if (key.toLowerCase() !== 'content-type') {
+                requestBuilder.header(key, value);
+            }
         }
 
         if (config.headers) {
             for (const [key, value] of Object.entries(config.headers)) {
-                connection.setRequestProperty(key, value);
+                if (key.toLowerCase() !== 'content-type') {
+                    requestBuilder.header(key, value);
+                }
             }
         }
 
@@ -130,73 +173,20 @@ const apiClient = {
             if (config.auth.username && config.auth.password) {
                 const authString = `${config.auth.username}:${config.auth.password}`;
                 const encodedAuth = Base64.getEncoder().encodeToString(authString.getBytes("UTF-8"));
-                connection.setRequestProperty("Authorization", `Basic ${encodedAuth}`);
+                requestBuilder.header("Authorization", `Basic ${encodedAuth}`);
             } else if (config.auth.bearer) {
-                connection.setRequestProperty("Authorization", `Bearer ${config.auth.bearer}`);
+                requestBuilder.header("Authorization", `Bearer ${config.auth.bearer}`);
             }
         }
     },
 
-    handleFileUpload: function(connection, fileUpload) {
-        const boundary = "*****";
-        const crlf = "\r\n";
-        const twoHyphens = "--";
-
-        connection.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary);
-        connection.setDoOutput(true);
-
-        const outputStream = new DataOutputStream(connection.getOutputStream());
-
-        outputStream.writeBytes(twoHyphens + boundary + crlf);
-        outputStream.writeBytes("Content-Disposition: form-data; name=\"comment\"" + crlf);
-        outputStream.writeBytes(crlf);
-        outputStream.writeBytes(fileUpload.comment + crlf);
-
-        outputStream.writeBytes(twoHyphens + boundary + crlf);
-        outputStream.writeBytes("Content-Disposition: form-data; name=\"file\"; filename=\"" + fileUpload.name + "\"" + crlf);
-        outputStream.writeBytes("Content-Type: " + fileUpload.contentType + crlf);
-        outputStream.writeBytes(crlf);
-
-        if (fileUpload.type === "image") {
-            outputStream.write(Base64.getDecoder().decode(fileUpload.content));
-        } else {
-            outputStream.write(fileUpload.content.getBytes());
-        }
-
-        outputStream.writeBytes(crlf);
-        outputStream.writeBytes(twoHyphens + boundary + twoHyphens + crlf);
-
-        outputStream.flush();
-        outputStream.close();
-    },
-
-    readResponseBody: function(connection) {
-
-        const stream = connection.getResponseCode() >= 400 ? connection.getErrorStream() : connection.getInputStream();
-        if (stream === null) return "";
-
-        const reader = new BufferedReader(new InputStreamReader(stream));
-        const out = new java.lang.StringBuilder();
-        let line;
-        while ((line = reader.readLine()) !== null) {
-            out.append(line);
-        }
-        reader.close();
-        return out.toString();
-    },
-
-    parseHeaders: function(headerFields) {
-        const headers = {};
-        const entries = headerFields.entrySet().toArray();
-        for (let i = 0; i < entries.length; i++) {
-            const entry = entries[i];
-            const key = entry.getKey();
-            const value = entry.getValue();
-            if (key !== null) {  // null key represents the status line
-                headers[key.toLowerCase()] = value.get(0);
-            }
-        }
-        return headers;
+    parseHeaders: function(headers) {
+        const parsedHeaders = {};
+        headers.map().forEach((key, values) => {
+            const valueArray = Java.from(values);
+            parsedHeaders[key.toLowerCase()] = valueArray.length > 1 ? valueArray : valueArray[0];
+        });
+        return parsedHeaders;
     },
 
     parseResponseBody: function(body, contentType) {
@@ -208,6 +198,20 @@ const apiClient = {
             }
         }
         return body;
+    },
+
+    getStatusText: function(statusCode) {
+        const statusTexts = {
+            200: "OK",
+            201: "Created",
+            204: "No Content",
+            400: "Bad Request",
+            401: "Unauthorized",
+            403: "Forbidden",
+            404: "Not Found",
+            500: "Internal Server Error"
+        };
+        return statusTexts[statusCode] || "Unknown Status";
     },
 
     get: function(url, config = {}) {
@@ -230,7 +234,6 @@ const apiClient = {
         return this.request({ ...config, method: 'PATCH', url, data });
     },
 
-    // New method for file uploads
     uploadFile: function(url, fileUpload, config = {}) {
         return this.request({ ...config, method: 'POST', url, fileUpload });
     }

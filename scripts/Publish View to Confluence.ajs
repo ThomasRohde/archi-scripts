@@ -1,133 +1,16 @@
 /**
  * @module PublishViewToConfluence
  * @description Publishes the currently selected view to a Confluence page with enhanced structure, Markdown support, and expandable element sections
- * @version 3.1
+ * @version 4.0
  * @author Claude AI Assistant
- * @lastModifiedDate 2024-07-31
+ * @lastModifiedDate 2024-08-02
  */
 
 console.clear();
 console.show();
 
-const apiClient = require("./lib/apiClient");
+const confluenceIntegration = require("./lib/confluenceIntegration");
 const marked = require('./node_modules/marked/marked.min');
-
-function readConfluenceSettings() {
-    const preferenceStore = workbench.getPreferenceStore();
-    return {
-        username: preferenceStore.getString('confluenceUsername'),
-        apiToken: preferenceStore.getString('confluencePassword'),
-        spaceKey: preferenceStore.getString('confluenceDefaultSpaceKey'),
-        baseUrl: preferenceStore.getString('confluenceBaseUrl'),
-    };
-}
-
-const confluenceApi = apiClient.create({
-    auth: {
-        username: readConfluenceSettings().username,
-        password: readConfluenceSettings().apiToken
-    },
-    baseURL: readConfluenceSettings().baseUrl,
-    headers: {
-        'X-Atlassian-Token': 'no-check'
-    }
-});
-
-async function getPageInfo(pageTitle) {
-    try {
-        const response = await confluenceApi.get('/wiki/rest/api/content', {
-            params: {
-                title: pageTitle,
-                spaceKey: readConfluenceSettings().spaceKey,
-                expand: 'version'
-            }
-        });
-
-        if (response.data.results.length === 0) {
-            return null;
-        }
-
-        const pageInfo = response.data.results[0];
-        return {
-            pageId: pageInfo.id,
-            pageVersion: parseInt(pageInfo.version.number)
-        };
-    } catch (error) {
-        console.error("Error getting page info:", error.message);
-        throw error;
-    }
-}
-
-async function updateConfluencePage(pageId, pageTitle, pageVersion, pageContents) {
-    const isNewPage = !pageId;
-    const method = isNewPage ? 'post' : 'put';
-    const url = isNewPage 
-        ? '/wiki/rest/api/content'
-        : `/wiki/rest/api/content/${pageId}`;
-
-    const requestData = {
-        type: "page",
-        title: pageTitle,
-        space: { key: readConfluenceSettings().spaceKey },
-        body: {
-            storage: {
-                value: pageContents,
-                representation: "storage"
-            }
-        }
-    };
-
-    if (!isNewPage) {
-        requestData.version = { number: pageVersion };
-    }
-
-    try {
-        const response = await confluenceApi.request({
-            method: method,
-            url: url,
-            data: requestData,
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-
-        return {
-            pageId: response.data.id,
-            pageVersion: response.data.version ? response.data.version.number : 1
-        };
-    } catch (error) {
-        console.error("Error updating Confluence page:", error.message);
-        throw error;
-    }
-}   
-
-async function attachFile(pageId, fileName, fileContent, fileType, comment) {
-    try {
-        const url = `/wiki/rest/api/content/${pageId}/child/attachment`;
-
-        const response = await confluenceApi.uploadFile(url, {
-            name: fileName,
-            content: fileContent,
-            type: fileType,
-            comment: comment,
-            contentType: fileType === "image" ? "image/png" : "text/plain"
-        }, {
-            method: 'POST',
-            headers: {
-                'X-Atlassian-Token': 'no-check'
-            }
-        });
-
-        return {
-            id: response.data.results[0].id,
-            title: response.data.results[0].title,
-            version: response.data.results[0].version.number
-        };
-    } catch (error) {
-        console.error("Error attaching file:", error.message);
-        throw error;
-    }
-}
 
 function preprocessMarkdown(content) {
     // Replace single newlines with two spaces followed by a newline
@@ -171,7 +54,7 @@ async function publishViewToConfluence() {
             return;
         }
 
-        const confluenceSettings = readConfluenceSettings();
+        const confluenceSettings = confluenceIntegration.readConfluenceSettings();
         if (!confluenceSettings.baseUrl || !confluenceSettings.spaceKey || !confluenceSettings.username || !confluenceSettings.apiToken) {
             console.error("Confluence settings are not properly configured. Please run the Confluence Settings script first.");
             return;
@@ -202,7 +85,7 @@ async function publishViewToConfluence() {
             pageContents += generateElementContent(element);
         });
 
-        let pageInfo = await getPageInfo(pageTitle);
+        let pageInfo = await confluenceIntegration.getPageInfo(pageTitle);
         if (!pageInfo) {
             console.log("Creating new page...");
             pageInfo = { pageId: "", pageVersion: 0 };
@@ -210,8 +93,9 @@ async function publishViewToConfluence() {
             console.log("Updating existing page...");
         }
 
-        const result = await updateConfluencePage(
+        const result = await confluenceIntegration.updateConfluencePage(
             pageInfo.pageId,
+            null,  // parentId
             pageTitle,
             pageInfo.pageVersion + 1,
             pageContents
@@ -220,7 +104,7 @@ async function publishViewToConfluence() {
         console.log(`Page "${pageTitle}" ${pageInfo.pageId ? "updated" : "created"} successfully. Page ID: ${result.pageId}, Version: ${result.pageVersion}`);
 
         const attachmentComment = "View diagram";
-        const attachmentResult = await attachFile(
+        const attachmentResult = await confluenceIntegration.attachFile(
             result.pageId,
             imageFileName,
             viewImage,
@@ -229,6 +113,8 @@ async function publishViewToConfluence() {
         );
 
         console.log(`Image "${imageFileName}" attached successfully. Attachment ID: ${attachmentResult.id}, Version: ${attachmentResult.version}`);
+
+        console.log(`View published successfully. You can view it at: ${confluenceSettings.baseUrl}/wiki/spaces/${confluenceSettings.spaceKey}/pages/${result.pageId}`);
     } catch (error) {
         console.error("An error occurred:", error.message);
     }

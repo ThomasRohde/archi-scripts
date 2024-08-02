@@ -1,99 +1,74 @@
 /**
  * @module confluenceIntegration
- * @description A module for integrating jArchi scripts with Atlassian Confluence Cloud
- * @version 2.0
+ * @description A module for integrating jArchi scripts with Atlassian Confluence Cloud using apiClient
+ * @version 3.0
  * @author Claude AI Assistant
- * @lastModifiedDate 2024-07-29
+ * @lastModifiedDate 2024-08-02
  */
 
-const HttpURLConnection = Java.type("java.net.HttpURLConnection");
-const BufferedReader = Java.type("java.io.BufferedReader");
-const InputStreamReader = Java.type("java.io.InputStreamReader");
-const DataOutputStream = Java.type("java.io.DataOutputStream");
-const URL = Java.type("java.net.URL");
-const Base64 = Java.type("java.util.Base64");
+const apiClient = require('./apiClient');
 
-function readResponseToString(streamData) {
-    const reader = new BufferedReader(new InputStreamReader(streamData));
-    let line;
-    let result = "";
-    while ((line = reader.readLine()) != null) {
-        result += line;
-    }
-    reader.close();
-    return result;
-}
-
-function encodeCredentials(username, apiToken) {
-    const authString = `${username}:${apiToken}`;
-    return Base64.getEncoder().encodeToString(authString.getBytes("UTF-8"));
-}
-
-function setAuthHeaders(connection, confluenceSettings) {
-    const encodedCredentials = encodeCredentials(confluenceSettings.username, confluenceSettings.apiToken);
-    connection.setRequestProperty("Authorization", `Basic ${encodedCredentials}`);
-    connection.setRequestProperty("X-Atlassian-Token", "no-check");
-    connection.setRequestProperty("Content-Type", "application/json");
-}
-
-function getPageInfo(confluenceSettings, pageTitle, opts = {}) {
-    const urlPath = "/wiki/rest/api/content";
-    const url = new URL(
-        `${confluenceSettings.baseUrl}${urlPath}?title=${encodeURIComponent(pageTitle)}&spaceKey=${encodeURIComponent(confluenceSettings.spaceKey)}&expand=version`
-    );
-    
-    const connection = url.openConnection();
-    connection.setRequestMethod("GET");
-    setAuthHeaders(connection, confluenceSettings);
-
-    if (opts.debug) {
-        console.log("Request URL:", url.toString());
-        console.log("Request Method:", connection.getRequestMethod());
-    }
-
-    const statusCode = connection.getResponseCode();
-
-    if (opts.debug) {
-        console.log("Response Status Code:", statusCode);
-    }
-
-    if (statusCode === 404) {
-        return null; // Page not found
-    }
-
-    if (statusCode < 200 || statusCode >= 300) {
-        const errorMessage = readResponseToString(connection.getErrorStream());
-        throw new Error(`HTTP Error ${statusCode}: ${errorMessage}`);
-    }
-
-    const response = JSON.parse(readResponseToString(connection.getInputStream()));
-
-    if (response.results.length === 0) {
-        return null; // No results found
-    }
-
-    const pageInfo = response.results[0];
+function readConfluenceSettings() {
+    const preferenceStore = workbench.getPreferenceStore();
     return {
-        pageId: pageInfo.id,
-        pageVersion: parseInt(pageInfo.version.number)
+        username: preferenceStore.getString('confluenceUsername'),
+        apiToken: preferenceStore.getString('confluencePassword'),
+        spaceKey: preferenceStore.getString('confluenceDefaultSpaceKey'),
+        baseUrl: preferenceStore.getString('confluenceBaseUrl'),
     };
 }
 
-function updateConfluencePage(confluenceSettings, pageId, parentId, pageTitle, pageVersion, pageContents, opts = {}) {
+const confluenceApi = apiClient.create({
+    auth: {
+        username: readConfluenceSettings().username,
+        password: readConfluenceSettings().apiToken
+    },
+    baseURL: readConfluenceSettings().baseUrl,
+    headers: {
+        'X-Atlassian-Token': 'no-check'
+    },
+    debug: true
+});
+
+async function getPageInfo(pageTitle, opts = {}) {
+    try {
+        const response = await confluenceApi.get('/wiki/rest/api/content', {
+            params: {
+                title: pageTitle,
+                spaceKey: readConfluenceSettings().spaceKey,
+                expand: 'version'
+            },
+            ...opts
+        });
+
+        if (response.data.results.length === 0) {
+            return null;
+        }
+
+        const pageInfo = response.data.results[0];
+        return {
+            pageId: pageInfo.id,
+            pageVersion: parseInt(pageInfo.version.number)
+        };
+    } catch (error) {
+        if (error.response && error.response.status === 404) {
+            return null;
+        }
+        throw error;
+    }
+}
+
+async function updateConfluencePage(pageId, parentId, pageTitle, pageVersion, pageContents, opts = {}) {
     const isNewPage = !pageId;
-    const method = isNewPage ? "POST" : "PUT";
-    const urlPath = "/wiki/rest/api/content" + (isNewPage ? "" : `/${pageId}`);
-    const url = new URL(confluenceSettings.baseUrl + urlPath);
-    
-    const connection = url.openConnection();
-    connection.setRequestMethod(method);
-    setAuthHeaders(connection, confluenceSettings);
-    connection.setDoOutput(true);
+    const method = isNewPage ? 'post' : 'put';
+    const url = isNewPage 
+        ? '/wiki/rest/api/content'
+        : `/wiki/rest/api/content/${pageId}`;
 
     const requestData = {
         type: "page",
         title: pageTitle,
-        space: { key: confluenceSettings.spaceKey },
+        space: { key: readConfluenceSettings().spaceKey },
         body: {
             storage: {
                 value: pageContents,
@@ -109,123 +84,97 @@ function updateConfluencePage(confluenceSettings, pageId, parentId, pageTitle, p
         }
     }
 
-    const outputStream = new DataOutputStream(connection.getOutputStream());
-    outputStream.writeBytes(JSON.stringify(requestData));
-    outputStream.flush();
-    outputStream.close();
+    try {
+        const response = await confluenceApi.request({
+            method: method,
+            url: url,
+            data: requestData,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            ...opts
+        });
 
-    const statusCode = connection.getResponseCode();
-
-    if (statusCode < 200 || statusCode >= 300) {
-        const errorMessage = readResponseToString(connection.getErrorStream());
-        throw new Error(`HTTP Error ${statusCode}: ${errorMessage}`);
+        return {
+            pageId: response.data.id,
+            pageVersion: response.data.version ? response.data.version.number : 1
+        };
+    } catch (error) {
+        throw error;
     }
-
-    const response = JSON.parse(readResponseToString(connection.getInputStream()));
-
-    return {
-        pageId: response.id,
-        pageVersion: response.version ? response.version.number : 1
-    };
 }
 
-function getAttachmentInfo(confluenceSettings, pageId, fileName) {
-    const urlPath = `/wiki/rest/api/content/${pageId}/child/attachment?filename=${encodeURIComponent(fileName)}&expand=version`;
-    const url = new URL(confluenceSettings.baseUrl + urlPath);
-    
-    const connection = url.openConnection();
-    connection.setRequestMethod("GET");
-    setAuthHeaders(connection, confluenceSettings);
+async function getAttachmentInfo(pageId, fileName, opts = {}) {
+    try {
+        const response = await confluenceApi.get(`/wiki/rest/api/content/${pageId}/child/attachment`, {
+            params: {
+                filename: fileName,
+                expand: 'version'
+            },
+            ...opts
+        });
 
-    const statusCode = connection.getResponseCode();
+        if (response.data.results.length === 0) {
+            return null;
+        }
 
-    if (statusCode === 404) {
-        return null; // Attachment not found
+        const attachmentInfo = response.data.results[0];
+        return {
+            id: attachmentInfo.id,
+            title: attachmentInfo.title,
+            version: attachmentInfo.version.number
+        };
+    } catch (error) {
+        if (error.response && error.response.status === 404) {
+            return null;
+        }
+        throw error;
     }
-
-    if (statusCode < 200 || statusCode >= 300) {
-        const errorMessage = readResponseToString(connection.getErrorStream());
-        throw new Error(`HTTP Error ${statusCode}: ${errorMessage}`);
-    }
-
-    const response = JSON.parse(readResponseToString(connection.getInputStream()));
-
-    if (response.results.length === 0) {
-        return null; // No attachment found
-    }
-
-    const attachmentInfo = response.results[0];
-    return {
-        id: attachmentInfo.id,
-        title: attachmentInfo.title,
-        version: attachmentInfo.version.number
-    };
 }
 
-function attachFile(confluenceSettings, pageId, fileName, fileContent, fileType, comment, existingAttachmentId = null) {
-    const urlPath = existingAttachmentId
-        ? `/wiki/rest/api/content/${pageId}/child/attachment/${existingAttachmentId}/data`
-        : `/wiki/rest/api/content/${pageId}/child/attachment`;
-    const url = new URL(confluenceSettings.baseUrl + urlPath);
-    const connection = url.openConnection();
-    const boundary = "*****" + Math.random().toString(36).substring(2);
-    
-    connection.setRequestMethod(existingAttachmentId ? "POST" : "PUT");
-    setAuthHeaders(connection, confluenceSettings);
-    connection.setRequestProperty("Content-Type", `multipart/form-data;boundary=${boundary}`);
-    connection.setRequestProperty("X-Atlassian-Token", "no-check");
-    connection.setDoOutput(true);
+async function attachFile(pageId, fileName, fileContent, fileType, comment, opts = {}) {
+    try {
+        // First, check if the attachment already exists
+        const existingAttachment = await getAttachmentInfo(pageId, fileName);
+        
+        let url;
+        let method;
+        
+        if (existingAttachment) {
+            // If the attachment exists, update it
+            url = `/wiki/rest/api/content/${pageId}/child/attachment/${existingAttachment.id}/data`;
+            method = 'POST';
+            console.log(`Updating existing attachment: ${fileName}`);
+        } else {
+            // If the attachment doesn't exist, create a new one
+            url = `/wiki/rest/api/content/${pageId}/child/attachment`;
+            method = 'POST';
+            console.log(`Creating new attachment: ${fileName}`);
+        }
 
-    const outputStream = new DataOutputStream(connection.getOutputStream());
-    const crlf = "\r\n";
-    const twoHyphens = "--";
+        const response = await confluenceApi.uploadFile(url, {
+            name: fileName,
+            content: fileContent,
+            type: fileType,
+            comment: comment,
+            contentType: fileType === "image" ? "image/png" : "text/plain"
+        }, {
+            method: method,
+            headers: {
+                'X-Atlassian-Token': 'no-check'
+            },
+            ...opts
+        });
 
-    // Write comment part
-    outputStream.writeBytes(twoHyphens + boundary + crlf);
-    outputStream.writeBytes("Content-Disposition: form-data; name=\"comment\"" + crlf);
-    outputStream.writeBytes(crlf);
-    outputStream.writeBytes(comment + crlf);
-
-    // Write file part
-    outputStream.writeBytes(twoHyphens + boundary + crlf);
-    outputStream.writeBytes(`Content-Disposition: form-data; name="file"; filename="${fileName}"${crlf}`);
-    outputStream.writeBytes(`Content-Type: ${fileType === "image" ? "image/png" : "text/plain"}${crlf}`);
-    outputStream.writeBytes(crlf);
-
-    if (fileType === "image") {
-        outputStream.write(Base64.getDecoder().decode(fileContent));
-    } else {
-        outputStream.writeBytes(fileContent);
+        return {
+            id: response.data.results[0].id,
+            title: response.data.results[0].title,
+            version: response.data.results[0].version.number
+        };
+    } catch (error) {
+        console.error("Error attaching file:", error.message);
+        throw error;
     }
-
-    outputStream.writeBytes(crlf);
-    outputStream.writeBytes(twoHyphens + boundary + twoHyphens + crlf);
-    outputStream.flush();
-    outputStream.close();
-
-    const statusCode = connection.getResponseCode();
-
-    if (statusCode < 200 || statusCode >= 300) {
-        const errorMessage = readResponseToString(connection.getErrorStream());
-        throw new Error(`HTTP Error ${statusCode}: ${errorMessage}`);
-    }
-
-    const response = JSON.parse(readResponseToString(connection.getInputStream()));
-    return {
-        id: response.results[0].id,
-        title: response.results[0].title,
-        version: response.results[0].version.number
-    };
-}
-
-function readConfluenceSettings() {
-    const preferenceStore = workbench.getPreferenceStore();
-    return {
-        username: preferenceStore.getString('confluenceUsername'),
-        apiToken: preferenceStore.getString('confluencePassword'),
-        spaceKey: preferenceStore.getString('confluenceDefaultSpaceKey'),
-        baseUrl: preferenceStore.getString('confluenceBaseUrl'),
-    };
 }
 
 module.exports = {
