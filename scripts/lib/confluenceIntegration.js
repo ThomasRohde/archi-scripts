@@ -57,30 +57,50 @@ async function getPageInfo(pageTitle, opts = {}) {
     }
 }
 
+async function getSpaceId(spaceKey) {
+    try {
+        const response = await confluenceApi.get('/wiki/api/v2/spaces', {
+            params: {
+                keys: spaceKey
+            }
+        });
+        if (response.data.results && response.data.results.length > 0) {
+            return response.data.results[0].id;
+        }
+        throw new Error(`Space with key ${spaceKey} not found`);
+    } catch (error) {
+        console.error("Error fetching space ID:", error);
+        throw error;
+    }
+}
+
 async function updateConfluencePage(pageId, parentId, pageTitle, pageVersion, pageContents, opts = {}) {
     const isNewPage = !pageId;
     const method = isNewPage ? 'post' : 'put';
     const url = isNewPage 
-        ? '/wiki/rest/api/content'
-        : `/wiki/rest/api/content/${pageId}`;
+        ? '/wiki/api/v2/pages'
+        : `/wiki/api/v2/pages/${pageId}`;
+
+    const spaceKey = readConfluenceSettings().spaceKey;
+    const spaceId = await getSpaceId(spaceKey);
 
     const requestData = {
-        type: "page",
+        spaceId: spaceId,
+        status: "current",
         title: pageTitle,
-        space: { key: readConfluenceSettings().spaceKey },
         body: {
-            storage: {
-                value: pageContents,
-                representation: "storage"
-            }
+            representation: "storage",
+            value: pageContents
         }
     };
 
     if (!isNewPage) {
         requestData.version = { number: pageVersion };
-        if (parentId) {
-            requestData.ancestors = [{ id: parentId }];
-        }
+        requestData.id = pageId;
+    }
+
+    if (parentId) {
+        requestData.parentId = parentId;
     }
 
     try {
@@ -96,9 +116,10 @@ async function updateConfluencePage(pageId, parentId, pageTitle, pageVersion, pa
 
         return {
             pageId: response.data.id,
-            pageVersion: response.data.version ? response.data.version.number : 1
+            pageVersion: response.data.version.number
         };
     } catch (error) {
+        console.error("Error updating Confluence page:", error.response ? error.response.data : error.message);
         throw error;
     }
 }
