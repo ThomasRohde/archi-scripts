@@ -64,30 +64,43 @@ function createDrawIoDiagram(view) {
 
     let idCounter = 2;
     const elementMap = new Map();
-    
+
     function traverseElements(element, parentId) {
         const cell = createDrawIoElement(doc, element, idCounter++, parentId);
         root.appendChild(cell);
         elementMap.set(element.id, cell);
-    
-        $(element).children("element").each((childElement) => {
-            traverseElements(childElement, cell.getAttribute("id"));
-        });
+
+        $(element)
+            .children("element")
+            .each((childElement) => {
+                traverseElements(childElement, cell.getAttribute("id"));
+            });
     }
 
     // Traverse the view hierarchy
-    $(view).children("element").each((element) => {
-        traverseElements(element, "1");
-    });
+    $(view)
+        .children("element")
+        .each((element) => {
+            console.log(element, element.type);
+            traverseElements(element, "1");
+        });
+
+    $(view)
+        .children("diagram-model-note")
+        .each((element) => {
+            console.log(element, element.type);
+            traverseElements(element, "1");
+        });
 
     // Create connections
-    $(view).children("relationship").each((relationship) => {
-
+    $(view)
+        .children("relationship")
+        .each((relationship) => {
             const drawIoConnection = createDrawIoConnection(doc, relationship, elementMap, idCounter++);
             if (drawIoConnection) {
                 root.appendChild(drawIoConnection);
             }
-    });
+        });
 
     return doc;
 }
@@ -95,19 +108,23 @@ function createDrawIoDiagram(view) {
 function createDrawIoElement(doc, element, id, parentId) {
     const cell = doc.createElement("mxCell");
     cell.setAttribute("id", id);
-    cell.setAttribute("value", element.name);
+    cell.setAttribute("value", element.type === "diagram-model-note" ? element.text : element.name);
     cell.setAttribute("parent", parentId);
     cell.setAttribute("vertex", "1");
 
     const hasChildren = $(element).children("element").size() > 0;
 
-    const archimateType = mapArchiMateTypeToDrawIo(element.concept.type);
-    let style = `${archimateType}whiteSpace=wrap;html=1;fillColor=${getFillColor(element)};`;
-    
+    let style = mapArchiMateTypeToDrawIo(element.type);
+
     if (hasChildren) {
         style += "container=1;collapsible=0;";
+        if (!style.includes("swimlane")) {
+            style += "labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;";
+        }
     }
-    
+
+    style += `fillColor=${getFillColor(element)};`;
+
     cell.setAttribute("style", style);
 
     const geometry = doc.createElement("mxGeometry");
@@ -128,10 +145,10 @@ function createDrawIoConnection(doc, relationship, elementMap, id) {
     cell.setAttribute("value", relationship.name || "");
     cell.setAttribute("parent", "1");
     cell.setAttribute("edge", "1");
-    
+
     const sourceElement = elementMap.get(relationship.source.id);
     const targetElement = elementMap.get(relationship.target.id);
-    
+
     cell.setAttribute("source", sourceElement.getAttribute("id"));
     cell.setAttribute("target", targetElement.getAttribute("id"));
 
@@ -162,7 +179,11 @@ function getFillColor(element) {
         implementation: "#FFE0E0",
     };
 
-    type = element.concept.type
+    try {
+        type = element.concept.type;
+    } catch {
+        type = element.type;
+    }
 
     // Determine the layer based on the element type
     let layer = "other";

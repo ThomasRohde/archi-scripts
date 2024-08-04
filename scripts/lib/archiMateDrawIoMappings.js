@@ -75,8 +75,21 @@ function mapArchiMateTypeToDrawIo(type) {
         // Other elements
         "location": "shape=mxgraph.archimate3.location;",
         "grouping": "shape=mxgraph.archimate3.grouping;",
-        "junction": "shape=mxgraph.archimate3.or_junction;"
+        "junction": "shape=mxgraph.archimate3.or_junction;",
+
+        // Other Visual Objects
+        "diagram-model-note": "shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;",
+        "diagram-model-group": "swimlane;startSize=23;",
+        "diagram-model-connection": "edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;",
+        "diagram-model-image": "shape=image;imageAspect=0;",
+        "diagram-model-reference": "shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;",
+        "sketch-model-sticky": "shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;",
+        "sketch-model-actor": "shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;",
+        "canvas-model-block": "shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;",
+        "canvas-model-sticky": "shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;",
+        "canvas-model-image": "shape=image;imageAspect=0;"
     };
+
     return typeMap[type] || "whiteSpace=wrap;html=1;";
 }
 
