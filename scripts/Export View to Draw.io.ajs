@@ -114,7 +114,7 @@ function createDrawIoElement(doc, element, id, parentId) {
 
     const hasChildren = $(element).children("element").size() > 0;
 
-    let style = mapArchiMateTypeToDrawIo(element.type);
+    let style = mapArchiMateTypeToDrawIo(element.type) + ";whiteSpace=wrap;";
 
     if (hasChildren) {
         style += "container=1;collapsible=0;";

@@ -90,7 +90,7 @@ function mapArchiMateTypeToDrawIo(type) {
         "canvas-model-image": "shape=image;imageAspect=0;"
     };
 
-    return typeMap[type] || "whiteSpace=wrap;html=1;";
+    return typeMap[type]  + ";whiteSpace=wrap;";
 }
 
 function mapArchiMateRelationshipToDrawIo(type) {
