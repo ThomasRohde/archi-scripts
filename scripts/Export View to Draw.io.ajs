@@ -1,7 +1,7 @@
 /**
- * @name Export to draw.io (Fixed)
- * @version 3.1
- * @description Exports the selected ArchiMate view to a draw.io diagram file, handling nested elements correctly
+ * @name Export to draw.io (Hierarchical)
+ * @version 4.1
+ * @description Exports the selected ArchiMate view to a draw.io diagram file, handling nested elements using groups and correct coordinate systems
  */
 
 console.clear();
@@ -20,27 +20,8 @@ const TransformerFactory = Java.type("javax.xml.transform.TransformerFactory");
 const DOMSource = Java.type("javax.xml.transform.dom.DOMSource");
 const StreamResult = Java.type("javax.xml.transform.stream.StreamResult");
 
-// Import modelTraversal library
-const modelTraversal = require("./lib/modelTraversal");
-
 // Import mapping functions
 const { mapArchiMateTypeToDrawIo, mapArchiMateRelationshipToDrawIo } = require("./lib/archiMateDrawIoMappings");
-
-function absoluteXY(obj) {
-    let x = obj.bounds.x;
-    let y = obj.bounds.y;
-
-    let p = $(obj).parent().first();
-    while (p && p.bounds) {
-        x = x + p.bounds.x;
-        y = y + p.bounds.y;
-        p = $(p).parent().first();
-    }
-    return {
-        x: x,
-        y: y,
-    };
-}
 
 function exportToDiagram() {
     const selectedView = $(selection).filter("archimate-diagram-model").first();
@@ -83,53 +64,30 @@ function createDrawIoDiagram(view) {
 
     let idCounter = 2;
     const elementMap = new Map();
-    const parentMap = new Map();
+    
+    function traverseElements(element, parentId) {
+        const cell = createDrawIoElement(doc, element, idCounter++, parentId);
+        root.appendChild(cell);
+        elementMap.set(element.id, cell);
+    
+        $(element).children("element").each((childElement) => {
+            traverseElements(childElement, cell.getAttribute("id"));
+        });
+    }
 
-    // First pass: create all elements and build hierarchy
-    modelTraversal.traverse(
-        {
-            viewElementHandler: (element) => {
-                const drawIoElement = createDrawIoElement(doc, element, idCounter++, "1");
-                root.appendChild(drawIoElement);
-                elementMap.set(element.id, drawIoElement);
-                parentMap.set(element.id, element.parent ? element.parent.id : "1");
-            },
-            diagramObjectHandler: (object) => {
-                // Handle diagram objects (groups, notes) if needed
-                console.log("Diagram object encountered:", object.type);
-            },
-        },
-        view
-    );
-
-    // Second pass: update parent references
-    elementMap.forEach((drawIoElement, elementId) => {
-        const parentId = parentMap.get(elementId);
-        if (parentId !== "1") {
-            const parentElement = elementMap.get(parentId);
-            if (parentElement) {
-                drawIoElement.setAttribute("parent", parentElement.getAttribute("id"));
-            }
-        }
+    // Traverse the view hierarchy
+    $(view).children("element").each((element) => {
+        traverseElements(element, "1");
     });
 
-    // Third pass: create connections
-    $(view)
-        .children("relationship")
-        .each((relationship) => {
-            // Check if the relationship is referenced in the current view
-            if (
-                $(relationship)
-                    .viewRefs()
-                    .filter((v) => v.id === view.id)
-                    .size() > 0
-            ) {
-                const drawIoConnection = createDrawIoConnection(doc, relationship, elementMap, idCounter++);
-                if (drawIoConnection) {
-                    root.appendChild(drawIoConnection);
-                }
+    // Create connections
+    $(view).children("relationship").each((relationship) => {
+
+            const drawIoConnection = createDrawIoConnection(doc, relationship, elementMap, idCounter++);
+            if (drawIoConnection) {
+                root.appendChild(drawIoConnection);
             }
-        });
+    });
 
     return doc;
 }
@@ -141,19 +99,24 @@ function createDrawIoElement(doc, element, id, parentId) {
     cell.setAttribute("parent", parentId);
     cell.setAttribute("vertex", "1");
 
-    const archimateType = mapArchiMateTypeToDrawIo(element.concept.type);
-    cell.setAttribute(
-        "style",
-        `${archimateType}whiteSpace=wrap;html=1;fillColor=${getFillColor(element.concept.type)};`
-    );
+    const hasChildren = $(element).children("element").size() > 0;
 
-    const absolutePosition = absoluteXY(element);
+    const archimateType = mapArchiMateTypeToDrawIo(element.concept.type);
+    let style = `${archimateType}whiteSpace=wrap;html=1;fillColor=${getFillColor(element.concept.type)};`;
+    
+    if (hasChildren) {
+        style += "container=1;collapsible=0;";
+    }
+    
+    cell.setAttribute("style", style);
+
     const geometry = doc.createElement("mxGeometry");
-    geometry.setAttribute("x", absolutePosition.x);
-    geometry.setAttribute("y", absolutePosition.y);
+    geometry.setAttribute("x", element.bounds.x);
+    geometry.setAttribute("y", element.bounds.y);
     geometry.setAttribute("width", element.bounds.width);
     geometry.setAttribute("height", element.bounds.height);
     geometry.setAttribute("as", "geometry");
+
     cell.appendChild(geometry);
 
     return cell;
@@ -165,8 +128,12 @@ function createDrawIoConnection(doc, relationship, elementMap, id) {
     cell.setAttribute("value", relationship.name || "");
     cell.setAttribute("parent", "1");
     cell.setAttribute("edge", "1");
-    cell.setAttribute("source", elementMap.get(relationship.source.id).getAttribute("id"));
-    cell.setAttribute("target", elementMap.get(relationship.target.id).getAttribute("id"));
+    
+    const sourceElement = elementMap.get(relationship.source.id);
+    const targetElement = elementMap.get(relationship.target.id);
+    
+    cell.setAttribute("source", sourceElement.getAttribute("id"));
+    cell.setAttribute("target", targetElement.getAttribute("id"));
 
     const style = mapArchiMateRelationshipToDrawIo(relationship.type);
     cell.setAttribute("style", style);
