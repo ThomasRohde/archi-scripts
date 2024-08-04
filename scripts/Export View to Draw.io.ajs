@@ -146,7 +146,13 @@ function createDrawIoConnection(doc, relationship, elementMap, id) {
     return cell;
 }
 
-function getFillColor(type) {
+function getFillColor(element) {
+    // Check if the element already has a fill color set in Archi
+    const existingFillColor = element.fillColor;
+    if (existingFillColor) {
+        return existingFillColor;
+    }
+
     // Define color mapping for different ArchiMate layers
     const colorMap = {
         strategy: "#F5DEAA",
@@ -158,30 +164,17 @@ function getFillColor(type) {
         implementation: "#FFE0E0",
     };
 
+    const type = element.type;
+
     // Determine the layer based on the element type
     let layer = "other";
     if (type.startsWith("business-")) layer = "business";
     else if (type.startsWith("application-")) layer = "application";
-    else if (type.startsWith("technology-") || type.startsWith("data")) layer = "technology";
-    else if (["resource", "capability", "course-of-action", "value-stream"].includes(type)) layer = "strategy";
-    else if (["equipment", "facility", "distribution-network", "material"].includes(type)) layer = "physical";
-    else if (
-        [
-            "stakeholder",
-            "driver",
-            "assessment",
-            "goal",
-            "outcome",
-            "principle",
-            "requirement",
-            "constraint",
-            "meaning",
-            "value",
-        ].includes(type)
-    )
-        layer = "motivation";
-    else if (["work-package", "deliverable", "implementation-event", "plateau", "gap"].includes(type))
-        layer = "implementation";
+    else if (type.startsWith("technology-") || type === "node" || type === "device" || type === "system-software" || type === "technology-collaboration" || type === "technology-interface" || type === "path" || type === "communication-network" || type === "artifact") layer = "technology";
+    else if (type === "resource" || type === "capability" || type === "value-stream" || type === "course-of-action") layer = "strategy";
+    else if (type === "equipment" || type === "facility" || type === "distribution-network" || type === "material") layer = "physical";
+    else if (type === "stakeholder" || type === "driver" || type === "assessment" || type === "goal" || type === "outcome" || type === "principle" || type === "requirement" || type === "constraint" || type === "meaning" || type === "value") layer = "motivation";
+    else if (type === "work-package" || type === "deliverable" || type === "implementation-event" || type === "plateau" || type === "gap") layer = "implementation";
 
     return colorMap[layer] || "#FFFFFF";
 }
