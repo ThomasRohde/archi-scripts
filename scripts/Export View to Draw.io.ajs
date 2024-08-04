@@ -1,0 +1,207 @@
+/**
+ * @name Export to draw.io (Fixed)
+ * @version 3.1
+ * @description Exports the selected ArchiMate view to a draw.io diagram file, handling nested elements correctly
+ */
+
+console.clear();
+console.show();
+
+// Import required Java classes
+const Files = Java.type('java.nio.file.Files');
+const Paths = Java.type('java.nio.file.Paths');
+const FileDialog = Java.type('org.eclipse.swt.widgets.FileDialog');
+const SWT = Java.type('org.eclipse.swt.SWT');
+const FileWriter = Java.type('java.io.FileWriter');
+
+// XML processing
+const DocumentBuilderFactory = Java.type('javax.xml.parsers.DocumentBuilderFactory');
+const TransformerFactory = Java.type('javax.xml.transform.TransformerFactory');
+const DOMSource = Java.type('javax.xml.transform.dom.DOMSource');
+const StreamResult = Java.type('javax.xml.transform.stream.StreamResult');
+
+// Import modelTraversal library
+const modelTraversal = require('./lib/modelTraversal');
+
+// Import mapping functions
+const { mapArchiMateTypeToDrawIo, mapArchiMateRelationshipToDrawIo } = require('./lib/archiMateDrawIoMappings');
+
+function exportToDiagram() {
+    const selectedView = $(selection).filter("archimate-diagram-model").first();
+    if (!selectedView) {
+        console.error("No view selected. Please select an ArchiMate view and run the script again.");
+        return;
+    }
+
+    const diagram = createDrawIoDiagram(selectedView);
+    saveDrawIoDiagram(diagram, selectedView.name);
+}
+
+function createDrawIoDiagram(view) {
+    const dbFactory = DocumentBuilderFactory.newInstance();
+    const dBuilder = dbFactory.newDocumentBuilder();
+    const doc = dBuilder.newDocument();
+
+    const mxfile = doc.createElement("mxfile");
+    doc.appendChild(mxfile);
+
+    const diagram = doc.createElement("diagram");
+    diagram.setAttribute("name", view.name);
+    diagram.setAttribute("id", view.id);
+    mxfile.appendChild(diagram);
+
+    const mxGraphModel = doc.createElement("mxGraphModel");
+    diagram.appendChild(mxGraphModel);
+
+    const root = doc.createElement("root");
+    mxGraphModel.appendChild(root);
+
+    const layer = doc.createElement("mxCell");
+    layer.setAttribute("id", "0");
+    root.appendChild(layer);
+
+    const parent = doc.createElement("mxCell");
+    parent.setAttribute("id", "1");
+    parent.setAttribute("parent", "0");
+    root.appendChild(parent);
+
+    let idCounter = 2;
+    const elementMap = new Map();
+    const parentMap = new Map();
+
+    // First pass: create all elements and build hierarchy
+    modelTraversal.traverse({
+        viewElementHandler: (element) => {
+            const drawIoElement = createDrawIoElement(doc, element, idCounter++, "1");
+            root.appendChild(drawIoElement);
+            elementMap.set(element.id, drawIoElement);
+            parentMap.set(element.id, element.parent ? element.parent.id : "1");
+        },
+        diagramObjectHandler: (object) => {
+            // Handle diagram objects (groups, notes) if needed
+            console.log("Diagram object encountered:", object.type);
+        }
+    }, view);
+
+    // Second pass: update parent references and adjust coordinates
+    elementMap.forEach((drawIoElement, elementId) => {
+        const parentId = parentMap.get(elementId);
+        if (parentId !== "1") {
+            const parentElement = elementMap.get(parentId);
+            if (parentElement) {
+                drawIoElement.setAttribute("parent", parentElement.getAttribute("id"));
+                adjustCoordinates(drawIoElement, parentElement);
+            }
+        }
+    });
+
+    // Third pass: create connections
+    modelTraversal.traverse({
+        viewRelationshipHandler: (relationship) => {
+            const drawIoConnection = createDrawIoConnection(doc, relationship, elementMap, idCounter++);
+            root.appendChild(drawIoConnection);
+        }
+    }, view);
+
+    return doc;
+}
+
+function createDrawIoElement(doc, element, id, parentId) {
+    const cell = doc.createElement("mxCell");
+    cell.setAttribute("id", id);
+    cell.setAttribute("value", element.name);
+    cell.setAttribute("parent", parentId);
+    cell.setAttribute("vertex", "1");
+
+    const archimateType = mapArchiMateTypeToDrawIo(element.concept.type);
+    cell.setAttribute("style", `${archimateType}whiteSpace=wrap;html=1;fillColor=${getFillColor(element.concept.type)};`);
+
+    const geometry = doc.createElement("mxGeometry");
+    geometry.setAttribute("x", element.bounds.x);
+    geometry.setAttribute("y", element.bounds.y);
+    geometry.setAttribute("width", element.bounds.width);
+    geometry.setAttribute("height", element.bounds.height);
+    geometry.setAttribute("as", "geometry");
+    cell.appendChild(geometry);
+
+    return cell;
+}
+
+function adjustCoordinates(childElement, parentElement) {
+    const childGeometry = childElement.getElementsByTagName("mxGeometry")[0];
+    const parentGeometry = parentElement.getElementsByTagName("mxGeometry")[0];
+
+    const childX = parseInt(childGeometry.getAttribute("x"));
+    const childY = parseInt(childGeometry.getAttribute("y"));
+    const parentX = parseInt(parentGeometry.getAttribute("x"));
+    const parentY = parseInt(parentGeometry.getAttribute("y"));
+
+    childGeometry.setAttribute("x", childX - parentX);
+    childGeometry.setAttribute("y", childY - parentY);
+}
+
+function createDrawIoConnection(doc, relationship, elementMap, id) {
+    const cell = doc.createElement("mxCell");
+    cell.setAttribute("id", id);
+    cell.setAttribute("value", relationship.name || "");
+    cell.setAttribute("parent", "1");
+    cell.setAttribute("edge", "1");
+    cell.setAttribute("source", elementMap.get(relationship.source.id).getAttribute("id"));
+    cell.setAttribute("target", elementMap.get(relationship.target.id).getAttribute("id"));
+
+    const style = mapArchiMateRelationshipToDrawIo(relationship.type);
+    cell.setAttribute("style", style);
+
+    const geometry = doc.createElement("mxGeometry");
+    geometry.setAttribute("relative", "1");
+    geometry.setAttribute("as", "geometry");
+    cell.appendChild(geometry);
+
+    return cell;
+}
+
+function getFillColor(type) {
+    // Define color mapping for different ArchiMate layers
+    const colorMap = {
+        "strategy": "#F5DEAA",
+        "business": "#FFFFB5",
+        "application": "#B5FFFF",
+        "technology": "#C2F0FF",
+        "physical": "#C2F0FF",
+        "motivation": "#CCCCFF",
+        "implementation": "#FFE0E0"
+    };
+
+    // Determine the layer based on the element type
+    let layer = "other";
+    if (type.startsWith("business-")) layer = "business";
+    else if (type.startsWith("application-")) layer = "application";
+    else if (type.startsWith("technology-")) layer = "technology";
+    else if (["resource", "capability", "course-of-action", "value-stream"].includes(type)) layer = "strategy";
+    else if (["equipment", "facility", "distribution-network", "material"].includes(type)) layer = "physical";
+    else if (["stakeholder", "driver", "assessment", "goal", "outcome", "principle", "requirement", "constraint", "meaning", "value"].includes(type)) layer = "motivation";
+    else if (["work-package", "deliverable", "implementation-event", "plateau", "gap"].includes(type)) layer = "implementation";
+
+    return colorMap[layer] || "#FFFFFF";
+}
+
+function saveDrawIoDiagram(diagram, viewName) {
+    const fileDialog = new FileDialog(shell, SWT.SAVE);
+    fileDialog.setFilterExtensions(["*.drawio"]);
+    fileDialog.setFileName(viewName.replace(/[^a-zA-Z0-9]/g, "_") + ".drawio");
+    const filePath = fileDialog.open();
+
+    if (filePath) {
+        const transformerFactory = TransformerFactory.newInstance();
+        const transformer = transformerFactory.newTransformer();
+        const source = new DOMSource(diagram);
+        const result = new StreamResult(Files.newOutputStream(Paths.get(filePath)));
+        transformer.transform(source, result);
+        console.log(`Diagram saved successfully: ${filePath}`);
+    } else {
+        console.log("Export cancelled by user.");
+    }
+}
+
+// Execute the export function
+exportToDiagram();
