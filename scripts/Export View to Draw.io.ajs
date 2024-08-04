@@ -162,7 +162,7 @@ function getFillColor(type) {
     let layer = "other";
     if (type.startsWith("business-")) layer = "business";
     else if (type.startsWith("application-")) layer = "application";
-    else if (type.startsWith("technology-")) layer = "technology";
+    else if (type.startsWith("technology-") || type.startsWith("data")) layer = "technology";
     else if (["resource", "capability", "course-of-action", "value-stream"].includes(type)) layer = "strategy";
     else if (["equipment", "facility", "distribution-network", "material"].includes(type)) layer = "physical";
     else if (
