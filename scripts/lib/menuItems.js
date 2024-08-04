@@ -215,4 +215,30 @@ const menuItems = [
         category: "Documentation",
         tutorial: "Documentation Augmenter"
     },
+    {
+        name: "Export View to Draw.io",
+        description: `
+        <h2>Export View to Draw.io</h2>
+        <p>This script exports the currently selected ArchiMate view to a draw.io diagram file, preserving the hierarchical structure and visual properties of the elements.</p>
+        <h3>Features:</h3>
+        <ul>
+            <li>Exports the selected view as a .drawio file</li>
+            <li>Preserves element positions, sizes, and hierarchical relationships</li>
+            <li>Maps ArchiMate element types to appropriate draw.io shapes</li>
+            <li>Maintains element colors and relationship types</li>
+            <li>Handles nested elements using draw.io's grouping functionality</li>
+        </ul>
+        <h3>Usage:</h3>
+        <ol>
+            <li>Select an ArchiMate view in your model</li>
+            <li>Run the "Export View to Draw.io" script</li>
+            <li>Choose a location to save the .drawio file</li>
+            <li>Open the exported file in draw.io for further editing or integration</li>
+        </ol>
+        <p>This script is particularly useful for sharing ArchiMate diagrams with stakeholders who use draw.io or for further customization of your architecture diagrams in a more flexible diagramming tool.</p>
+    `,
+        script: "Export View to Draw.io.ajs",
+        category: "Export",
+        tutorial: "Export View to Draw.io"
+    },
 ];

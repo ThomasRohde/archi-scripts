@@ -1,0 +1,116 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Tutorial: Export View to Draw.io</title>
+            
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.3;
+        color: #333;
+        margin: 0;
+        padding: 10px;
+    }
+    h1 {
+        color: #2c3e50;
+        font-size: 20px;
+        margin: 10px 0 5px 0;
+    }
+    h2 {
+        color: #3498db;
+        font-size: 16px;
+        margin: 8px 0 4px 0;
+    }
+    p {
+        margin: 0 0 5px 0;
+    }
+    ul,
+    ol {
+        margin: 0 0 5px 0;
+        padding-left: 20px;
+    }
+    li {
+        margin-bottom: 2px;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 5px 0;
+    }
+    table,
+    th,
+    td {
+        border: 1px solid black;
+        font-size: 12px;
+        padding: 2px;
+    }
+</style>
+
+        </head>
+        <body>
+            <h1>Tutorial: Export View to Draw.io</h1>
+            <p>This tutorial will guide you through the process of exporting an ArchiMate view from Archi to a draw.io diagram using the &quot;Export View to Draw.io&quot; script.</p>
+<h2>Prerequisites</h2>
+<ul>
+<li>Archi with the jArchi plugin installed</li>
+<li>An ArchiMate model with at least one view</li>
+<li>draw.io (or diagrams.net) installed or accessible via web browser</li>
+</ul>
+<h2>Step 1: Prepare Your View</h2>
+<ol>
+<li>Open your ArchiMate model in Archi.</li>
+<li>Navigate to the view you want to export.</li>
+<li>Make sure the view is properly organized and all elements are positioned as desired.</li>
+</ol>
+<h2>Step 2: Run the Script</h2>
+<ol>
+<li>Select the view you want to export in the Archi UI.</li>
+<li>Go to &quot;Scripts&quot; in the Archi menu, then select &quot;jArchi Scripts Menu&quot;.</li>
+<li>In the jArchi Scripts Menu, find and select &quot;Export View to Draw.io&quot; under the &quot;Export&quot; category.</li>
+<li>Click &quot;Execute&quot; to run the script.</li>
+</ol>
+<h2>Step 3: Save the Exported File</h2>
+<ol>
+<li>A file dialog will appear, prompting you to choose a location to save the .drawio file.</li>
+<li>Navigate to your desired save location.</li>
+<li>The default filename will be based on your view name, with spaces replaced by underscores.</li>
+<li>You can modify the filename if needed, but keep the .drawio extension.</li>
+<li>Click &quot;Save&quot; to export the file.</li>
+</ol>
+<h2>Step 4: Open in draw.io</h2>
+<ol>
+<li>Open draw.io (or diagrams.net) in your web browser or desktop application.</li>
+<li>Go to File &gt; Open From &gt; Device and select your exported .drawio file.</li>
+<li>The diagram will open, preserving the layout and structure from your ArchiMate view.</li>
+</ol>
+<h2>Features and Considerations</h2>
+<ul>
+<li><strong>Element Mapping</strong>: ArchiMate elements are mapped to equivalent draw.io shapes where possible.</li>
+<li><strong>Colors</strong>: The script preserves the fill colors of your ArchiMate elements.</li>
+<li><strong>Relationships</strong>: ArchiMate relationships are converted to appropriate draw.io connectors.</li>
+<li><strong>Nesting</strong>: Nested elements in your ArchiMate view are represented as grouped elements in draw.io.</li>
+<li><strong>Positioning</strong>: The position and size of elements are preserved in the draw.io diagram.</li>
+</ul>
+<h2>Troubleshooting</h2>
+<ul>
+<li>If some elements appear misaligned, you may need to adjust their positions slightly in draw.io.</li>
+<li>Custom ArchiMate elements or relationships might not have exact equivalents in draw.io. In such cases, they will be represented by generic shapes.</li>
+<li>If the export fails, ensure you have write permissions in the directory where you&#39;re trying to save the file.</li>
+</ul>
+<h2>Next Steps</h2>
+<p>After exporting, you can take advantage of draw.io&#39;s features to further enhance your diagram:</p>
+<ul>
+<li>Add custom styling or colors to elements</li>
+<li>Incorporate additional annotations or notes</li>
+<li>Use draw.io&#39;s extensive shape libraries to add complementary elements</li>
+<li>Leverage draw.io&#39;s collaboration features for team-based diagramming</li>
+</ul>
+<p>By using this export feature, you can bridge the gap between ArchiMate modeling in Archi and the flexible diagramming capabilities of draw.io, enabling you to create rich, customized architectural diagrams based on your ArchiMate models.</p>
+
+        </body>
+        </html>
+    
