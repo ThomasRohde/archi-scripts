@@ -209,49 +209,106 @@ function getFillColor(element) {
     if (existingFillColor) {
         return existingFillColor;
     }
-    // Define color mapping for different ArchiMate layers
+
     const colorMap = {
         strategy: "#F5DEAA",
         business: "#FFFFB5",
-        application: "#B5FFFF",
-        technology: "#C2F0FF",
-        physical: "#C2F0FF",
+        application: "#99FFFF",
+        technology: "#AFFFAF",
+        physical: "#AFFFAF",
         motivation: "#CCCCFF",
         implementation: "#FFE0E0",
+        other: "#FFFFFF"
     };
 
+    const layerMap = {
+        // Strategy
+        "resource": "strategy",
+        "capability": "strategy",
+        "course-of-action": "strategy",
+        "value-stream": "strategy",
+
+        // Business
+        "business-actor": "business",
+        "business-role": "business",
+        "business-collaboration": "business",
+        "business-interface": "business",
+        "business-process": "business",
+        "business-function": "business",
+        "business-interaction": "business",
+        "business-event": "business",
+        "business-service": "business",
+        "business-object": "business",
+        "contract": "business",
+        "representation": "business",
+        "product": "business",
+
+        // Application
+        "application-component": "application",
+        "application-collaboration": "application",
+        "application-interface": "application",
+        "application-function": "application",
+        "application-process": "application",
+        "application-interaction": "application",
+        "application-event": "application",
+        "application-service": "application",
+        "data-object": "application",
+
+        // Technology
+        "node": "technology",
+        "device": "technology",
+        "system-software": "technology",
+        "technology-collaboration": "technology",
+        "technology-interface": "technology",
+        "path": "technology",
+        "communication-network": "technology",
+        "technology-function": "technology",
+        "technology-process": "technology",
+        "technology-interaction": "technology",
+        "technology-event": "technology",
+        "technology-service": "technology",
+        "artifact": "technology",
+
+        // Physical
+        "equipment": "physical",
+        "facility": "physical",
+        "distribution-network": "physical",
+        "material": "physical",
+
+        // Motivation
+        "stakeholder": "motivation",
+        "driver": "motivation",
+        "assessment": "motivation",
+        "goal": "motivation",
+        "outcome": "motivation",
+        "principle": "motivation",
+        "requirement": "motivation",
+        "constraint": "motivation",
+        "meaning": "motivation",
+        "value": "motivation",
+
+        // Implementation & Migration
+        "work-package": "implementation",
+        "deliverable": "implementation",
+        "implementation-event": "implementation",
+        "plateau": "implementation",
+        "gap": "implementation",
+
+        // Other
+        "location": "other",
+        "grouping": "other",
+        "junction": "other"
+    };
+
+    let type;
     try {
         type = element.concept.type;
     } catch {
         type = element.type;
     }
 
-    // Determine the layer based on the element type
-    let layer = "other";
-    if (type.startsWith("business-")) layer = "business";
-    else if (type.startsWith("application-")) layer = "application";
-    else if (type.startsWith("technology-") || type.startsWith("data")) layer = "technology";
-    else if (["resource", "capability", "course-of-action", "value-stream"].includes(type)) layer = "strategy";
-    else if (["equipment", "facility", "distribution-network", "material"].includes(type)) layer = "physical";
-    else if (
-        [
-            "stakeholder",
-            "driver",
-            "assessment",
-            "goal",
-            "outcome",
-            "principle",
-            "requirement",
-            "constraint",
-            "meaning",
-            "value",
-        ].includes(type)
-    )
-        layer = "motivation";
-    else if (["work-package", "deliverable", "implementation-event", "plateau", "gap"].includes(type))
-        layer = "implementation";
-
-    return colorMap[layer] || "#FFFFFF";
+    const layer = layerMap[type] || "other";
+    return colorMap[layer];
 }
 
 function saveDrawIoDiagram(diagram, viewName) {
