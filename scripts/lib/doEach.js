@@ -231,7 +231,7 @@ function getObjXY(obj) {
  */
 function isInsideObj(obj, x, y) {
     let b = getObjXY(obj)
-    return (x > b.x-b.width/2 && x < b.x + b.width/2 && y > b.y-b.height/2 && y < b.y + b.height/2)
+    return (x > b.x - b.width / 2 && x < b.x + b.width / 2 && y > b.y - b.height / 2 && y < b.y + b.height / 2)
 }
 
 /**
@@ -244,6 +244,17 @@ function isInsideObj(obj, x, y) {
  */
 function isBetween(i, min, max) {
     return (i >= min && i <= max)
+}
+
+/**
+ * Remove bendpoints
+ *
+ * @param conn      - visual connection
+ *
+ */
+
+function removeBendpoints(conn) { 
+    conn.deleteAllBendpoints();
 }
 
 /**
@@ -333,7 +344,7 @@ function getObjPos(obj1, obj2) {
     let dx = b2.x - b1.x
     let dy = b2.y - b1.y
     let pos
-    let dist = {dx: dx, dy: dy, gapX: 0, gapY: 0}
+    let dist = { dx: dx, dy: dy, gapX: 0, gapY: 0 }
 
     let angle = Math.atan2(dy, dx) * 180 / Math.PI
     // normalize angle wrt obj1
@@ -354,10 +365,10 @@ function getObjPos(obj1, obj2) {
     if (b2.x - b2.width / 2 > b1.x + b1.width / 2 && b2.x + b2.width / 2 > b1.x + b1.width / 2)
         dist.gapX = b2.x - b2.width / 2 - b1.x - b1.width / 2
     else if (b2.x - b2.width / 2 < b1.x - b1.width / 2 && b2.x + b2.width / 2 < b1.x - b1.width / 2)
-        dist.gapX = b2.x + b2.width/2 - b1.x + b1.width / 2
+        dist.gapX = b2.x + b2.width / 2 - b1.x + b1.width / 2
 
     if (b2.y - b2.height / 2 > b1.y + b1.height / 2 && b2.y + b2.height / 2 > b1.y + b1.height / 2)
-        dist.gapY = b2.y - b2.height/2 - b1.y - b1.height / 2
+        dist.gapY = b2.y - b2.height / 2 - b1.y - b1.height / 2
     else if (b2.y - b2.height / 2 < b1.y - b1.height / 2 && b2.y + b2.height / 2 < b1.y - b1.height / 2)
         dist.gapY = b2.y + b2.height / 2 - b1.y + b1.height / 2
 
@@ -396,7 +407,7 @@ function getPointPos(obj1, XY) {
         angle += 360
     angle = (360 - angle) % 360
 
-    if (!isBetween(XY.y, b.y-b.height/2, b.y + b.height/2) && !isBetween(XY.x, b.x-b.width/2, b.x + b.width/2)) {
+    if (!isBetween(XY.y, b.y - b.height / 2, b.y + b.height / 2) && !isBetween(XY.x, b.x - b.width / 2, b.x + b.width / 2)) {
         if (angle >= 135 && angle < 225) {
             pos = 'R'
         } else if (angle >= 225 && angle < 315) {
@@ -408,13 +419,13 @@ function getPointPos(obj1, XY) {
         }
     }
 
-    if ((angle > 270 || angle < 90) && isBetween(XY.y, b.y-b.height/2, b.y + b.height/2))
+    if ((angle > 270 || angle < 90) && isBetween(XY.y, b.y - b.height / 2, b.y + b.height / 2))
         pos = 'L!'
-    else if (angle > 180 && isBetween(XY.x, b.x-b.width/2, b.x + b.width/2))
+    else if (angle > 180 && isBetween(XY.x, b.x - b.width / 2, b.x + b.width / 2))
         pos = 'B!'
-    else if (angle < 180 && isBetween(XY.x, b.x-b.width/2, b.x + b.width/2))
+    else if (angle < 180 && isBetween(XY.x, b.x - b.width / 2, b.x + b.width / 2))
         pos = 'T!'
-    else if (isBetween(XY.y, b.y-b.height/2, b.y + b.height/2))
+    else if (isBetween(XY.y, b.y - b.height / 2, b.y + b.height / 2))
         pos = 'R!'
     return [pos, angle]
 }
@@ -493,18 +504,18 @@ function distributeConnections(obj) {
 
             if (pos[0] === 'R') {
                 // angle = (angle + 180) % 360
-                right.push({order: angle, bp: bp, r: r})
+                right.push({ order: angle, bp: bp, r: r })
             }
             if (pos[0] === 'L') {
                 angle = (angle + 180) % 360
-                left.push({order: angle, bp: bp, r: r})
+                left.push({ order: angle, bp: bp, r: r })
             }
             if (pos[0] === 'T') {
-                top.push({order: -angle, bp: bp, r: r})
+                top.push({ order: -angle, bp: bp, r: r })
             }
             if (pos[0] === 'B') {
                 // angle = (angle + 180) % 360
-                bottom.push({order: angle, bp: bp, r: r})
+                bottom.push({ order: angle, bp: bp, r: r })
             }
         }
     })
@@ -519,7 +530,7 @@ function distributeConnections(obj) {
     left.sort(dynamicSort('order')).forEach(r => {
         r.bp.y = bo1.y - bo1.height * (0.5 - (i++ / (left.length + 1)))
         // r.bp.x = r.bp.x + 5*i * ((r.order > 180)? 1:-1)
-        setAbsoluteBendpoint(r.r,r.bp.x, r.bp.y, r.bp.idx)
+        setAbsoluteBendpoint(r.r, r.bp.x, r.bp.y, r.bp.idx)
     })
     i = 1
     top.sort(dynamicSort('order')).forEach(r => {
@@ -612,24 +623,24 @@ function setXY(bnd, x, y) {
 
     if ((xa > w && ya > h)) {
         if (ya / xa > hw) {
-            return {x: (x / xa) * (w - 10), y: ym, dir: 0};
+            return { x: (x / xa) * (w - 10), y: ym, dir: 0 };
         } else {
-            return {x: xm, y: (y / ya) * (h - 10), dir: 1};
+            return { x: xm, y: (y / ya) * (h - 10), dir: 1 };
 
         }
     } else if (xa < w && ya < h) {
         if (ya / xa > hw) {
-            return {x: x, y: ym, dir: 0};
+            return { x: x, y: ym, dir: 0 };
 
         } else {
-            return {x: xm, y: y, dir: 1};
+            return { x: xm, y: y, dir: 1 };
         }
     } else if (xa > w && ya < h) {
-        return {x: xm, y: y, dir: 1};
+        return { x: xm, y: y, dir: 1 };
     } else if (xa < w && ya > h) {
-        return {x: x, y: ym, dir: 0};
+        return { x: x, y: ym, dir: 0 };
     } else {
-        return {x: x, y: y, dir: 0}
+        return { x: x, y: y, dir: 0 }
     }
 
 }
@@ -713,7 +724,7 @@ function ortho(o) {
             bps = o.getRelativeBendpoints();
         }
     }
-    b = {startX: 0, startY: 0, endX: 0, endY: 0};
+    b = { startX: 0, startY: 0, endX: 0, endY: 0 };
     let prev = bp0;
     idx = 0;
     bps.forEach(function (bp) {
@@ -751,3 +762,23 @@ function ortho(o) {
     });
 
 }
+
+// Export the functions
+module.exports = {
+    doEachElem,
+    doEachRel,
+    addAbsoluteBendpoint,
+    setAbsoluteBendpoint,
+    getAbsoluteBendpoints,
+    getObjXY,
+    isInsideObj,
+    isBetween,
+    lRel,
+    sRel,
+    getObjPos,
+    getPointPos,
+    distributeConnections,
+    dynamicSort,
+    ortho,
+    removeBendpoints
+};

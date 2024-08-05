@@ -1,0 +1,2 @@
+const { doEachRel, sRel } = require('./lib/doEach');
+doEachRel(sRel)(selection, 1); // start vertical and create an S-Shape relationship

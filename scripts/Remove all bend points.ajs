@@ -1,0 +1,2 @@
+const { doEachRel, removeBendpoints } = require('./lib/doEach');
+doEachRel(removeBendpoints)(selection) 

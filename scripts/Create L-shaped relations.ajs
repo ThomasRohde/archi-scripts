@@ -1,0 +1,2 @@
+const { doEachRel, lRel } = require('./lib/doEach');
+doEachRel(lRel)(selection, 0); // start horizontal and create an L-Shape relationship

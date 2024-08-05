@@ -1,0 +1,2 @@
+const { doEachElem, distributeConnections } = require('./lib/doEach');
+doEachElem(distributeConnections)(selection); // arrange and spread equally multiple visual relationships along the edges of an element

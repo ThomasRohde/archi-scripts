@@ -156,7 +156,7 @@ const menuItems = [
         `,
         script: "Settings.ajs",
         category: "Configuration",
-        tutorial: "Settings"
+        tutorial: "Settings",
     },
     {
         name: "Publish View to Confluence",
@@ -188,7 +188,7 @@ const menuItems = [
         `,
         script: "Publish View to Confluence.ajs",
         category: "Integration",
-        tutorial: "Publish View to Confluence"
+        tutorial: "Publish View to Confluence",
     },
     {
         name: "Documentation Augmenter",
@@ -213,7 +213,7 @@ const menuItems = [
         `,
         script: "Documentation Augmenter.ajs",
         category: "Documentation",
-        tutorial: "Documentation Augmenter"
+        tutorial: "Documentation Augmenter",
     },
     {
         name: "Export View to Draw.io",
@@ -239,6 +239,118 @@ const menuItems = [
     `,
         script: "Export View to Draw.io.ajs",
         category: "Export",
-        tutorial: "Export View to Draw.io"
+        tutorial: "Export View to Draw.io",
+    },
+    {
+        name: "Create L-shaped Relations",
+        description: `
+        <h2>Create L-shaped Relations</h2>
+        <p>This script creates L-shaped relationships for selected elements in your ArchiMate view.</p>
+        <h3>Features:</h3>
+        <ul>
+            <li>Transforms selected relationships into L-shapes</li>
+            <li>Starts horizontally and then turns vertically</li>
+            <li>Improves visual clarity of complex diagrams</li>
+        </ul>
+        <h3>Usage:</h3>
+        <ol>
+            <li>Select one or more relationships in your ArchiMate view</li>
+            <li>Run the "Create L-shaped Relations" script</li>
+            <li>The selected relationships will be reshaped into L-shapes</li>
+        </ol>
+        <p>This script is useful for organizing and standardizing the appearance of relationships in your diagrams.</p>
+    `,
+        script: "Create L-shaped relations.ajs",
+        category: "Layout",
+    },
+
+    {
+        name: "Create Orthogonal Relations",
+        description: `
+        <h2>Create Orthogonal Relations</h2>
+        <p>This script transforms selected relationships into orthogonal (right-angled) paths.</p>
+        <h3>Features:</h3>
+        <ul>
+            <li>Converts selected relationships to use only horizontal and vertical segments</li>
+            <li>Particularly useful after moving objects in a view</li>
+            <li>Enhances diagram readability</li>
+        </ul>
+        <h3>Usage:</h3>
+        <ol>
+            <li>Select one or more relationships in your ArchiMate view</li>
+            <li>Run the "Create Orthogonal Relations" script</li>
+            <li>The selected relationships will be reshaped with right angles</li>
+        </ol>
+        <p>This script helps maintain a clean and organized layout in your ArchiMate diagrams.</p>
+    `,
+        script: "Create orthogonal relations.ajs",
+        category: "Layout",
+    },
+
+    {
+        name: "Create S-shaped Relations",
+        description: `
+        <h2>Create S-shaped Relations</h2>
+        <p>This script creates S-shaped relationships for selected elements in your ArchiMate view.</p>
+        <h3>Features:</h3>
+        <ul>
+            <li>Transforms selected relationships into S-shapes</li>
+            <li>Starts vertically and then turns horizontally</li>
+            <li>Useful for creating visually appealing diagrams</li>
+        </ul>
+        <h3>Usage:</h3>
+        <ol>
+            <li>Select one or more relationships in your ArchiMate view</li>
+            <li>Run the "Create S-shaped Relations" script</li>
+            <li>The selected relationships will be reshaped into S-shapes</li>
+        </ol>
+        <p>This script provides an alternative way to organize relationships, especially useful in complex diagrams.</p>
+    `,
+        script: "Create S-shaped relations.ajs",
+        category: "Layout",
+    },
+    {
+        name: "Spread Relations Orthogonally",
+        description: `
+        <h2>Spread Relations Orthogonally</h2>
+        <p>This script arranges and spreads relationships evenly along the edges of selected elements.</p>
+        <h3>Features:</h3>
+        <ul>
+            <li>Distributes relationships equally around the selected elements</li>
+            <li>Improves the visual organization of complex diagrams</li>
+            <li>Helps prevent overlapping relationships</li>
+        </ul>
+        <h3>Usage:</h3>
+        <ol>
+            <li>Select one or more elements in your ArchiMate view</li>
+            <li>Run the "Spread Relations Orthogonally" script</li>
+            <li>The relationships connected to the selected elements will be evenly distributed</li>
+        </ol>
+        <p>This script is particularly useful for elements with many connections, helping to create cleaner and more readable diagrams.</p>
+    `,
+        script: "Spread relations orthogonally.ajs",
+        category: "Layout",
+    },
+    {
+        name: "Remove All Bend Points",
+        description: `
+        <h2>Remove All Bend Points</h2>
+        <p>This script removes all bend points from selected relationships, creating straight connections.</p>
+        <h3>Features:</h3>
+        <ul>
+            <li>Removes all bend points from selected relationships</li>
+            <li>Creates direct, straight connections between elements</li>
+            <li>Useful for simplifying complex diagrams</li>
+        </ul>
+        <h3>Usage:</h3>
+        <ol>
+            <li>Select one or more relationships in your ArchiMate view</li>
+            <li>Run the "Remove All Bend Points" script</li>
+            <li>All bend points will be removed from the selected relationships</li>
+        </ol>
+        <p>This script is helpful when you want to reset relationship paths or create a more minimalist diagram layout.</p>
+    `,
+        script: "Remove all bend points.ajs",
+        category: "Layout",
     },
 ];

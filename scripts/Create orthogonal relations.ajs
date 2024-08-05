@@ -1,0 +1,2 @@
+const { doEachRel, ortho } = require('./lib/doEach');
+doEachRel(ortho)(selection); // make all existing visual relationships orthogonal (especially after moving an object in a view)

@@ -162,7 +162,8 @@ const chartjsUtility = {
      */
     createTempHtmlFile: function (htmlContent) {
         const tempFile = File.createTempFile("chart_", ".html");
-        tempFile.deleteOnExit();
+        console.log(tempFile)
+        //tempFile.deleteOnExit();
         const writer = new BufferedWriter(new FileWriter(tempFile));
         writer.write(htmlContent);
         writer.close();
