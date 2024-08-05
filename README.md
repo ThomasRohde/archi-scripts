@@ -78,4 +78,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - The Archi team for creating an excellent ArchiMate modelling tool.
 - The jArchi plugin developers for enabling scripting capabilities in Archi.
+- Xavier Mayeur, for the excellent doEach gist
 - All contributors and users of these scripts.

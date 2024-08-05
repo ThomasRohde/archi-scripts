@@ -1,6 +1,6 @@
 /**
  * @name Export to draw.io (Hierarchical)
- * @version 4.1
+ * @version 4.2
  * @description Exports the selected ArchiMate view to a draw.io diagram file, handling nested elements using groups and correct coordinate systems
  */
 
@@ -81,7 +81,6 @@ function createDrawIoDiagram(view) {
     $(view)
         .children().not("relationship").not("diagram-model-connection")
         .each((element) => {
-            console.log(element, element.type);
             traverseElements(element, "1");
         });
 
@@ -132,28 +131,77 @@ function createDrawIoElement(doc, element, id, parentId) {
     return cell;
 }
 
-function createDrawIoConnection(doc, relationship, elementMap, id) {
+function createDrawIoConnection(doc, connection, elementMap, id) {
     const cell = doc.createElement("mxCell");
     cell.setAttribute("id", id);
-    cell.setAttribute("value", relationship.name || "");
+    cell.setAttribute("value", connection.name || "");
     cell.setAttribute("parent", "1");
     cell.setAttribute("edge", "1");
 
-    const sourceElement = elementMap.get(relationship.source.id);
-    const targetElement = elementMap.get(relationship.target.id);
+    const sourceElement = elementMap.get(connection.source.id);
+    const targetElement = elementMap.get(connection.target.id);
 
     cell.setAttribute("source", sourceElement.getAttribute("id"));
     cell.setAttribute("target", targetElement.getAttribute("id"));
 
-    const style = mapArchiMateRelationshipToDrawIo(relationship.type)  + ";whiteSpace=wrap;";
+    const style = mapArchiMateRelationshipToDrawIo(connection.type) + "edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;";
     cell.setAttribute("style", style);
 
     const geometry = doc.createElement("mxGeometry");
     geometry.setAttribute("relative", "1");
     geometry.setAttribute("as", "geometry");
+
+    // Add bend points
+    const bendPoints = getBendPoints(connection);
+    if (bendPoints.length > 0) {
+        const array = doc.createElement("Array");
+        array.setAttribute("as", "points");
+        bendPoints.forEach(point => {
+            const mxPoint = doc.createElement("mxPoint");
+            mxPoint.setAttribute("x", point.x);
+            mxPoint.setAttribute("y", point.y);
+            array.appendChild(mxPoint);
+        });
+        geometry.appendChild(array);
+    }
+
     cell.appendChild(geometry);
 
     return cell;
+}
+
+function getBendPoints(connection) {
+    const bendPoints = [];
+    const relativeBendpoints = connection.getRelativeBendpoints();
+    if (relativeBendpoints && relativeBendpoints.length > 0) {
+        const sourceXY = getObjXY(connection.source);
+        relativeBendpoints.forEach(point => {
+            const absoluteX = sourceXY.x + point.startX;
+            const absoluteY = sourceXY.y + point.startY;
+            bendPoints.push({ x: absoluteX, y: absoluteY });
+        });
+    }
+    return bendPoints;
+}
+
+function getObjXY(obj) {
+    let b = obj.bounds;
+    let x = b.x + b.width / 2;
+    let y = b.y + b.height / 2;
+    $(obj).parents().forEach(p => {
+        try {
+            x += p.bounds.x;
+            y += p.bounds.y;
+        } catch (e) {
+        }
+    });
+
+    return {
+        x: x,
+        y: y,
+        width: b.width,
+        height: b.height
+    };
 }
 
 function getFillColor(element) {
