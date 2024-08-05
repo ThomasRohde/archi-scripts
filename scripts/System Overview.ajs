@@ -1,0 +1,102 @@
+/**
+ * @name Generate Comprehensive jArchi System Overview
+ * @version 2.0
+ * @description Creates a detailed ArchiMate view representing the jArchi scripts system
+ */
+
+console.clear();
+console.show();
+
+// Create a new model and set it as the current model
+$.model.create("jArchi Comprehensive System Overview").setAsCurrent();
+console.log("Created model: ", model.name);
+
+// Create a new ArchiMate view
+var view = model.createArchimateView("jArchi Scripts Comprehensive System Overview");
+console.log("Created view - ", view);
+
+// Helper function to create elements and add them to the view
+function createElement(type, name, x, y, width, height) {
+    var element = model.createElement(type, name);
+    console.log("Added - ", element);
+    var viewObject = view.add(element, x, y, width, height);
+    return { element: element, viewObject: viewObject };
+}
+
+// Helper function to create relationships and add them to the view
+function createRelationship(type, name, source, target) {
+    var relationship = model.createRelationship(type, name, source.element, target.element);
+    console.log("Added relationship - ", relationship);
+    view.add(relationship, source.viewObject, target.viewObject);
+    return relationship;
+}
+
+// Create main components
+var archi = createElement("application-component", "Archi", 400, 50, 120, 60);
+var jarchiPlugin = createElement("application-component", "jArchi Plugin", 400, 150, 120, 60);
+var scriptMenu = createElement("application-component", "Script Menu", 200, 250, 120, 60);
+var scriptEngine = createElement("application-component", "GraalVM JavaScript Engine", 400, 250, 120, 60);
+var scriptLibrary = createElement("application-component", "Script Library", 600, 250, 120, 60);
+
+var apiClient = createElement("application-component", "API Client", 100, 350, 120, 60);
+var confluenceIntegration = createElement("application-component", "Confluence Integration", 300, 350, 120, 60);
+var ollamaClient = createElement("application-component", "Ollama Client", 500, 350, 120, 60);
+var chartjsUtility = createElement("application-component", "Chart.js Utility", 700, 350, 120, 60);
+
+var modelData = createElement("data-object", "Model Data", 400, 450, 120, 60);
+
+// Create business layer elements
+var architecutreModeler = createElement("business-role", "Architecture Modeler", 100, 50, 120, 60);
+var scriptDeveloper = createElement("business-role", "Script Developer", 700, 50, 120, 60);
+var modelingProcess = createElement("business-process", "ArchiMate Modeling Process", 100, 150, 120, 60);
+var scriptDevelopmentProcess = createElement("business-process", "Script Development Process", 700, 150, 120, 60);
+
+// Create strategy layer elements
+var modelingEfficiency = createElement("capability", "Modeling Efficiency", 250, -50, 120, 60);
+var scriptingCapability = createElement("capability", "Scripting Capability", 550, -50, 120, 60);
+
+// Create motivation layer elements
+var automationGoal = createElement("goal", "Automate Repetitive Tasks", 400, -150, 120, 60);
+
+// Create technology layer elements
+var javaRuntime = createElement("system-software", "Java Runtime", 250, 550, 120, 60);
+var javascriptRuntime = createElement("system-software", "JavaScript Runtime", 550, 550, 120, 60);
+
+// Create relationships
+createRelationship("serving-relationship", "Extends", jarchiPlugin, archi);
+createRelationship("composition-relationship", "Contains", jarchiPlugin, scriptMenu);
+createRelationship("composition-relationship", "Contains", jarchiPlugin, scriptEngine);
+createRelationship("composition-relationship", "Contains", jarchiPlugin, scriptLibrary);
+
+createRelationship("serving-relationship", "Provides", scriptLibrary, apiClient);
+createRelationship("serving-relationship", "Provides", scriptLibrary, confluenceIntegration);
+createRelationship("serving-relationship", "Provides", scriptLibrary, ollamaClient);
+createRelationship("serving-relationship", "Provides", scriptLibrary, chartjsUtility);
+
+createRelationship("access-relationship", "Accesses", jarchiPlugin, modelData);
+createRelationship("access-relationship", "Accesses", archi, modelData);
+
+createRelationship("serving-relationship", "Supports", archi, modelingProcess);
+createRelationship("serving-relationship", "Supports", jarchiPlugin, scriptDevelopmentProcess);
+
+createRelationship("assignment-relationship", "Performs", architecutreModeler, modelingProcess);
+createRelationship("assignment-relationship", "Performs", scriptDeveloper, scriptDevelopmentProcess);
+
+createRelationship("realization-relationship", "Realizes", modelingProcess, modelingEfficiency);
+createRelationship("realization-relationship", "Realizes", scriptDevelopmentProcess, scriptingCapability);
+
+createRelationship("realization-relationship", "Realizes", modelingEfficiency, automationGoal);
+createRelationship("realization-relationship", "Realizes", scriptingCapability, automationGoal);
+
+createRelationship("serving-relationship", "Supports", javaRuntime, archi);
+createRelationship("serving-relationship", "Supports", javascriptRuntime, scriptEngine);
+
+// Add a note explaining the diagram
+var note = view.createObject("diagram-model-note", 50, 650, 300, 80);
+note.setText("This diagram provides a comprehensive overview of the jArchi Scripts system, showing the main components, their relationships, and how they fit into the broader context of ArchiMate modeling and script development processes.");
+
+console.log("jArchi Comprehensive System Overview created successfully.");
+
+// Open in UI
+console.log("Opening model in tree...");
+model.openInUI();
