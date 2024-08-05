@@ -1,7 +1,7 @@
 /**
  * @name Export to draw.io (Hierarchical)
- * @version 4.2
- * @description Exports the selected ArchiMate view to a draw.io diagram file, handling nested elements using groups and correct coordinate systems
+ * @version 4.7
+ * @description Exports the selected ArchiMate view to a draw.io diagram file, handling nested elements using groups, correct coordinate systems, text formatting, scaled font size, and proper label positioning for grouped objects
  */
 
 console.clear();
@@ -22,6 +22,9 @@ const StreamResult = Java.type("javax.xml.transform.stream.StreamResult");
 
 // Import mapping functions
 const { mapArchiMateTypeToDrawIo, mapArchiMateRelationshipToDrawIo } = require("./lib/archiMateDrawIoMappings");
+
+// Constants
+const FONT_SIZE_SCALE_FACTOR = 1.5;
 
 function exportToDiagram() {
     const selectedView = $(selection).filter("archimate-diagram-model").first();
@@ -65,23 +68,11 @@ function createDrawIoDiagram(view) {
     let idCounter = 2;
     const elementMap = new Map();
 
-    function traverseElements(element, parentId) {
-        const cell = createDrawIoElement(doc, element, idCounter++, parentId);
-        root.appendChild(cell);
-        elementMap.set(element.id, cell);
-
-        $(element)
-            .children("element")
-            .each((childElement) => {
-                traverseElements(childElement, cell.getAttribute("id"));
-            });
-    }
-
     // Traverse the view hierarchy
     $(view)
         .children().not("relationship").not("diagram-model-connection")
         .each((element) => {
-            traverseElements(element, "1");
+            idCounter = traverseElements(element, "1", doc, root, elementMap, idCounter);
         });
 
     // Create connections
@@ -100,7 +91,6 @@ function createDrawIoDiagram(view) {
 function createDrawIoElement(doc, element, id, parentId) {
     const cell = doc.createElement("mxCell");
     cell.setAttribute("id", id);
-    cell.setAttribute("value", element.type === "diagram-model-note" ? element.text : element.name);
     cell.setAttribute("parent", parentId);
     cell.setAttribute("vertex", "1");
 
@@ -110,10 +100,10 @@ function createDrawIoElement(doc, element, id, parentId) {
 
     if (hasChildren) {
         style += "container=1;collapsible=0;";
-        if (!style.includes("swimlane")) {
-            style += "labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;";
-        }
     }
+
+    // Add text formatting
+    style += getTextFormatting(element);
 
     style += `fillColor=${getFillColor(element)};`;
 
@@ -128,7 +118,96 @@ function createDrawIoElement(doc, element, id, parentId) {
 
     cell.appendChild(geometry);
 
-    return cell;
+    // Create a separate label cell for containers
+    if (hasChildren) {
+        const labelCell = doc.createElement("mxCell");
+        labelCell.setAttribute("id", id + "-label");
+        labelCell.setAttribute("value", element.name);
+        labelCell.setAttribute("parent", id);
+        labelCell.setAttribute("vertex", "1");
+        labelCell.setAttribute("style", "text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;");
+
+        const labelGeometry = doc.createElement("mxGeometry");
+        labelGeometry.setAttribute("y", "10");
+        labelGeometry.setAttribute("width", element.bounds.width.toString());
+        labelGeometry.setAttribute("height", "30");
+        labelGeometry.setAttribute("as", "geometry");
+        labelCell.appendChild(labelGeometry);
+
+        return [cell, labelCell];
+    } else {
+        cell.setAttribute("value", element.name);
+        return [cell];
+    }
+}
+
+function traverseElements(element, parentId, doc, root, elementMap, idCounter) {
+    const cells = createDrawIoElement(doc, element, idCounter.toString(), parentId);
+    cells.forEach(cell => root.appendChild(cell));
+    elementMap.set(element.id, cells[0]);
+    idCounter++;
+
+    $(element)
+        .children("element")
+        .each((childElement) => {
+            idCounter = traverseElements(childElement, cells[0].getAttribute("id"), doc, root, elementMap, idCounter);
+        });
+
+    return idCounter;
+}
+
+function getTextFormatting(element) {
+    let formatting = "";
+    
+    // Set default font
+    formatting += "fontFamily=Segoe UI;";
+    
+    // Text alignment
+    switch (element.textAlignment) {
+        case TEXT_ALIGNMENT.LEFT:
+            formatting += "align=left;";
+            break;
+        case TEXT_ALIGNMENT.RIGHT:
+            formatting += "align=right;";
+            break;
+        default:
+            formatting += "align=center;";
+    }
+    
+    // Vertical alignment
+    switch (element.textPosition) {
+        case TEXT_POSITION.TOP:
+            formatting += "verticalAlign=top;";
+            break;
+        case TEXT_POSITION.BOTTOM:
+            formatting += "verticalAlign=bottom;";
+            break;
+        default:
+            formatting += "verticalAlign=middle;";
+    }
+    
+    // Font style
+    if (element.fontStyle) {
+        if (element.fontStyle.includes("bold")) {
+            formatting += "fontStyle=1;";
+        }
+        if (element.fontStyle.includes("italic")) {
+            formatting += "fontStyle=2;";
+        }
+    }
+    
+    // Font color
+    if (element.fontColor) {
+        formatting += `fontColor=${element.fontColor};`;
+    }
+    
+    // Font size with scaling
+    if (element.fontSize) {
+        const scaledFontSize = Math.round(element.fontSize * FONT_SIZE_SCALE_FACTOR);
+        formatting += `fontSize=${scaledFontSize};`;
+    }
+    
+    return formatting;
 }
 
 function createDrawIoConnection(doc, connection, elementMap, id) {
@@ -144,7 +223,11 @@ function createDrawIoConnection(doc, connection, elementMap, id) {
     cell.setAttribute("source", sourceElement.getAttribute("id"));
     cell.setAttribute("target", targetElement.getAttribute("id"));
 
-    const style = mapArchiMateRelationshipToDrawIo(connection.type) + "edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;";
+    let style = mapArchiMateRelationshipToDrawIo(connection.type) + "edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;";
+    
+    // Add connection style
+    style += getConnectionStyle(connection);
+
     cell.setAttribute("style", style);
 
     const geometry = doc.createElement("mxGeometry");
@@ -165,9 +248,65 @@ function createDrawIoConnection(doc, connection, elementMap, id) {
         geometry.appendChild(array);
     }
 
+    // Add label position
+    if (connection.textPosition !== undefined) {
+        const mxPoint = doc.createElement("mxPoint");
+        mxPoint.setAttribute("as", "offset");
+        switch (connection.textPosition) {
+            case CONNECTION_TEXT_POSITION.SOURCE:
+                mxPoint.setAttribute("x", "-0.9");
+                mxPoint.setAttribute("y", "-0.5");
+                break;
+            case CONNECTION_TEXT_POSITION.TARGET:
+                mxPoint.setAttribute("x", "0.9");
+                mxPoint.setAttribute("y", "-0.5");
+                break;
+            default: // CONNECTION_TEXT_POSITION.MIDDLE
+                mxPoint.setAttribute("x", "0");
+                mxPoint.setAttribute("y", "-0.5");
+        }
+        geometry.appendChild(mxPoint);
+    }
+
     cell.appendChild(geometry);
 
     return cell;
+}
+
+function getConnectionStyle(connection) {
+    let style = "";
+    
+    if (connection.lineColor) {
+        style += `strokeColor=${connection.lineColor};`;
+    }
+    
+    if (connection.lineWidth) {
+        style += `strokeWidth=${connection.lineWidth};`;
+    }
+    
+    if (connection.style & CONNECTION_STYLE.LINE_DASHED) {
+        style += "dashed=1;";
+    } else if (connection.style & CONNECTION_STYLE.LINE_DOTTED) {
+        style += "dashed=1;dashPattern=1 4;";
+    }
+    
+    if (connection.style & CONNECTION_STYLE.ARROW_FILL_SOURCE) {
+        style += "startArrow=classic;startFill=1;";
+    } else if (connection.style & CONNECTION_STYLE.ARROW_HOLLOW_SOURCE) {
+        style += "startArrow=classic;startFill=0;";
+    } else if (connection.style & CONNECTION_STYLE.ARROW_LINE_SOURCE) {
+        style += "startArrow=open;startFill=0;";
+    }
+    
+    if (connection.style & CONNECTION_STYLE.ARROW_FILL_TARGET) {
+        style += "endArrow=classic;endFill=1;";
+    } else if (connection.style & CONNECTION_STYLE.ARROW_HOLLOW_TARGET) {
+        style += "endArrow=classic;endFill=0;";
+    } else if (connection.style & CONNECTION_STYLE.ARROW_LINE_TARGET) {
+        style += "endArrow=open;endFill=0;";
+    }
+    
+    return style;
 }
 
 function getBendPoints(connection) {
