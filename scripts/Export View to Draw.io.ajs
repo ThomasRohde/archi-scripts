@@ -79,14 +79,7 @@ function createDrawIoDiagram(view) {
 
     // Traverse the view hierarchy
     $(view)
-        .children("element")
-        .each((element) => {
-            console.log(element, element.type);
-            traverseElements(element, "1");
-        });
-
-    $(view)
-        .children("diagram-model-note")
+        .children().not("relationship").not("diagram-model-connection")
         .each((element) => {
             console.log(element, element.type);
             traverseElements(element, "1");
@@ -94,7 +87,7 @@ function createDrawIoDiagram(view) {
 
     // Create connections
     $(view)
-        .children("relationship")
+        .children("relationship").add($(view).children("diagram-model-connection"))
         .each((relationship) => {
             const drawIoConnection = createDrawIoConnection(doc, relationship, elementMap, idCounter++);
             if (drawIoConnection) {
@@ -152,7 +145,7 @@ function createDrawIoConnection(doc, relationship, elementMap, id) {
     cell.setAttribute("source", sourceElement.getAttribute("id"));
     cell.setAttribute("target", targetElement.getAttribute("id"));
 
-    const style = mapArchiMateRelationshipToDrawIo(relationship.type);
+    const style = mapArchiMateRelationshipToDrawIo(relationship.type)  + ";whiteSpace=wrap;";
     cell.setAttribute("style", style);
 
     const geometry = doc.createElement("mxGeometry");
