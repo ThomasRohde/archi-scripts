@@ -19,7 +19,7 @@ const jarchiLogger = {
             application,
             module,
             message,
-            ...additionalData
+            ...(typeof additionalData === 'object' && additionalData !== null ? additionalData : { data: additionalData })
         };
 
         const requestBody = JSON.stringify(logData);

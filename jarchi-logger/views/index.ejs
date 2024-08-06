@@ -66,7 +66,7 @@
                 <td class="px-4 py-2">${module}</td>
                 <td class="px-4 py-2 cursor-pointer" onclick="toggleDetails(this)">
                     <div class="log-summary">${JSON.stringify(log.message).slice(1, -1)}</div>
-                    <pre class="log-details hidden mt-2 text-xs bg-gray-100 p-2 rounded">${JSON.stringify(log, null, 2)}</pre>
+                    <pre class="log-details hidden mt-2 text-xs bg-gray-100 p-2 rounded">${JSON.stringify(Object.fromEntries(Object.entries(log).filter(([key]) => !['message', 'timestamp'].includes(key))), null, 2)}</pre>
                 </td>
             `;
             return row;

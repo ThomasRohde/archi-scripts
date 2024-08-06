@@ -74,11 +74,11 @@ const apiClient = {
 
                 if (config.debug) {
                     console.log("Request URL:", fullUrl);
-                    log.slog("Request URL: " + fullUrl);
+                    log.slog("Request URL: ", fullUrl);
                     console.log("Request Method:", config.method.toUpperCase());
-                    log.slog("Request Method: " + config.method.toUpperCase());
+                    log.slog("Request Method", config.method.toUpperCase());
                     console.log("Request Headers:", requestBuilder.build().headers().map());
-                    log.slog("Request Headers: " + requestBuilder.build().headers().map());
+                    log.slog("Request Headers",requestBuilder.build().headers().map());
                 }
 
                 const response = this.httpClient.send(requestBuilder.build(), BodyHandlers.ofString());

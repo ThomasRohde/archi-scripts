@@ -10,6 +10,7 @@ JArchi Logger is a real-time logging system designed to work with JArchi scripts
 - **EJS**: Templating engine for rendering the web interface.
 - **Tailwind CSS**: Utility-first CSS framework for styling the web interface.
 - **dotenv**: Module for loading environment variables from a .env file.
+- **Luxon**: Library for working with dates and times.
 
 ## Project Structure
 
@@ -19,6 +20,7 @@ jarchi-logger/
 ├── .env
 ├── .env.example
 ├── package.json
+├── tailwind.config.js
 ├── public/
 │   ├── styles.css
 │   └── client.js
@@ -32,7 +34,7 @@ jarchi-logger/
 1. Clone the repository
 2. Run `npm install` to install dependencies
 3. Create a `.env` file based on `.env.example` and set your desired ports
-4. Run `npm run build-css` to generate the Tailwind CSS file (if you're using Tailwind)
+4. Run `npm run build-css` to generate the Tailwind CSS file
 5. Start the server with `npm start`
 
 ## Usage
@@ -67,44 +69,38 @@ Content-Type: application/json
 
 The web interface for viewing logs is accessible at `http://localhost:3001` (or the port specified in your .env file).
 
-New features of the web interface:
+Features of the web interface:
+- Real-time log updates
 - Collapsible sections for applications and modules
 - Expandable individual log entries
-- Real-time updates without page refresh
+- Filtering capabilities for timestamp, application, module, and message
+- Automatic cleanup of old logs
 
 ## Integrating with JArchi
 
-To use this logger with JArchi scripts, you can add a logging function to your `apiClient.js`:
+To use this logger with JArchi scripts, you can use the `jarchiLogger.js` module:
 
 ```javascript
-function logToServer(data) {
-    const queryString = Object.entries(data)
-        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-        .join('&');
-    
-    fetch(`http://localhost:3000/log?${queryString}`, {
-        method: 'GET',
-    }).catch(error => console.error('Error logging to server:', error));
-}
+const jarchiLogger = require('./lib/jarchiLogger');
+
+// Set the application and module (optional)
+jarchiLogger.setApplication('YourApp', 'YourModule');
+
+// Log a message
+jarchiLogger.log('YourApp', 'YourModule', 'Your message here', { additionalData: 'value' });
+
+// Or use the shorthand method if application and module are set
+jarchiLogger.slog('Your message here', { additionalData: 'value' });
 ```
 
-Then, use this function in your API client to log requests and responses:
-
-```javascript
-logToServer({
-    application: 'JArchi',
-    module: 'apiClient',
-    message: 'API request initiated',
-    additionalData: JSON.stringify({ method: 'GET', url: '/example' })
-});
-```
+The `jarchiLogger.js` module uses Java's HttpClient to send log messages asynchronously to the logging server.
 
 ## Customization
 
 - Modify `views/index.ejs` to change the layout of the web interface
-- Update `public/styles.css` and `tailwind.config.js` (if using Tailwind) to customize the styling
+- Update `tailwind.config.js` to customize the styling
 - Extend `server.js` to add more logging endpoints or additional features
-- Modify `public/client.js` to change the behavior of the web interface
+- Modify `jarchiLogger.js` to change the logging behavior in JArchi scripts
 
 ## Environment Variables
 
@@ -113,25 +109,28 @@ logToServer({
 
 Set these in your `.env` file to customize the ports used by the application.
 
-## New Features and Improvements
+## Features
 
-1. **Collapsible Sections**: Application and module sections can be expanded or collapsed for better organization of logs.
-2. **Expandable Log Entries**: Individual log entries can be clicked to show full details.
-3. **Real-time Updates**: The web interface now updates in real-time without requiring page refresh.
-4. **Flexible Logging**: Support for both GET and POST requests, with intelligent handling of missing application or module names.
-5. **Improved Error Handling**: Better error logging for Socket.IO connections.
+1. **Real-time Updates**: The web interface updates in real-time without requiring page refresh.
+2. **Flexible Logging**: Support for both GET and POST requests, with intelligent handling of missing application or module names.
+3. **Expandable Log Entries**: Individual log entries can be clicked to show full details.
+4. **Filtering**: The web interface supports filtering logs by timestamp, application, module, and message content.
+5. **Log Retention**: Automatic cleanup of old logs based on a configurable retention period.
+6. **Asynchronous Logging**: The JArchi logging module sends logs asynchronously to avoid blocking script execution.
 
 ## Troubleshooting
 
 - If you're not seeing real-time updates, check the browser console for any connection errors.
 - Ensure that your firewall is not blocking the WebSocket connection used by Socket.IO.
 - If logs are not appearing, verify that the correct ports are being used for both the API and web interface.
+- Check the JArchi console for any errors related to sending logs.
 
 ## Future Enhancements
 
 - Add authentication for the logging API and web interface
 - Implement log persistence (database storage)
-- Add filtering and search functionality to the web interface
+- Add more advanced filtering and search functionality to the web interface
 - Create a downloadable log export feature
+- Implement log level support (e.g., INFO, WARN, ERROR)
 
 Remember to regularly check for updates and improvements to the JArchi Logger system.
