@@ -17,6 +17,10 @@ const Base64 = Java.type("java.util.Base64");
 const ByteArrayOutputStream = Java.type("java.io.ByteArrayOutputStream");
 const DataOutputStream = Java.type("java.io.DataOutputStream");
 
+const log = require('./jarchiLogger');
+
+log.setApplication("API Client");
+
 const apiClient = {
     create: function(defaultConfig = {}) {
         const instance = Object.create(this);
@@ -35,6 +39,7 @@ const apiClient = {
         instance.httpClient = HttpClient.newBuilder()
             .version(HttpClient.Version.HTTP_2)
             .build();
+        log.slog("API client created")
         return instance;
     },
 
@@ -69,8 +74,11 @@ const apiClient = {
 
                 if (config.debug) {
                     console.log("Request URL:", fullUrl);
+                    log.slog("Request URL: " + fullUrl);
                     console.log("Request Method:", config.method.toUpperCase());
+                    log.slog("Request Method: " + config.method.toUpperCase());
                     console.log("Request Headers:", requestBuilder.build().headers().map());
+                    log.slog("Request Headers: " + requestBuilder.build().headers().map());
                 }
 
                 const response = this.httpClient.send(requestBuilder.build(), BodyHandlers.ofString());

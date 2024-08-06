@@ -4,41 +4,153 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JArchi Logger</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/3.3.0/luxon.min.js"></script>
+    <style>
+        .log-row:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        .log-row:hover {
+            background-color: #e5e7eb;
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold mb-4">JArchi Logger</h1>
-        <div id="logContainer" class="space-y-4">
-            <% for (const [appName, appData] of Object.entries(logs)) { %>
-                <div class="app-section bg-white shadow-md rounded-lg p-4">
-                    <h2 class="text-xl font-semibold mb-2 cursor-pointer flex items-center">
-                        <span class="transform transition-transform duration-200 inline-block mr-2">▶</span>
-                        <%= appName %>
-                    </h2>
-                    <div class="app-content hidden">
-                        <% for (const [moduleName, moduleData] of Object.entries(appData)) { %>
-                            <div class="module-section mb-2">
-                                <h3 class="text-lg font-medium mb-1 cursor-pointer flex items-center">
-                                    <span class="transform transition-transform duration-200 inline-block mr-2">▶</span>
-                                    <%= moduleName %>
-                                </h3>
-                                <div class="log-entries space-y-1 hidden">
-                                    <% moduleData.forEach(function(log) { %>
-                                        <div class="log-entry p-2 bg-gray-50 rounded">
-                                            <span class="text-sm text-gray-500"><%= log.timestamp %></span>
-                                            <pre class="text-sm mt-1"><%= JSON.stringify(log, null, 2) %></pre>
-                                        </div>
-                                    <% }); %>
-                                </div>
-                            </div>
-                        <% } %>
-                    </div>
-                </div>
-            <% } %>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-4">
+        <h1 class="text-2xl font-bold mb-4">JArchi Logger</h1>
+        <div id="logContainer" class="bg-white shadow-md rounded-lg overflow-hidden">
+            <table class="w-full text-sm text-left">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-200">
+                    <tr>
+                        <th class="px-4 py-2">Timestamp</th>
+                        <th class="px-4 py-2">Application</th>
+                        <th class="px-4 py-2">Module</th>
+                        <th class="px-4 py-2">Message</th>
+                    </tr>
+                    <tr>
+                        <th class="px-4 py-2"><input type="text" class="w-full px-2 py-1 text-sm rounded border" placeholder="Filter Timestamp" id="filterTimestamp"></th>
+                        <th class="px-4 py-2"><input type="text" class="w-full px-2 py-1 text-sm rounded border" placeholder="Filter Application" id="filterApplication"></th>
+                        <th class="px-4 py-2"><input type="text" class="w-full px-2 py-1 text-sm rounded border" placeholder="Filter Module" id="filterModule"></th>
+                        <th class="px-4 py-2"><input type="text" class="w-full px-2 py-1 text-sm rounded border" placeholder="Filter Message" id="filterMessage"></th>
+                    </tr>
+                </thead>
+                <tbody id="logTableBody">
+                </tbody>
+            </table>
         </div>
     </div>
-    <script src="/client.js"></script>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const logTableBody = document.getElementById('logTableBody');
+        const filterInputs = document.querySelectorAll('input[id^="filter"]');
+        const { DateTime } = luxon;
+
+        // Configuration
+        const LOG_RETENTION_TIME = 60 * 60 * 1000; // 1 hour in milliseconds
+        const CLEANUP_INTERVAL = 5 * 60 * 1000; // Run cleanup every 5 minutes
+
+        function formatTimestamp(isoString) {
+            const date = DateTime.fromISO(isoString, { zone: 'UTC' }).toLocal();
+            return date.toFormat('yyyy-MM-dd HH:mm:ss');
+        }
+
+        function createLogRow(log, application, module) {
+            const row = document.createElement('tr');
+            row.className = 'log-row';
+            const formattedTimestamp = formatTimestamp(log.timestamp);
+            row.innerHTML = `
+                <td class="px-4 py-2 text-gray-500" data-timestamp="${log.timestamp}">${formattedTimestamp}</td>
+                <td class="px-4 py-2">${application}</td>
+                <td class="px-4 py-2">${module}</td>
+                <td class="px-4 py-2 cursor-pointer" onclick="toggleDetails(this)">
+                    <div class="log-summary">${JSON.stringify(log.message).slice(1, -1)}</div>
+                    <pre class="log-details hidden mt-2 text-xs bg-gray-100 p-2 rounded">${JSON.stringify(log, null, 2)}</pre>
+                </td>
+            `;
+            return row;
+        }
+
+        // Sort and display initial logs
+        const initialLogs = [];
+        <% Object.entries(logs).forEach(([appName, appLogs]) => { %>
+            <% Object.entries(appLogs).forEach(([moduleName, moduleLogs]) => { %>
+                <% moduleLogs.forEach((log) => { %>
+                    initialLogs.push({ log: <%- JSON.stringify(log) %>, application: '<%= appName %>', module: '<%= moduleName %>' });
+                <% }); %>
+            <% }); %>
+        <% }); %>
+
+        initialLogs.sort((a, b) => new Date(b.log.timestamp) - new Date(a.log.timestamp));
+        initialLogs.forEach(({ log, application, module }) => {
+            logTableBody.appendChild(createLogRow(log, application, module));
+        });
+
+        socket.on('newLog', ({ application, module, logEntry }) => {
+            const newRow = createLogRow(logEntry, application, module);
+            logTableBody.insertBefore(newRow, logTableBody.firstChild);
+            applyFilters();
+        });
+
+        function toggleDetails(element) {
+            const details = element.querySelector('.log-details');
+            details.classList.toggle('hidden');
+        }
+
+        filterInputs.forEach(input => {
+            input.addEventListener('input', applyFilters);
+        });
+
+        function applyFilters() {
+            const filters = {
+                timestamp: document.getElementById('filterTimestamp').value.toLowerCase(),
+                application: document.getElementById('filterApplication').value.toLowerCase(),
+                module: document.getElementById('filterModule').value.toLowerCase(),
+                message: document.getElementById('filterMessage').value.toLowerCase()
+            };
+
+            const rows = logTableBody.querySelectorAll('tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const shouldShow = (
+                    cells[0].textContent.toLowerCase().includes(filters.timestamp) &&
+                    cells[1].textContent.toLowerCase().includes(filters.application) &&
+                    cells[2].textContent.toLowerCase().includes(filters.module) &&
+                    cells[3].textContent.toLowerCase().includes(filters.message)
+                );
+                row.style.display = shouldShow ? '' : 'none';
+            });
+        }
+
+        function cleanupOldLogs() {
+            const currentTime = new Date().getTime();
+            const rows = logTableBody.querySelectorAll('tr');
+            rows.forEach(row => {
+                const timestampCell = row.querySelector('td[data-timestamp]');
+                if (timestampCell) {
+                    const logTime = new Date(timestampCell.dataset.timestamp).getTime();
+                    if (currentTime - logTime > LOG_RETENTION_TIME) {
+                        row.remove();
+                    }
+                }
+            });
+        }
+
+        // Run cleanup periodically
+        setInterval(cleanupOldLogs, CLEANUP_INTERVAL);
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+        });
+
+        socket.on('connect_error', (error) => {
+            console.error('Connection error:', error);
+        });
+    </script>
 </body>
 </html>

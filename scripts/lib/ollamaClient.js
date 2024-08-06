@@ -102,6 +102,7 @@ class OllamaClient {
             headers: {
                 'Content-Type': 'application/json'
             },
+            debug: true
         });
     }
 
