@@ -37,6 +37,10 @@
     const monitorWidth = shell.getDisplay().getPrimaryMonitor().getBounds().width;
     const monitorHeight = shell.getDisplay().getPrimaryMonitor().getBounds().height;
 
+    const log = require('./lib/jarchiLogger');
+
+    log.setApplication("Menu");
+
     /**
      * Main dialog object for the JArchi Script Menu.
      * This object encapsulates all the functionality for creating and managing the dialog.
@@ -342,12 +346,15 @@
             console.log("Dialog closed normally");
             if (menuDialog.dialogResult) {
                 console.log("Executing script: " + menuDialog.dialogResult);
+                log.slog("Running: " + menuDialog.dialogResult)
                 load(menuDialog.dialogResult);
             }
         } else {
             console.log("Dialog cancelled or closed abnormally");
+            log.slog("Dialog cancelled or closed abnormally")
         }
     } catch (error) {
         console.error("An error occurred while running the script menu: " + error.toString());
+        log.slog("An error occurred while running the script menu: " + error.toString())
     }
 })();

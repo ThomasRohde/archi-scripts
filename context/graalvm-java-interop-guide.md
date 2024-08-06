@@ -205,6 +205,14 @@ jsPromise.then(value => {
 
 GraalVM JavaScript supports multithreading when used with Java. Refer to the GraalVM documentation for detailed information on the multithreading model.
 
+Multithreading is supported when running JavaScript in the context of Java interoperability. The basic model of multi-threaded execution supported by GraalVM is a “share-nothing” model that should be familiar to any JavaScript developer:
+
+- An arbitrary number of JavaScript Contexts can be created, but they should be used by one thread at a time.
+- Concurrent access to JavaScript objects is not allowed: any JavaScript object cannot be accessed by more than one thread at a time.
+- Concurrent access to Java objects is allowed: any Java object can be accessed by any Java or JavaScript thread, concurrently.
+
+A JavaScript Context cannot be accessed by two or more threads, concurrently, but it is possible to access the same Context from multiple threads using proper syncronization, to ensure that concurrent access never happens.
+
 ## Extending Java Classes
 
 Use `Java.extend()` to create JavaScript objects that extend Java classes or implement Java interfaces:

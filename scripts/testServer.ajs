@@ -1,0 +1,123 @@
+// Import required Java classes
+const ServerSocket = Java.type('java.net.ServerSocket');
+const BufferedReader = Java.type('java.io.BufferedReader');
+const InputStreamReader = Java.type('java.io.InputStreamReader');
+const PrintWriter = Java.type('java.io.PrintWriter');
+const Thread = Java.type('java.lang.Thread');
+const Runnable = Java.type('java.lang.Runnable');
+const SwingUtilities = Java.type('javax.swing.SwingUtilities');
+const JFrame = Java.type('javax.swing.JFrame');
+const JTextArea = Java.type('javax.swing.JTextArea');
+const JScrollPane = Java.type('javax.swing.JScrollPane');
+const BorderLayout = Java.type('java.awt.BorderLayout');
+
+// Clear the console and ensure it's visible
+console.clear();
+console.show();
+
+let serverSocket;
+let textArea;
+
+// Create a runnable for the entire server process, including UI
+const serverRunnable = new Runnable({
+    run: function() {
+        SwingUtilities.invokeLater(new Runnable({
+            run: function() {
+                const frame = new JFrame("Logging Server");
+                frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                frame.setSize(300, 200);
+
+                textArea = new JTextArea();
+                textArea.setEditable(false);
+                const scrollPane = new JScrollPane(textArea);
+                frame.getContentPane().add(scrollPane, BorderLayout.CENTER);
+
+                frame.setVisible(true);
+
+                // Start the server after the UI is set up
+                startServer();
+            }
+        }));
+    }
+});
+
+function startServer() {
+    try {
+        serverSocket = new ServerSocket(1234);
+        console.log("Server is running on port 1234");
+
+        // Create a separate thread for handling client connections
+        const clientHandlerThread = new Thread(new Runnable({
+            run: function() {
+                while (!serverSocket.isClosed()) {
+                    try {
+                        const clientSocket = serverSocket.accept();
+                        console.log("New client connected: " + clientSocket.getInetAddress().getHostAddress());
+                        
+                        const reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                        const writer = new PrintWriter(clientSocket.getOutputStream(), true);
+
+                        const request = reader.readLine();
+                        console.log("Received request: " + request);
+                        
+                        if (request && request.startsWith("GET /hello")) {
+                            const message = request.split(" ")[1].substring(7); // Extract message from /hello/
+                            writer.println("HTTP/1.1 200 OK");
+                            writer.println("Content-Type: text/plain");
+                            writer.println("");
+                            writer.println("Hello, " + message);
+
+                            console.log("Processed message: " + message);
+
+                            // Update the text area in the UI thread
+                            SwingUtilities.invokeLater(new Runnable({
+                                run: function() {
+                                    textArea.append("Received: " + message + "\n");
+                                }
+                            }));
+                        } else {
+                            writer.println("HTTP/1.1 404 Not Found");
+                            writer.println("");
+                            console.log("Sent 404 response");
+                        }
+
+                        clientSocket.close();
+                        console.log("Client connection closed");
+                    } catch (e) {
+                        if (!serverSocket.isClosed()) {
+                            console.error("Error in server: " + e);
+                        }
+                    }
+                }
+            }
+        }));
+
+        clientHandlerThread.start();
+
+    } catch (e) {
+        console.error("Error starting server: " + e);
+    }
+}
+
+// Start the server (including UI) in a new thread
+const serverThread = new Thread(serverRunnable);
+serverThread.start();
+
+console.log("Server thread started. You can now use the Archi interface.");
+
+// Provide a way to stop the server when the script ends or is interrupted
+function stopServer() {
+    if (serverSocket && !serverSocket.isClosed()) {
+        try {
+            serverSocket.close();
+            console.log("Server stopped.");
+        } catch (e) {
+            console.error("Error stopping server: " + e);
+        }
+    }
+}
+
+// Register the stopServer function to be called when the script ends
+java.lang.Runtime.getRuntime().addShutdownHook(new Thread(new Runnable({
+    run: stopServer
+})));
