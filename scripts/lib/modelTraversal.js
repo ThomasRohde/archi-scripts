@@ -33,7 +33,10 @@ const modelTraversal = {
         this.traverseHierarchy($("folder"), handlers.folderHandler);
         this.traverseHierarchy($("element"), handlers.elementHandler);
         this.traverseHierarchy($("relationship"), handlers.relationshipHandler);
-        this.traverseHierarchy($("view"), (view) => this.traverseView(view, handlers));
+        this.traverseHierarchy($("view"), (view) => {
+            this.handleElement(view, handlers.viewHandler);
+            this.traverseView(view, handlers);
+        });
     },
 
     /**
@@ -53,19 +56,21 @@ const modelTraversal = {
      * @param {Object} handlers - Object containing handler functions for different element types
      */
     traverseView: function (node, handlers) {
-        $(node).children().each((child) => {
-            if ($(child).is("element")) {
-                this.handleElement(child, handlers.viewElementHandler);
-                // Recursively traverse nested elements
-                this.traverseView(child, handlers);
-            } else if ($(child).is("relationship")) {
-                this.handleElement(child, handlers.viewRelationshipHandler);
-            } else if ($(child).is("diagram-model-group") || $(child).is("diagram-model-note")) {
-                this.handleElement(child, handlers.diagramObjectHandler);
-                // Recursively traverse nested diagram objects
-                this.traverseView(child, handlers);
-            }
-        });
+        $(node)
+            .children()
+            .each((child) => {
+                if ($(child).is("element")) {
+                    this.handleElement(child, handlers.viewElementHandler);
+                    // Recursively traverse nested elements
+                    this.traverseView(child, handlers);
+                } else if ($(child).is("relationship")) {
+                    this.handleElement(child, handlers.viewRelationshipHandler);
+                } else if ($(child).is("diagram-model-group") || $(child).is("diagram-model-note")) {
+                    this.handleElement(child, handlers.diagramObjectHandler);
+                    // Recursively traverse nested diagram objects
+                    this.traverseView(child, handlers);
+                }
+            });
     },
 
     /**
@@ -101,14 +106,18 @@ const modelTraversal = {
                 console.log(`View: ${view.name}`);
             },
             viewElementHandler: (element) => {
-                console.log(`View Element: ${element.name} (${element.type}) - Bounds: ${JSON.stringify(element.bounds)}`);
+                console.log(
+                    `View Element: ${element.name} (${element.type}) - Bounds: ${JSON.stringify(element.bounds)}`
+                );
             },
             viewRelationshipHandler: (relationship) => {
-                console.log(`View Relationship: ${relationship.name} - ${relationship.source.name} -> ${relationship.target.name}`);
+                console.log(
+                    `View Relationship: ${relationship.name} - ${relationship.source.name} -> ${relationship.target.name}`
+                );
             },
             diagramObjectHandler: (object) => {
                 console.log(`Diagram Object: ${object.name} (${object.type})`);
-            }
+            },
         };
 
         // Test 1: Traverse entire model
@@ -129,7 +138,7 @@ const modelTraversal = {
         this.traverse(testHandlers, "invalid input");
 
         console.log("\nTests completed.");
-    }
+    },
 };
 
 module.exports = modelTraversal;

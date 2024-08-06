@@ -75,7 +75,9 @@ async function generateModelOverview(elements, views) {
     Provide insights on the model's completeness, balance between different layers, and any potential areas for improvement.`;
 
     const options = new GenerateOptions({ stream: false });
+
     const response = await ollamaClient.generateChatCompletion(MODEL_NAME, [new Message(ROLES.USER, prompt)], options);
+
     return response.message.content;
 }
 
