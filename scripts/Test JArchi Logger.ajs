@@ -1,13 +1,22 @@
 /**
  * @name Test JArchi Logger
- * @version 1.1
- * @description Test script to exercise the JArchi Logger API (Updated for JArchi compatibility)
+ * @version 1.2
+ * @description Test script to exercise the JArchi Logger API (Updated for new logging approach)
  */
 
 console.clear();
 console.show();
 
 const jarchiLogger = require('./lib/jarchiLogger');
+jarchiLogger.init('TestJArchiLogger');
+
+// Create shorthand logging functions
+const log = {
+    debug: jarchiLogger.debug.bind(jarchiLogger),
+    info: jarchiLogger.info.bind(jarchiLogger),
+    warn: jarchiLogger.warn.bind(jarchiLogger),
+    error: jarchiLogger.error.bind(jarchiLogger)
+};
 
 // Import Java's Thread class
 const Thread = Java.type('java.lang.Thread');
@@ -25,50 +34,41 @@ function simulateAsyncOperation(callback) {
 
 // Test basic logging
 console.log("Testing basic logging...");
-jarchiLogger.log('TestApp', 'BasicTest', 'This is a basic log message');
+log.info('This is a basic log message');
 
 // Test logging with additional data
 console.log("Testing logging with additional data...");
-jarchiLogger.log('TestApp', 'DataTest', 'Log with additional data', { userId: 123, action: 'test' });
+log.info('Log with additional data', { userId: 123, action: 'test' });
 
-// Test logging from different modules
-console.log("Testing logging from different modules...");
-jarchiLogger.log('TestApp', 'Module1', 'Log from Module 1');
-jarchiLogger.log('TestApp', 'Module2', 'Log from Module 2');
-
-// Test logging with different log levels (simulated)
+// Test logging with different log levels
 console.log("Testing different log levels...");
-jarchiLogger.log('TestApp', 'LevelTest', 'Info level message', { level: 'INFO' });
-jarchiLogger.log('TestApp', 'LevelTest', 'Warning level message', { level: 'WARNING' });
-jarchiLogger.log('TestApp', 'LevelTest', 'Error level message', { level: 'ERROR' });
+log.debug('Debug level message');
+log.info('Info level message');
+log.warn('Warning level message');
+log.error('Error level message');
 
 // Test logging in a loop
 console.log("Testing logging in a loop...");
 for (let i = 0; i < 5; i++) {
-    jarchiLogger.log('TestApp', 'LoopTest', `Log message ${i + 1}`);
+    log.info(`Log message ${i + 1}`);
 }
-
-// Test logging with a custom server URL (Note: This will likely fail, it's just for demonstration)
-console.log("Testing logging with custom server URL...");
-jarchiLogger.setLogServerUrl('http://custom-url:3000/log');
-jarchiLogger.log('TestApp', 'CustomURLTest', 'This log may fail silently');
-
-// Reset to the default URL
-jarchiLogger.setLogServerUrl('http://localhost:3000/log');
 
 // Test logging in an asynchronous context
 console.log("Testing logging in asynchronous context...");
 simulateAsyncOperation(() => {
-    jarchiLogger.log('TestApp', 'AsyncTest', 'Log from async operation');
+    log.info('Log from async operation');
 });
 
-// Test error handling (by sending an invalid request)
-console.log("Testing error handling...");
-jarchiLogger.log('TestApp', 'ErrorTest', null, { invalidData: "This is invalid data" });
+// Test error handling (by logging an error)
+console.log("Testing error logging...");
+try {
+    throw new Error("This is a test error");
+} catch (error) {
+    log.error('An error occurred', { error: error.toString(), stack: error.stack });
+}
 
 console.log("Test script completed. Check the logger server or its console for the results.");
 
 // Wait for a moment to allow async operations to complete
 Thread.sleep(2000);
 console.log("Script execution finished.");
-

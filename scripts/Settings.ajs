@@ -10,26 +10,26 @@ console.clear();
 console.show();
 
 // Import necessary Java types
-const SWT = Java.type('org.eclipse.swt.SWT');
-const GridLayout = Java.type('org.eclipse.swt.layout.GridLayout');
-const GridData = Java.type('org.eclipse.swt.layout.GridData');
-const Label = Java.type('org.eclipse.swt.widgets.Label');
-const Text = Java.type('org.eclipse.swt.widgets.Text');
-const Button = Java.type('org.eclipse.swt.widgets.Button');
-const Dialog = Java.extend(Java.type('org.eclipse.jface.dialogs.Dialog'));
-const IDialogConstants = Java.type('org.eclipse.jface.dialogs.IDialogConstants');
-const TabFolder = Java.type('org.eclipse.swt.widgets.TabFolder');
-const TabItem = Java.type('org.eclipse.swt.widgets.TabItem');
-const Composite = Java.type('org.eclipse.swt.widgets.Composite');
-const Combo = Java.type('org.eclipse.swt.widgets.Combo');
-const MessageDialog = Java.type('org.eclipse.jface.dialogs.MessageDialog');
-const Display = Java.type('org.eclipse.swt.widgets.Display');
+const SWT = Java.type("org.eclipse.swt.SWT");
+const GridLayout = Java.type("org.eclipse.swt.layout.GridLayout");
+const GridData = Java.type("org.eclipse.swt.layout.GridData");
+const Label = Java.type("org.eclipse.swt.widgets.Label");
+const Text = Java.type("org.eclipse.swt.widgets.Text");
+const Button = Java.type("org.eclipse.swt.widgets.Button");
+const Dialog = Java.extend(Java.type("org.eclipse.jface.dialogs.Dialog"));
+const IDialogConstants = Java.type("org.eclipse.jface.dialogs.IDialogConstants");
+const TabFolder = Java.type("org.eclipse.swt.widgets.TabFolder");
+const TabItem = Java.type("org.eclipse.swt.widgets.TabItem");
+const Composite = Java.type("org.eclipse.swt.widgets.Composite");
+const Combo = Java.type("org.eclipse.swt.widgets.Combo");
+const MessageDialog = Java.type("org.eclipse.jface.dialogs.MessageDialog");
+const Display = Java.type("org.eclipse.swt.widgets.Display");
 
 // Import Ollama client
-const { OllamaClient } = require('./lib/ollamaClient');
+const { OllamaClient } = require("./lib/ollamaClient");
 
 // Global constants
-const DEFAULT_MODELS = ['llama3.1'];
+const DEFAULT_MODELS = ["llama3.1"];
 let OLLAMA_MODELS = [];
 
 // Flag to indicate if Ollama is installed and should be used
@@ -41,13 +41,14 @@ function fetchOllamaModels() {
         return Promise.resolve([]);
     }
     console.log("Fetching Ollama models...");
-    const ollama = new OllamaClient('http://localhost:11434');
-    return ollama.listModels()
-        .then(models => {
+    const ollama = new OllamaClient("http://localhost:11434");
+    return ollama
+        .listModels()
+        .then((models) => {
             console.log("Fetched Ollama models:", models);
-            return models.map(model => model.name);
+            return models.map((model) => model.name);
         })
-        .catch(error => {
+        .catch((error) => {
             console.error("Error fetching Ollama models:", error);
             return [];
         });
@@ -55,23 +56,31 @@ function fetchOllamaModels() {
 
 const integrationSettingsDialog = {
     confluenceSettings: {
-        username: '',
-        apiToken: '',
-        spaceKey: '',
-        baseUrl: ''
+        username: "",
+        apiToken: "",
+        spaceKey: "",
+        baseUrl: "",
     },
     documentationAugmenterSettings: {
-        model: 'llama3.1',
-        temperature: '0.7',
-        topK: '40',
-        topP: '0.9'
+        model: "llama3.1",
+        temperature: "0.7",
+        topK: "40",
+        topP: "0.9",
     },
     modelCombo: null,
+    loggerSettings: {
+        enabled: false,
+        apiUrl: "http://localhost:4000",
+        consoleLogging: true,
+        logLevel: "INFO",
+        logRetentionPeriod: "7",
+        logRetentionUnit: "days",
+    },
 
-    open: function() {
+    open: function () {
         this.loadSettings();
         return new Promise((resolve) => {
-            fetchOllamaModels().then(models => {
+            fetchOllamaModels().then((models) => {
                 OLLAMA_MODELS = models;
                 console.log("Initialized Ollama models:", OLLAMA_MODELS);
                 Display.getDefault().asyncExec(() => {
@@ -82,42 +91,56 @@ const integrationSettingsDialog = {
         });
     },
 
-    loadSettings: function() {
+    loadSettings: function () {
         const preferenceStore = workbench.getPreferenceStore();
         // Load Confluence settings
-        this.confluenceSettings.username = preferenceStore.getString('confluenceUsername') || '';
-        this.confluenceSettings.apiToken = preferenceStore.getString('confluencePassword') || '';
-        this.confluenceSettings.spaceKey = preferenceStore.getString('confluenceDefaultSpaceKey') || '';
-        this.confluenceSettings.baseUrl = preferenceStore.getString('confluenceBaseUrl') || '';
+        this.confluenceSettings.username = preferenceStore.getString("confluenceUsername") || "";
+        this.confluenceSettings.apiToken = preferenceStore.getString("confluencePassword") || "";
+        this.confluenceSettings.spaceKey = preferenceStore.getString("confluenceDefaultSpaceKey") || "";
+        this.confluenceSettings.baseUrl = preferenceStore.getString("confluenceBaseUrl") || "";
         // Load Documentation Augmenter settings
-        this.documentationAugmenterSettings.model = preferenceStore.getString('docAugmenterModel') || 'llama3.1';
-        this.documentationAugmenterSettings.temperature = preferenceStore.getString('docAugmenterTemperature') || '0.7';
-        this.documentationAugmenterSettings.topK = preferenceStore.getString('docAugmenterTopK') || '40';
-        this.documentationAugmenterSettings.topP = preferenceStore.getString('docAugmenterTopP') || '0.9';
+        this.documentationAugmenterSettings.model = preferenceStore.getString("docAugmenterModel") || "llama3.1";
+        this.documentationAugmenterSettings.temperature = preferenceStore.getString("docAugmenterTemperature") || "0.7";
+        this.documentationAugmenterSettings.topK = preferenceStore.getString("docAugmenterTopK") || "40";
+        this.documentationAugmenterSettings.topP = preferenceStore.getString("docAugmenterTopP") || "0.9";
+        // Load Logger settings
+        this.loggerSettings.enabled = preferenceStore.getBoolean("loggerEnabled") || false;
+        this.loggerSettings.apiUrl = preferenceStore.getString("loggerApiUrl") || "http://localhost:3000";
+        this.loggerSettings.logRetentionPeriod = preferenceStore.getString("loggerRetentionPeriod") || "7";
+        this.loggerSettings.logRetentionUnit = preferenceStore.getString("loggerRetentionUnit") || "days";
+        this.loggerSettings.consoleLogging = preferenceStore.getBoolean("loggerConsoleLogging") || false;
+        this.loggerSettings.logLevel = preferenceStore.getString("loggerLogLevel") || "INFO";
     },
 
-    saveSettings: function() {
+    saveSettings: function () {
         const preferenceStore = workbench.getPreferenceStore();
         // Save Confluence settings
-        preferenceStore.setValue('confluenceUsername', this.confluenceSettings.username);
-        preferenceStore.setValue('confluencePassword', this.confluenceSettings.apiToken);
-        preferenceStore.setValue('confluenceDefaultSpaceKey', this.confluenceSettings.spaceKey);
-        preferenceStore.setValue('confluenceBaseUrl', this.confluenceSettings.baseUrl);
+        preferenceStore.setValue("confluenceUsername", this.confluenceSettings.username);
+        preferenceStore.setValue("confluencePassword", this.confluenceSettings.apiToken);
+        preferenceStore.setValue("confluenceDefaultSpaceKey", this.confluenceSettings.spaceKey);
+        preferenceStore.setValue("confluenceBaseUrl", this.confluenceSettings.baseUrl);
         // Save Documentation Augmenter settings
-        preferenceStore.setValue('docAugmenterModel', this.documentationAugmenterSettings.model);
-        preferenceStore.setValue('docAugmenterTemperature', this.documentationAugmenterSettings.temperature);
-        preferenceStore.setValue('docAugmenterTopK', this.documentationAugmenterSettings.topK);
-        preferenceStore.setValue('docAugmenterTopP', this.documentationAugmenterSettings.topP);
+        preferenceStore.setValue("docAugmenterModel", this.documentationAugmenterSettings.model);
+        preferenceStore.setValue("docAugmenterTemperature", this.documentationAugmenterSettings.temperature);
+        preferenceStore.setValue("docAugmenterTopK", this.documentationAugmenterSettings.topK);
+        preferenceStore.setValue("docAugmenterTopP", this.documentationAugmenterSettings.topP);
+        // Save Logger settings
+        preferenceStore.setValue("loggerEnabled", this.loggerSettings.enabled);
+        preferenceStore.setValue("loggerApiUrl", this.loggerSettings.apiUrl);
+        preferenceStore.setValue("loggerRetentionPeriod", this.loggerSettings.logRetentionPeriod);
+        preferenceStore.setValue("loggerRetentionUnit", this.loggerSettings.logRetentionUnit);
+        preferenceStore.setValue("loggerConsoleLogging", this.loggerSettings.consoleLogging);
+        preferenceStore.setValue("loggerLogLevel", this.loggerSettings.logLevel);
     },
 
     dialog: new Dialog(shell, {
-        configureShell: function(newShell) {
+        configureShell: function (newShell) {
             Java.super(integrationSettingsDialog.dialog).configureShell(newShell);
             newShell.setText("Integration Settings");
             newShell.setSize(800, 400);
         },
 
-        createDialogArea: function(parent) {
+        createDialogArea: function (parent) {
             const container = Java.super(integrationSettingsDialog.dialog).createDialogArea(parent);
             container.setLayoutData(new GridData(GridData.FILL_BOTH));
             container.setLayout(new GridLayout(1, false));
@@ -127,11 +150,12 @@ const integrationSettingsDialog = {
 
             this.createConfluenceTab(tabFolder);
             this.createDocumentationAugmenterTab(tabFolder);
+            this.createLoggerTab(tabFolder);
 
             return container;
         },
 
-        createConfluenceTab: function(tabFolder) {
+        createConfluenceTab: function (tabFolder) {
             const confluenceTab = new TabItem(tabFolder, SWT.NONE);
             confluenceTab.setText("Confluence");
 
@@ -144,31 +168,39 @@ const integrationSettingsDialog = {
             const usernameText = new Text(composite, SWT.BORDER);
             usernameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
             usernameText.setText(integrationSettingsDialog.confluenceSettings.username);
-            usernameText.addModifyListener(e => integrationSettingsDialog.confluenceSettings.username = usernameText.getText());
+            usernameText.addModifyListener(
+                (e) => (integrationSettingsDialog.confluenceSettings.username = usernameText.getText())
+            );
 
             // API Token
             new Label(composite, SWT.NONE).setText("API Token:");
             const apiTokenText = new Text(composite, SWT.BORDER | SWT.PASSWORD);
             apiTokenText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
             apiTokenText.setText(integrationSettingsDialog.confluenceSettings.apiToken);
-            apiTokenText.addModifyListener(e => integrationSettingsDialog.confluenceSettings.apiToken = apiTokenText.getText());
+            apiTokenText.addModifyListener(
+                (e) => (integrationSettingsDialog.confluenceSettings.apiToken = apiTokenText.getText())
+            );
 
             // Space Key
             new Label(composite, SWT.NONE).setText("Space Key:");
             const spaceKeyText = new Text(composite, SWT.BORDER);
             spaceKeyText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
             spaceKeyText.setText(integrationSettingsDialog.confluenceSettings.spaceKey);
-            spaceKeyText.addModifyListener(e => integrationSettingsDialog.confluenceSettings.spaceKey = spaceKeyText.getText());
+            spaceKeyText.addModifyListener(
+                (e) => (integrationSettingsDialog.confluenceSettings.spaceKey = spaceKeyText.getText())
+            );
 
             // Base URL
             new Label(composite, SWT.NONE).setText("Base URL:");
             const baseUrlText = new Text(composite, SWT.BORDER);
             baseUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
             baseUrlText.setText(integrationSettingsDialog.confluenceSettings.baseUrl);
-            baseUrlText.addModifyListener(e => integrationSettingsDialog.confluenceSettings.baseUrl = baseUrlText.getText());
+            baseUrlText.addModifyListener(
+                (e) => (integrationSettingsDialog.confluenceSettings.baseUrl = baseUrlText.getText())
+            );
         },
 
-        createDocumentationAugmenterTab: function(tabFolder) {
+        createDocumentationAugmenterTab: function (tabFolder) {
             const docAugmenterTab = new TabItem(tabFolder, SWT.NONE);
             docAugmenterTab.setText("Documentation Augmenter");
 
@@ -180,12 +212,15 @@ const integrationSettingsDialog = {
             new Label(composite, SWT.NONE).setText("Model:");
             integrationSettingsDialog.modelCombo = new Combo(composite, SWT.READ_ONLY);
             integrationSettingsDialog.modelCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-            
+
             this.populateModelCombo();
 
-            integrationSettingsDialog.modelCombo.setText(integrationSettingsDialog.documentationAugmenterSettings.model);
-            integrationSettingsDialog.modelCombo.addModifyListener(e => {
-                integrationSettingsDialog.documentationAugmenterSettings.model = integrationSettingsDialog.modelCombo.getText();
+            integrationSettingsDialog.modelCombo.setText(
+                integrationSettingsDialog.documentationAugmenterSettings.model
+            );
+            integrationSettingsDialog.modelCombo.addModifyListener((e) => {
+                integrationSettingsDialog.documentationAugmenterSettings.model =
+                    integrationSettingsDialog.modelCombo.getText();
             });
 
             // Temperature
@@ -193,51 +228,136 @@ const integrationSettingsDialog = {
             const temperatureText = new Text(composite, SWT.BORDER);
             temperatureText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
             temperatureText.setText(integrationSettingsDialog.documentationAugmenterSettings.temperature);
-            temperatureText.addModifyListener(e => integrationSettingsDialog.documentationAugmenterSettings.temperature = temperatureText.getText());
+            temperatureText.addModifyListener(
+                (e) =>
+                    (integrationSettingsDialog.documentationAugmenterSettings.temperature = temperatureText.getText())
+            );
 
             // Top K
             new Label(composite, SWT.NONE).setText("Top K:");
             const topKText = new Text(composite, SWT.BORDER);
             topKText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
             topKText.setText(integrationSettingsDialog.documentationAugmenterSettings.topK);
-            topKText.addModifyListener(e => integrationSettingsDialog.documentationAugmenterSettings.topK = topKText.getText());
+            topKText.addModifyListener(
+                (e) => (integrationSettingsDialog.documentationAugmenterSettings.topK = topKText.getText())
+            );
 
             // Top P
             new Label(composite, SWT.NONE).setText("Top P:");
             const topPText = new Text(composite, SWT.BORDER);
             topPText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
             topPText.setText(integrationSettingsDialog.documentationAugmenterSettings.topP);
-            topPText.addModifyListener(e => integrationSettingsDialog.documentationAugmenterSettings.topP = topPText.getText());
+            topPText.addModifyListener(
+                (e) => (integrationSettingsDialog.documentationAugmenterSettings.topP = topPText.getText())
+            );
         },
 
-        populateModelCombo: function() {
+        createLoggerTab: function (tabFolder) {
+            const loggerTab = new TabItem(tabFolder, SWT.NONE);
+            loggerTab.setText("Logger");
+
+            const composite = new Composite(tabFolder, SWT.NONE);
+            composite.setLayout(new GridLayout(2, false));
+            loggerTab.setControl(composite);
+
+            // Enable Logging
+            const enableLoggingButton = new Button(composite, SWT.CHECK);
+            enableLoggingButton.setText("Enable Remote Logging");
+            enableLoggingButton.setSelection(integrationSettingsDialog.loggerSettings.enabled);
+            enableLoggingButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
+            enableLoggingButton.addSelectionListener({
+                widgetSelected: function (e) {
+                    integrationSettingsDialog.loggerSettings.enabled = enableLoggingButton.getSelection();
+                },
+            });
+
+            // Logger API URL
+            new Label(composite, SWT.NONE).setText("Logger API URL:");
+            const apiUrlText = new Text(composite, SWT.BORDER);
+            apiUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            apiUrlText.setText(integrationSettingsDialog.loggerSettings.apiUrl);
+            apiUrlText.addModifyListener(
+                (e) => (integrationSettingsDialog.loggerSettings.apiUrl = apiUrlText.getText())
+            );
+
+            // Log Retention Period
+            new Label(composite, SWT.NONE).setText("Log Retention Period:");
+            const retentionComposite = new Composite(composite, SWT.NONE);
+            retentionComposite.setLayout(new GridLayout(2, false));
+            retentionComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+            const retentionText = new Text(retentionComposite, SWT.BORDER);
+            retentionText.setLayoutData(new GridData(50, SWT.DEFAULT));
+            retentionText.setText(integrationSettingsDialog.loggerSettings.logRetentionPeriod);
+            retentionText.addModifyListener(
+                (e) => (integrationSettingsDialog.loggerSettings.logRetentionPeriod = retentionText.getText())
+            );
+
+            const retentionUnitCombo = new Combo(retentionComposite, SWT.READ_ONLY);
+            retentionUnitCombo.setItems(["days", "hours", "minutes"]);
+            retentionUnitCombo.setText(integrationSettingsDialog.loggerSettings.logRetentionUnit);
+            retentionUnitCombo.addModifyListener(
+                (e) => (integrationSettingsDialog.loggerSettings.logRetentionUnit = retentionUnitCombo.getText())
+            );
+
+            // Console Logging
+            const consoleLoggingButton = new Button(composite, SWT.CHECK);
+            consoleLoggingButton.setText("Enable Console Logging");
+            consoleLoggingButton.setSelection(integrationSettingsDialog.loggerSettings.consoleLogging);
+            consoleLoggingButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
+            consoleLoggingButton.addSelectionListener({
+                widgetSelected: function (e) {
+                    integrationSettingsDialog.loggerSettings.consoleLogging = consoleLoggingButton.getSelection();
+                },
+            });
+
+            // Log level
+            new Label(composite, SWT.NONE).setText("Log Level:");
+            const logLevelCombo = new Combo(composite, SWT.READ_ONLY);
+            logLevelCombo.setItems(["DEBUG", "INFO", "WARN", "ERROR"]);
+            logLevelCombo.setText(integrationSettingsDialog.loggerSettings.logLevel);
+            logLevelCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            logLevelCombo.addModifyListener(
+                (e) => (integrationSettingsDialog.loggerSettings.logLevel = logLevelCombo.getText())
+            );
+        },
+
+        populateModelCombo: function () {
             // Combine Ollama models and default models, removing duplicates
             const allModels = [...new Set([...OLLAMA_MODELS, ...DEFAULT_MODELS])];
-            allModels.forEach(model => integrationSettingsDialog.modelCombo.add(model));
+            allModels.forEach((model) => integrationSettingsDialog.modelCombo.add(model));
         },
 
-        createButtonsForButtonBar: function(parent) {
+        createButtonsForButtonBar: function (parent) {
             Java.super(integrationSettingsDialog.dialog).createButton(parent, IDialogConstants.OK_ID, "Save", true);
-            Java.super(integrationSettingsDialog.dialog).createButton(parent, IDialogConstants.CANCEL_ID, "Cancel", false);
+            Java.super(integrationSettingsDialog.dialog).createButton(
+                parent,
+                IDialogConstants.CANCEL_ID,
+                "Cancel",
+                false
+            );
         },
 
-        okPressed: function() {
+        okPressed: function () {
             integrationSettingsDialog.saveSettings();
             Java.super(integrationSettingsDialog.dialog).okPressed();
-        }
-    })
+        },
+    }),
 };
 
 // Run the Integration settings dialog
-integrationSettingsDialog.open().then(result => {
-    if (result) {
-        console.log("Integration settings saved successfully.");
-    } else {
-        console.log("Integration settings update cancelled.");
-    }
-}).catch(error => {
-    console.error("Error in settings dialog:", error);
-    Display.getDefault().asyncExec(() => {
-        MessageDialog.openError(shell, "Error", "An error occurred: " + error.message);
+integrationSettingsDialog
+    .open()
+    .then((result) => {
+        if (result) {
+            console.log("Integration settings saved successfully.");
+        } else {
+            console.log("Integration settings update cancelled.");
+        }
+    })
+    .catch((error) => {
+        console.error("Error in settings dialog:", error);
+        Display.getDefault().asyncExec(() => {
+            MessageDialog.openError(shell, "Error", "An error occurred: " + error.message);
+        });
     });
-});

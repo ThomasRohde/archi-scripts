@@ -4,8 +4,8 @@ const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
 
-const API_PORT = process.env.API_PORT || 3000;
-const WEB_PORT = process.env.WEB_PORT || 3001;
+const API_PORT = process.env.API_PORT || 4000;
+const WEB_PORT = process.env.WEB_PORT || 4001;
 
 const apiServer = express();
 const webServer = express();
@@ -18,54 +18,29 @@ webServer.set('views', path.join(__dirname, 'views'));
 apiServer.use(express.json());
 webServer.use(express.static('public'));
 
-// Initialize an object to store logs grouped by application and module
-const logs = {};
-
-// Helper function to get a valid application name
-function getValidAppName(name) {
-    return name || 'Unspecified Application';
-}
-
-// Helper function to get a valid module name
-function getValidModuleName(name) {
-    return name || 'General';
-}
+// Initialize an object to store logs
+const logs = [];
 
 // Helper function to process and store a log entry
-function processLogEntry(application, module, message, additionalData) {
-    const timestamp = new Date().toISOString();
-    application = getValidAppName(application);
-    module = getValidModuleName(module);
+function processLogEntry(logData) {
+    const { level, script, message, timestamp, ...additionalData } = logData;
+    
+    const logEntry = { 
+        level, 
+        script, 
+        message, 
+        timestamp, 
+        additionalData: Object.keys(additionalData).length > 0 ? additionalData : null 
+    };
 
-    if (!message) {
-        message = 'Log entry (no message provided)';
-        additionalData = { ...additionalData, originalPayload: { application, module, ...additionalData } };
-    }
-
-    const logEntry = { timestamp, message, ...additionalData };
-
-    if (!logs[application]) {
-        logs[application] = {};
-    }
-    if (!logs[application][module]) {
-        logs[application][module] = [];
-    }
-    logs[application][module].push(logEntry);
-
-    io.emit('newLog', { application, module, logEntry });
-    return { application, module, logEntry };
+    logs.push(logEntry);
+    io.emit('newLog', logEntry);
+    return logEntry;
 }
 
 // API Routes
 apiServer.post('/log', (req, res) => {
-    const { application, module, message, ...additionalData } = req.body;
-    processLogEntry(application, module, message, additionalData);
-    res.sendStatus(200);
-});
-
-apiServer.get('/log', (req, res) => {
-    const { application, module, message, ...additionalData } = req.query;
-    processLogEntry(application, module, message, additionalData);
+    const logEntry = processLogEntry(req.body);
     res.sendStatus(200);
 });
 

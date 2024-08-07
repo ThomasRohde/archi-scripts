@@ -23,14 +23,14 @@
                 <thead class="text-xs text-gray-700 uppercase bg-gray-200">
                     <tr>
                         <th class="px-4 py-2">Timestamp</th>
-                        <th class="px-4 py-2">Application</th>
-                        <th class="px-4 py-2">Module</th>
+                        <th class="px-4 py-2">Level</th>
+                        <th class="px-4 py-2">Script</th>
                         <th class="px-4 py-2">Message</th>
                     </tr>
                     <tr>
                         <th class="px-4 py-2"><input type="text" class="w-full px-2 py-1 text-sm rounded border" placeholder="Filter Timestamp" id="filterTimestamp"></th>
-                        <th class="px-4 py-2"><input type="text" class="w-full px-2 py-1 text-sm rounded border" placeholder="Filter Application" id="filterApplication"></th>
-                        <th class="px-4 py-2"><input type="text" class="w-full px-2 py-1 text-sm rounded border" placeholder="Filter Module" id="filterModule"></th>
+                        <th class="px-4 py-2"><input type="text" class="w-full px-2 py-1 text-sm rounded border" placeholder="Filter Level" id="filterLevel"></th>
+                        <th class="px-4 py-2"><input type="text" class="w-full px-2 py-1 text-sm rounded border" placeholder="Filter Script" id="filterScript"></th>
                         <th class="px-4 py-2"><input type="text" class="w-full px-2 py-1 text-sm rounded border" placeholder="Filter Message" id="filterMessage"></th>
                     </tr>
                 </thead>
@@ -51,51 +51,54 @@
         const LOG_RETENTION_TIME = 60 * 60 * 1000; // 1 hour in milliseconds
         const CLEANUP_INTERVAL = 5 * 60 * 1000; // Run cleanup every 5 minutes
 
+        const LOG_LEVEL_COLORS = {
+            DEBUG: 'bg-gray-500',
+            INFO: 'bg-green-500',
+            WARN: 'bg-yellow-500',
+            ERROR: 'bg-red-500'
+        };
+
         function formatTimestamp(isoString) {
             const date = DateTime.fromISO(isoString, { zone: 'UTC' }).toLocal();
             return date.toFormat('yyyy-MM-dd HH:mm:ss');
         }
 
-        function createLogRow(log, application, module) {
+        function createLogRow(log) {
             const row = document.createElement('tr');
             row.className = 'log-row';
             const formattedTimestamp = formatTimestamp(log.timestamp);
             row.innerHTML = `
                 <td class="px-4 py-2 text-gray-500" data-timestamp="${log.timestamp}">${formattedTimestamp}</td>
-                <td class="px-4 py-2">${application}</td>
-                <td class="px-4 py-2">${module}</td>
+                <td class="px-4 py-2">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full text-white ${LOG_LEVEL_COLORS[log.level] || 'bg-gray-500'}">
+                        ${log.level}
+                    </span>
+                </td>
+                <td class="px-4 py-2">${log.script}</td>
                 <td class="px-4 py-2 cursor-pointer" onclick="toggleDetails(this)">
-                    <div class="log-summary">${JSON.stringify(log.message).slice(1, -1)}</div>
-                    <pre class="log-details hidden mt-2 text-xs bg-gray-100 p-2 rounded">${JSON.stringify(Object.fromEntries(Object.entries(log).filter(([key]) => !['message', 'timestamp'].includes(key))), null, 2)}</pre>
+                    <div class="log-summary">${log.message}</div>
+                    ${log.additionalData ? `<pre class="log-details hidden mt-2 text-xs bg-gray-100 p-2 rounded">${JSON.stringify(log.additionalData, null, 2)}</pre>` : ''}
                 </td>
             `;
             return row;
         }
 
         // Sort and display initial logs
-        const initialLogs = [];
-        <% Object.entries(logs).forEach(([appName, appLogs]) => { %>
-            <% Object.entries(appLogs).forEach(([moduleName, moduleLogs]) => { %>
-                <% moduleLogs.forEach((log) => { %>
-                    initialLogs.push({ log: <%- JSON.stringify(log) %>, application: '<%= appName %>', module: '<%= moduleName %>' });
-                <% }); %>
-            <% }); %>
+        <% logs.forEach((log) => { %>
+            logTableBody.appendChild(createLogRow(<%- JSON.stringify(log) %>));
         <% }); %>
 
-        initialLogs.sort((a, b) => new Date(b.log.timestamp) - new Date(a.log.timestamp));
-        initialLogs.forEach(({ log, application, module }) => {
-            logTableBody.appendChild(createLogRow(log, application, module));
-        });
-
-        socket.on('newLog', ({ application, module, logEntry }) => {
-            const newRow = createLogRow(logEntry, application, module);
+        socket.on('newLog', (logEntry) => {
+            const newRow = createLogRow(logEntry);
             logTableBody.insertBefore(newRow, logTableBody.firstChild);
             applyFilters();
         });
 
         function toggleDetails(element) {
             const details = element.querySelector('.log-details');
-            details.classList.toggle('hidden');
+            if (details) {
+                details.classList.toggle('hidden');
+            }
         }
 
         filterInputs.forEach(input => {
@@ -105,8 +108,8 @@
         function applyFilters() {
             const filters = {
                 timestamp: document.getElementById('filterTimestamp').value.toLowerCase(),
-                application: document.getElementById('filterApplication').value.toLowerCase(),
-                module: document.getElementById('filterModule').value.toLowerCase(),
+                level: document.getElementById('filterLevel').value.toLowerCase(),
+                script: document.getElementById('filterScript').value.toLowerCase(),
                 message: document.getElementById('filterMessage').value.toLowerCase()
             };
 
@@ -115,8 +118,8 @@
                 const cells = row.querySelectorAll('td');
                 const shouldShow = (
                     cells[0].textContent.toLowerCase().includes(filters.timestamp) &&
-                    cells[1].textContent.toLowerCase().includes(filters.application) &&
-                    cells[2].textContent.toLowerCase().includes(filters.module) &&
+                    cells[1].textContent.toLowerCase().includes(filters.level) &&
+                    cells[2].textContent.toLowerCase().includes(filters.script) &&
                     cells[3].textContent.toLowerCase().includes(filters.message)
                 );
                 row.style.display = shouldShow ? '' : 'none';
