@@ -1,9 +1,9 @@
 /**
  * @module apiClient
  * @description A robust HTTP client for making API requests in JArchi scripts, using JDK 17's HttpClient
- * @version 4.1
+ * @version 4.2
  * @author Claude AI Assistant
- * @lastModifiedDate 2024-08-01
+ * @lastModifiedDate 2024-08-02
  */
 
 const HttpClient = Java.type("java.net.http.HttpClient");
@@ -16,6 +16,16 @@ const Duration = Java.type("java.time.Duration");
 const Base64 = Java.type("java.util.Base64");
 const ByteArrayOutputStream = Java.type("java.io.ByteArrayOutputStream");
 const DataOutputStream = Java.type("java.io.DataOutputStream");
+
+const jarchiLogger = require('./jarchiLogger');
+jarchiLogger.init('apiClient');
+
+const log = {
+    debug: jarchiLogger.debug.bind(jarchiLogger),
+    info: jarchiLogger.info.bind(jarchiLogger),
+    warn: jarchiLogger.warn.bind(jarchiLogger),
+    error: jarchiLogger.error.bind(jarchiLogger)
+};
 
 const apiClient = {
     create: function(defaultConfig = {}) {
@@ -68,9 +78,11 @@ const apiClient = {
                 }
 
                 if (config.debug) {
-                    console.log("Request URL:", fullUrl);
-                    console.log("Request Method:", config.method.toUpperCase());
-                    console.log("Request Headers:", requestBuilder.build().headers().map());
+                    log.debug('API Request', {
+                        url: fullUrl,
+                        method: config.method.toUpperCase(),
+                        headers: requestBuilder.build().headers().map()
+                    });
                 }
 
                 const response = this.httpClient.send(requestBuilder.build(), BodyHandlers.ofString());
@@ -85,9 +97,11 @@ const apiClient = {
                 };
 
                 if (config.debug) {
-                    console.log("Response Status:", parsedResponse.status);
-                    console.log("Response Headers:", parsedResponse.headers);
-                    console.log("Response Data:", parsedResponse.data);
+                    log.debug('API Response', {
+                        status: parsedResponse.status,
+                        headers: parsedResponse.headers,
+                        data: parsedResponse.data
+                    });
                 }
 
                 if (config.validateStatus(parsedResponse.status)) {
@@ -98,6 +112,7 @@ const apiClient = {
                     reject(error);
                 }
             } catch (error) {
+                log.error('API Request Error', { error: error.toString(), stack: error.stack });
                 reject(error);
             }
         });
@@ -194,7 +209,7 @@ const apiClient = {
             try {
                 return JSON.parse(body);
             } catch (e) {
-                console.warn("Failed to parse JSON response body:", e);
+                log.warn('Failed to parse JSON response body', { error: e.toString() });
             }
         }
         return body;

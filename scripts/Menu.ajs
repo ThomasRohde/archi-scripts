@@ -4,10 +4,10 @@
  * @description This script creates a graphical user interface for managing and executing JArchi scripts.
  * It provides a tree-based menu structure for organizing scripts into categories and allows
  * users to view script descriptions and tutorials before execution.
- * @version 1.3
+ * @version 1.4
  * @author Thomas Klok Rohde
  * @lastModifiedBy Claude AI Assistant (Anthropic)
- * @lastModifiedDate 2024-07-25
+ * @lastModifiedDate 2024-08-07
  */
 
 (function () {
@@ -25,21 +25,25 @@
     const IMessageProvider = Java.type("org.eclipse.jface.dialogs.IMessageProvider");
     const IArchiImages = Java.type("com.archimatetool.editor.ui.IArchiImages");
 
-    /**
-     * Common CSS styles for the description area.
-     * This defines the look and feel of the script descriptions.
-     */
+    // Load common styles and menu items
     load(__DIR__ + "lib/commonStyles.js");
-    // Load menu items from an external file
     load(__DIR__ + "lib/menuItems.js");
 
     // Get monitor dimensions for responsive sizing
     const monitorWidth = shell.getDisplay().getPrimaryMonitor().getBounds().width;
     const monitorHeight = shell.getDisplay().getPrimaryMonitor().getBounds().height;
 
-    const log = require('./lib/jarchiLogger');
+    // Initialize logger
+    const jarchiLogger = require('./lib/jarchiLogger');
+    jarchiLogger.init('Menu');
 
-    log.setApplication("Menu");
+    // Create shorthand logging functions
+    const log = {
+        debug: jarchiLogger.debug.bind(jarchiLogger),
+        info: jarchiLogger.info.bind(jarchiLogger),
+        warn: jarchiLogger.warn.bind(jarchiLogger),
+        error: jarchiLogger.error.bind(jarchiLogger)
+    };
 
     /**
      * Main dialog object for the JArchi Script Menu.
@@ -280,6 +284,7 @@
                 if (this.tutorialButton) {
                     this.tutorialButton.setEnabled(!!item.tutorial);
                 }
+                log.info('Script selected', { scriptName: item.name, category: item.category });
             } else {
                 this.descriptionBrowser.setText(/* HTML */ `
                     ${commonStyles}
@@ -320,6 +325,7 @@
 
                 if (java.nio.file.Files.exists(java.nio.file.Paths.get(tutorialPath))) {
                     this.descriptionBrowser.setUrl("file://" + tutorialPath);
+                    log.info('Tutorial loaded', { scriptName: item.name, tutorialFile: fullTutorialFileName });
                 } else {
                     this.descriptionBrowser.setText(
                         commonStyles +
@@ -332,6 +338,7 @@
                                 <p>Please check the file name and location, then try again.</p>
                             `
                     );
+                    log.warn('Tutorial not found', { scriptName: item.name, tutorialFile: fullTutorialFileName, path: tutorialPath });
                 }
             }
         },
@@ -342,19 +349,17 @@
      * @throws {Error} If an error occurs while running the script menu.
      */
     try {
+        log.info('Opening JArchi Script Menu');
         if (menuDialog.open()) {
-            console.log("Dialog closed normally");
+            log.info('Dialog closed normally');
             if (menuDialog.dialogResult) {
-                console.log("Executing script: " + menuDialog.dialogResult);
-                log.slog("Running: " + menuDialog.dialogResult)
+                log.info('Executing script', { script: menuDialog.dialogResult });
                 load(menuDialog.dialogResult);
             }
         } else {
-            console.log("Dialog cancelled or closed abnormally");
-            log.slog("Dialog cancelled or closed abnormally")
+            log.info('Dialog cancelled or closed abnormally');
         }
     } catch (error) {
-        console.error("An error occurred while running the script menu: " + error.toString());
-        log.slog("An error occurred while running the script menu: " + error.toString())
+        log.error('An error occurred while running the script menu', { error: error.toString() });
     }
 })();
