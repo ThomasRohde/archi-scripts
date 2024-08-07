@@ -24,6 +24,7 @@ const Composite = Java.type("org.eclipse.swt.widgets.Composite");
 const Combo = Java.type("org.eclipse.swt.widgets.Combo");
 const MessageDialog = Java.type("org.eclipse.jface.dialogs.MessageDialog");
 const Display = Java.type("org.eclipse.swt.widgets.Display");
+const File = Java.type("java.io.File");
 
 // Import Ollama client
 const { OllamaClient } = require("./lib/ollamaClient");
@@ -110,6 +111,7 @@ const integrationSettingsDialog = {
         this.loggerSettings.logRetentionUnit = preferenceStore.getString("loggerRetentionUnit") || "days";
         this.loggerSettings.consoleLogging = preferenceStore.getBoolean("loggerConsoleLogging") || false;
         this.loggerSettings.logLevel = preferenceStore.getString("loggerLogLevel") || "INFO";
+        this.loggerSettings.webPort = preferenceStore.getString('loggerWebPort') || "4001";
     },
 
     saveSettings: function () {
@@ -131,6 +133,7 @@ const integrationSettingsDialog = {
         preferenceStore.setValue("loggerRetentionUnit", this.loggerSettings.logRetentionUnit);
         preferenceStore.setValue("loggerConsoleLogging", this.loggerSettings.consoleLogging);
         preferenceStore.setValue("loggerLogLevel", this.loggerSettings.logLevel);
+        preferenceStore.setValue("loggerWebPort", this.loggerSettings.webPort);
     },
 
     dialog: new Dialog(shell, {
@@ -280,6 +283,27 @@ const integrationSettingsDialog = {
                 (e) => (integrationSettingsDialog.loggerSettings.apiUrl = apiUrlText.getText())
             );
 
+            // Web Server Port
+            new Label(composite, SWT.NONE).setText("Web Server Port:");
+            const webPortText = new Text(composite, SWT.BORDER);
+            webPortText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            webPortText.setText(integrationSettingsDialog.loggerSettings.webPort);
+            webPortText.setEnabled(false);
+            webPortText.addModifyListener(
+                (e) => (integrationSettingsDialog.loggerSettings.webPort = webPortText.getText())
+            );
+
+            // Start Logger Button
+            const startLoggerButton = new Button(composite, SWT.PUSH);
+            startLoggerButton.setText("Start Logger");
+            startLoggerButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
+            startLoggerButton.setEnabled(false);
+            startLoggerButton.addSelectionListener({
+                widgetSelected: function (e) {
+                    startLoggerExecutable();
+                }
+            });
+
             // Log Retention Period
             new Label(composite, SWT.NONE).setText("Log Retention Period:");
             const retentionComposite = new Composite(composite, SWT.NONE);
@@ -320,6 +344,45 @@ const integrationSettingsDialog = {
             logLevelCombo.addModifyListener(
                 (e) => (integrationSettingsDialog.loggerSettings.logLevel = logLevelCombo.getText())
             );
+
+            function updateWebPortAndButtonState() {
+                const isLocalhost = apiUrlText.getText().includes("localhost") || apiUrlText.getText().includes("127.0.0.1");
+                webPortText.setEnabled(isLocalhost);
+                startLoggerButton.setEnabled(isLocalhost);
+            }
+            
+            // Call this function when the API URL changes
+            apiUrlText.addModifyListener(
+                (e) => {
+                    integrationSettingsDialog.loggerSettings.apiUrl = apiUrlText.getText();
+                    updateWebPortAndButtonState();
+                }
+            );
+            
+            // Call this function initially to set the correct state
+            updateWebPortAndButtonState();
+
+            function startLoggerExecutable() {
+                const apiPort = apiUrlText.getText().split(":")[2] || "4000";
+                const webPort = webPortText.getText() || "4001";
+                const isWindows = java.lang.System.getProperty("os.name").toLowerCase().includes("win");
+                const executableName = isWindows ? "jarchi-logger-win.exe" : "jarchi-logger-macos";
+                
+                // Construct the path to the jarchi-logger executable
+                const executableFile = new File(new File(__DIR__).getParentFile(), "jarchi-logger" + File.separator + executableName);
+                const executablePath = executableFile.getAbsolutePath();
+                console.log(executablePath);
+                const command = `"${executablePath}" --api-port ${apiPort} --web-port ${webPort}`;
+                
+                const runtime = java.lang.Runtime.getRuntime();
+                try {
+                    runtime.exec(command);
+                    console.log(`Started logger executable: ${command}`);
+                } catch (error) {
+                    console.error(`Failed to start logger executable: ${error}`);
+                    MessageDialog.openError(shell, "Error", `Failed to start logger executable: ${error}`);
+                }
+            }
         },
 
         populateModelCombo: function () {
