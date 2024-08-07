@@ -15,7 +15,8 @@ This repository contains a collection of JArchi scripts designed to enhance and 
 
 - Archi (latest version recommended)
 - jArchi plugin installed and activated in Archi
-- Node.js and npm (for managing dependencies)
+- Node.js and npm (for managing dependencies and building the logger)
+- Ollama (for AI-powered scripts)
 
 ## Installation
 
@@ -25,6 +26,16 @@ This repository contains a collection of JArchi scripts designed to enhance and 
 2. Run the following command to install the required Node.js modules:
    ```
    npm install
+   ```
+
+### Setting Up Ollama
+
+For scripts that use AI capabilities:
+
+1. Install Ollama from [ollama.ai](https://ollama.ai)
+2. Pull the required model:
+   ```
+   ollama pull llama3.1
    ```
 
 ### Installing Scripts
@@ -58,9 +69,33 @@ You have two options for installing the scripts:
 - **Dagre Layout**: Automatically arrange elements in your Archi view using the Dagre graph layout algorithm.
 - **Smart Style Sync**: Change the appearance of elements in an ArchiMate view based on their property values.
 - **Model Health Check**: Perform a comprehensive health check on your ArchiMate model, providing insights and recommendations for improvement.
-- **Settings**: Configure various settings.
+- **Settings**: Configure various settings for jArchi integrations and features.
 - **Publish View to Confluence**: Publish the currently selected view to a Confluence page.
-- **Documentation Augmenter**: Automatically create or augment the documentation of a view using a locally installed Ollama LLM.
+- **Documentation Augmenter**: Automatically generate and enhance documentation for ArchiMate views and elements using AI.
+- **Export View to Draw.io**: Export the currently selected ArchiMate view to a draw.io diagram file.
+
+## JArchi Logger
+
+The project includes a logging server for advanced logging capabilities.
+
+### Building the Logger
+
+To build the logger as an executable:
+
+1. Navigate to the `jarchi-logger` directory.
+2. Run:
+   ```
+   npm run build
+   ```
+   This will create executables for both macOS and Windows.
+
+### Running the Logger
+
+- Start the logger manually:
+  ```
+  npm start
+  ```
+- Or use the built executable (platform-dependent).
 
 ## Documentation
 
@@ -78,5 +113,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - The Archi team for creating an excellent ArchiMate modelling tool.
 - The jArchi plugin developers for enabling scripting capabilities in Archi.
-- Xavier Mayeur, for the excellent doEach gist
 - All contributors and users of these scripts.
