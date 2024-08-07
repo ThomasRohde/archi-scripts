@@ -57,14 +57,24 @@ apiServer.get('/logs', (req, res) => {
     res.json(logs);
 });
 
+// Clear logs endpoint
+webServer.post('/clear-logs', (req, res) => {
+    logs.length = 0; // Clear the logs array
+    io.emit('logsCleared'); // Emit an event to all connected clients
+    console.log('Logs cleared on server'); // Add this line for debugging
+    res.sendStatus(200);
+});
+
 // Web Routes
 webServer.get('/', (req, res) => {
+    console.log('Current logs:', logs);
     res.render('index', { logs });
 });
 
-// Socket.IO
 io.on('connection', (socket) => {
     console.log('A user connected');
+    // Send current logs to the newly connected client
+    socket.emit('initialLogs', logs);
     socket.on('disconnect', () => {
         console.log('User disconnected');
     });

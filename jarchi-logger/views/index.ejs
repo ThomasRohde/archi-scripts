@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,14 +11,19 @@
         .log-row:nth-child(even) {
             background-color: #f9fafb;
         }
+
         .log-row:hover {
             background-color: #e5e7eb;
         }
     </style>
 </head>
+
 <body class="bg-gray-100 font-sans">
     <div class="container mx-auto p-4">
         <h1 class="text-2xl font-bold mb-4">JArchi Logger</h1>
+        <button id="clearLogsBtn" class="mb-4 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+            Clear Logs
+        </button>
         <div id="logContainer" class="bg-white shadow-md rounded-lg overflow-hidden">
             <table class="w-full text-sm text-left">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-200">
@@ -28,10 +34,14 @@
                         <th class="px-4 py-2">Message</th>
                     </tr>
                     <tr>
-                        <th class="px-4 py-2"><input type="text" class="w-full px-2 py-1 text-sm rounded border" placeholder="Filter Timestamp" id="filterTimestamp"></th>
-                        <th class="px-4 py-2"><input type="text" class="w-full px-2 py-1 text-sm rounded border" placeholder="Filter Level" id="filterLevel"></th>
-                        <th class="px-4 py-2"><input type="text" class="w-full px-2 py-1 text-sm rounded border" placeholder="Filter Script" id="filterScript"></th>
-                        <th class="px-4 py-2"><input type="text" class="w-full px-2 py-1 text-sm rounded border" placeholder="Filter Message" id="filterMessage"></th>
+                        <th class="px-4 py-2"><input type="text" class="w-full px-2 py-1 text-sm rounded border"
+                                placeholder="Filter Timestamp" id="filterTimestamp"></th>
+                        <th class="px-4 py-2"><input type="text" class="w-full px-2 py-1 text-sm rounded border"
+                                placeholder="Filter Level" id="filterLevel"></th>
+                        <th class="px-4 py-2"><input type="text" class="w-full px-2 py-1 text-sm rounded border"
+                                placeholder="Filter Script" id="filterScript"></th>
+                        <th class="px-4 py-2"><input type="text" class="w-full px-2 py-1 text-sm rounded border"
+                                placeholder="Filter Message" id="filterMessage"></th>
                     </tr>
                 </thead>
                 <tbody id="logTableBody">
@@ -59,39 +69,46 @@
         };
 
         function formatTimestamp(isoString) {
-            const date = DateTime.fromISO(isoString, { zone: 'UTC' }).toLocal();
-            return date.toFormat('yyyy-MM-dd HH:mm:ss');
+            if (!isoString) return 'Invalid Date';
+            const date = DateTime.fromISO(isoString, { zone: 'UTC' });
+            return date.isValid ? date.toLocal().toFormat('yyyy-MM-dd HH:mm:ss') : 'Invalid Date';
         }
 
         function createLogRow(log) {
+            if (!log || typeof log !== 'object') {
+                console.error('Invalid log entry:', log);
+                return document.createElement('tr'); // Return an empty row
+            }
+
             const row = document.createElement('tr');
             row.className = 'log-row';
-            const formattedTimestamp = formatTimestamp(log.timestamp);
+            const formattedTimestamp = log.timestamp ? formatTimestamp(log.timestamp) : 'N/A';
             row.innerHTML = `
-                <td class="px-4 py-2 text-gray-500" data-timestamp="${log.timestamp}">${formattedTimestamp}</td>
+                <td class="px-4 py-2 text-gray-500" data-timestamp="${log.timestamp || ''}">${formattedTimestamp}</td>
                 <td class="px-4 py-2">
                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full text-white ${LOG_LEVEL_COLORS[log.level] || 'bg-gray-500'}">
-                        ${log.level}
+                        ${log.level || 'UNKNOWN'}
                     </span>
                 </td>
-                <td class="px-4 py-2">${log.script}</td>
+                <td class="px-4 py-2">${log.script || 'N/A'}</td>
                 <td class="px-4 py-2 cursor-pointer" onclick="toggleDetails(this)">
-                    <div class="log-summary">${log.message}</div>
+                    <div class="log-summary">${log.message || 'No message'}</div>
                     ${log.additionalData ? `<pre class="log-details hidden mt-2 text-xs bg-gray-100 p-2 rounded">${JSON.stringify(log.additionalData, null, 2)}</pre>` : ''}
                 </td>
             `;
             return row;
         }
 
-        // Sort and display initial logs
-        <% logs.forEach((log) => { %>
-            logTableBody.appendChild(createLogRow(<%- JSON.stringify(log) %>));
-        <% }); %>
+        // Initial logs will be populated by the 'initialLogs' socket event
 
         socket.on('newLog', (logEntry) => {
-            const newRow = createLogRow(logEntry);
-            logTableBody.insertBefore(newRow, logTableBody.firstChild);
-            applyFilters();
+            if (logEntry && typeof logEntry === 'object') {
+                const newRow = createLogRow(logEntry);
+                logTableBody.insertBefore(newRow, logTableBody.firstChild);
+                applyFilters();
+            } else {
+                console.error('Received invalid log entry:', logEntry);
+            }
         });
 
         function toggleDetails(element) {
@@ -114,6 +131,11 @@
             };
 
             const rows = logTableBody.querySelectorAll('tr');
+            if (rows.length === 0) {
+                // If there are no rows, there's nothing to filter
+                return;
+            }
+
             rows.forEach(row => {
                 const cells = row.querySelectorAll('td');
                 const shouldShow = (
@@ -154,6 +176,55 @@
         socket.on('connect_error', (error) => {
             console.error('Connection error:', error);
         });
+
+        document.getElementById('clearLogsBtn').addEventListener('click', function () {
+            if (confirm('Are you sure you want to clear all logs?')) {
+                fetch('/clear-logs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            console.log('Logs cleared successfully');
+                            clearLogDisplay();
+                            // Add this line to force a refresh of the logs from the server
+                            location.reload();
+                        } else {
+                            console.error('Failed to clear logs');
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+        });
+
+        function clearLogDisplay() {
+            logTableBody.innerHTML = ''; // Clear the table body
+            // Reset filter inputs
+            filterInputs.forEach(input => {
+                input.value = '';
+            });
+            // Apply filters to ensure everything is visible
+            applyFilters();
+            console.log('Log display cleared'); // Add this line for debugging
+        }
+
+        socket.on('logsCleared', function () {
+            clearLogDisplay();
+            console.log('Received logsCleared event'); // Add this line for debugging
+        });
+
+        socket.on('initialLogs', function (initialLogs) {
+            logTableBody.innerHTML = ''; // Clear existing logs
+            initialLogs.forEach(log => {
+                if (log && typeof log === 'object') {
+                    logTableBody.appendChild(createLogRow(log));
+                }
+            });
+            applyFilters();
+        });
     </script>
 </body>
+
 </html>

@@ -140,7 +140,7 @@ const integrationSettingsDialog = {
         configureShell: function (newShell) {
             Java.super(integrationSettingsDialog.dialog).configureShell(newShell);
             newShell.setText("Integration Settings");
-            newShell.setSize(800, 400);
+            newShell.setSize(800, 600);
         },
 
         createDialogArea: function (parent) {
