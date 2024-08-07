@@ -3,9 +3,17 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
+const { program } = require('commander');
 
-const API_PORT = process.env.API_PORT || 4000;
-const WEB_PORT = process.env.WEB_PORT || 4001;
+program
+  .option('--api-port <port>', 'API server port')
+  .option('--web-port <port>', 'Web server port')
+  .parse(process.argv);
+
+const options = program.opts();
+
+const API_PORT = options.apiPort || process.env.API_PORT || 4000;
+const WEB_PORT = options.webPort || process.env.WEB_PORT || 4001;
 
 const apiServer = express();
 const webServer = express();

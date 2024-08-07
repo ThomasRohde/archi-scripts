@@ -5,7 +5,7 @@
   "scripts": {
     "build-css": "tailwindcss -i ./public/styles.css -o ./public/output.css",
     "start": "npm run build-css && node server.js",
-    "build": "npm run build-css && pkg . --targets node18-macos-x64,node18-win-x64 --output jarchi-logger"
+    "build": "npm run build-css && pkg . --targets node18-macos-x64,node18-win-x64 --output jarchi-logger --options preserve-symlinks"
   },
   "bin": "server.js",
   "pkg": {
@@ -19,6 +19,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "commander": "^12.1.0",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
