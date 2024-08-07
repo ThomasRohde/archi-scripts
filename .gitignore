@@ -93,3 +93,5 @@ typings/
 ehthumbs.db
 Thumbs.db
 .aider*
+jarchi-logger/jarchi-logger-macos
+jarchi-logger/jarchi-logger-win.exe
