@@ -30,8 +30,16 @@ const jarchiLogger = {
         this.preferenceStore = workbench.getPreferenceStore();
         this.defaultLogLevel = this.getLogLevelFromPreferences();
         this.scriptName = scriptName;
-    },
 
+        // Return an object with bound logging methods
+        return {
+            debug: this.debug.bind(this),
+            info: this.info.bind(this),
+            warn: this.warn.bind(this),
+            error: this.error.bind(this)
+        };
+    },
+    
     isEnabled: function() {
         return this.preferenceStore.getBoolean('loggerEnabled');
     },
