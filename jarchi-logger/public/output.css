@@ -588,6 +588,10 @@ video {
   }
 }
 
+.collapse {
+  visibility: collapse;
+}
+
 .mx-auto {
   margin-left: auto;
   margin-right: auto;
@@ -629,8 +633,8 @@ video {
   height: 1rem;
 }
 
-.h-\[calc\(100vh-8rem\)\] {
-  height: calc(100vh - 8rem);
+.h-\[calc\(100vh-12rem\)\] {
+  height: calc(100vh - 12rem);
 }
 
 .w-4 {
@@ -639,6 +643,10 @@ video {
 
 .w-full {
   width: 100%;
+}
+
+.border-collapse {
+  border-collapse: collapse;
 }
 
 .transform {

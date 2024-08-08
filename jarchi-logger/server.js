@@ -109,6 +109,22 @@ webServer.get('/console', (req, res) => {
     res.render('console', { initialContent: consoleContent });
 });
 
+io.on('connection', (socket) => {
+    console.log('A user connected');
+    // Send current logs to the newly connected client
+    socket.emit('initialLogs', logs);
+    
+    // Handle console reset
+    socket.on('resetConsole', () => {
+        consoleContent = [];
+        io.emit('consoleReset');
+    });
+    
+    socket.on('disconnect', () => {
+        console.log('User disconnected');
+    });
+});
+
 // Clear logs endpoint
 webServer.post('/clear-logs', (req, res) => {
     logs.length = 0; // Clear the logs array

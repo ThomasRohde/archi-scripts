@@ -7,16 +7,68 @@
     <link href="/output.css" rel="stylesheet">
     <style>
         #consoleOutput {
-            font-family: monospace;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        #consoleOutput > div {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            border-radius: 0 4px 4px 0;
+        }
+        #consoleOutput h1, #consoleOutput h2, #consoleOutput h3 {
+            color: #007bff;
+            margin-top: 0;
+        }
+        #consoleOutput code {
+            background-color: #e9ecef;
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        #consoleOutput pre {
+            background-color: #e9ecef;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        #consoleOutput table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 1rem;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        #consoleOutput th,
+        #consoleOutput td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+        #consoleOutput th {
+            background-color: #f1f3f5;
+            font-weight: bold;
+            color: #495057;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+        }
+        #consoleOutput tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        #consoleOutput tbody tr:hover {
+            background-color: #e9ecef;
         }
     </style>
 </head>
 <body class="bg-gray-100 font-sans">
     <div class="container mx-auto p-4">
         <h1 class="text-2xl font-bold mb-4">JArchi Console</h1>
-        <div id="consoleOutput" class="bg-white shadow-md rounded-lg p-4 overflow-auto h-[calc(100vh-8rem)]">
+        <button id="resetButton" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mb-4">
+            Reset Console
+        </button>
+        <div id="consoleOutput" class="bg-white shadow-md rounded-lg p-4 overflow-auto h-[calc(100vh-12rem)]">
         </div>
     </div>
 
@@ -24,8 +76,8 @@
     <script>
         const socket = io();
         const consoleOutput = document.getElementById('consoleOutput');
+        const resetButton = document.getElementById('resetButton');
 
-        // Function to append content to the console
         function appendToConsole(htmlContent) {
             const contentDiv = document.createElement('div');
             contentDiv.innerHTML = htmlContent;
@@ -33,13 +85,23 @@
             consoleOutput.scrollTop = consoleOutput.scrollHeight;
         }
 
-        // Display initial content
         <% initialContent.forEach(function(content) { %>
             appendToConsole(`<%- content %>`);
         <% }); %>
 
         socket.on('newConsoleContent', (htmlContent) => {
             appendToConsole(htmlContent);
+        });
+
+        resetButton.addEventListener('click', () => {
+            if (confirm('Are you sure you want to reset the console? This will clear all content.')) {
+                consoleOutput.innerHTML = '';
+                socket.emit('resetConsole');
+            }
+        });
+
+        socket.on('consoleReset', () => {
+            consoleOutput.innerHTML = '';
         });
     </script>
 </body>
