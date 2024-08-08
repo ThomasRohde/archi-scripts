@@ -4,6 +4,7 @@ const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
 const { program } = require('commander');
+const { marked } = require('marked');
 
 program
   .option('--api-port <port>', 'API server port')
@@ -50,6 +51,9 @@ webServer.get('/luxon.min.js', (req, res) => {
 // Initialize an object to store logs
 const logs = [];
 
+// Add this line to store console content
+let consoleContent = [];
+
 // Helper function to process and store a log entry
 function processLogEntry(logData) {
     const { level, script, message, timestamp, ...additionalData } = logData;
@@ -78,17 +82,39 @@ apiServer.get('/logs', (req, res) => {
     res.json(logs);
 });
 
+// Update this endpoint for receiving markdown
+apiServer.post('/console', (req, res) => {
+    const { markdown } = req.body;
+    if (!markdown) {
+        return res.status(400).json({ error: 'Markdown content is required' });
+    }
+    const htmlContent = marked.parse(markdown);
+    consoleContent.push(htmlContent);
+    io.emit('newConsoleContent', htmlContent);
+    res.sendStatus(200);
+});
+
+// Add this new route to get all console content
+apiServer.get('/console-content', (req, res) => {
+    res.json(consoleContent);
+});
+
+// Web Routes
+webServer.get('/', (req, res) => {
+    res.render('index', { logs });
+});
+
+// Keep this route on the webServer for serving the console page
+webServer.get('/console', (req, res) => {
+    res.render('console', { initialContent: consoleContent });
+});
+
 // Clear logs endpoint
 webServer.post('/clear-logs', (req, res) => {
     logs.length = 0; // Clear the logs array
     io.emit('logsCleared'); // Emit an event to all connected clients
     console.log('Logs cleared on server');
     res.sendStatus(200);
-});
-
-// Web Routes
-webServer.get('/', (req, res) => {
-    res.render('index', { logs });
 });
 
 io.on('connection', (socket) => {
