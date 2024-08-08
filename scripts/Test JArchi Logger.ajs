@@ -1,13 +1,22 @@
 /**
  * @name Test JArchi Logger
- * @version 1.3
- * @description Test script to exercise the updated JArchi Logger API
+ * @version 1.2
+ * @description Test script to exercise the JArchi Logger API (Updated for new logging approach)
  */
 
 console.clear();
 console.show();
 
-const log = require('./lib/jarchiLogger').init('TestJArchiLogger');
+const jarchiLogger = require('./lib/jarchiLogger');
+jarchiLogger.init('TestJArchiLogger');
+
+// Create shorthand logging functions
+const log = {
+    debug: jarchiLogger.debug.bind(jarchiLogger),
+    info: jarchiLogger.info.bind(jarchiLogger),
+    warn: jarchiLogger.warn.bind(jarchiLogger),
+    error: jarchiLogger.error.bind(jarchiLogger)
+};
 
 // Import Java's Thread class
 const Thread = Java.type('java.lang.Thread');
@@ -19,7 +28,7 @@ function simulateAsyncOperation(callback) {
         Thread.sleep(1000);
         callback();
     } catch (e) {
-        log.error("Error in simulateAsyncOperation", { error: e.toString() });
+        console.error("Error in simulateAsyncOperation:", e);
     }
 }
 
@@ -58,7 +67,7 @@ try {
     log.error('An error occurred', { error: error.toString(), stack: error.stack });
 }
 
-console.log("Test script completed. Check the logger output for the results.");
+console.log("Test script completed. Check the logger server or its console for the results.");
 
 // Wait for a moment to allow async operations to complete
 Thread.sleep(2000);

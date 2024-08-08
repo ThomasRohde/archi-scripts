@@ -34,7 +34,16 @@
     const monitorHeight = shell.getDisplay().getPrimaryMonitor().getBounds().height;
 
     // Initialize logger
-    const log = require('./lib/jarchiLogger').init('Menu');
+    const jarchiLogger = require('./lib/jarchiLogger');
+    jarchiLogger.init('Menu');
+
+    // Create shorthand logging functions
+    const log = {
+        debug: jarchiLogger.debug.bind(jarchiLogger),
+        info: jarchiLogger.info.bind(jarchiLogger),
+        warn: jarchiLogger.warn.bind(jarchiLogger),
+        error: jarchiLogger.error.bind(jarchiLogger)
+    };
 
     /**
      * Main dialog object for the JArchi Script Menu.
