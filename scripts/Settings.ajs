@@ -80,6 +80,7 @@ const integrationSettingsDialog = {
         enabled: false,
         apiUrl: "http://localhost:4000",
         consoleLogging: true,
+        markdownLogging: false,
         logLevel: "INFO",
         logRetentionPeriod: "7",
         logRetentionUnit: "days",
@@ -117,6 +118,7 @@ const integrationSettingsDialog = {
         this.loggerSettings.logRetentionPeriod = preferenceStore.getString("loggerRetentionPeriod") || "7";
         this.loggerSettings.logRetentionUnit = preferenceStore.getString("loggerRetentionUnit") || "days";
         this.loggerSettings.consoleLogging = preferenceStore.getBoolean("loggerConsoleLogging") || false;
+        this.loggerSettings.markdownLogging = preferenceStore.getBoolean("loggerMarkdownLogging") || false;  // Add this line
         this.loggerSettings.logLevel = preferenceStore.getString("loggerLogLevel") || "INFO";
         this.loggerSettings.webPort = preferenceStore.getString('loggerWebPort') || "4001";
     },
@@ -139,6 +141,7 @@ const integrationSettingsDialog = {
         preferenceStore.setValue("loggerRetentionPeriod", this.loggerSettings.logRetentionPeriod);
         preferenceStore.setValue("loggerRetentionUnit", this.loggerSettings.logRetentionUnit);
         preferenceStore.setValue("loggerConsoleLogging", this.loggerSettings.consoleLogging);
+        preferenceStore.setValue("loggerMarkdownLogging", this.loggerSettings.markdownLogging);  // Add this line
         preferenceStore.setValue("loggerLogLevel", this.loggerSettings.logLevel);
         preferenceStore.setValue("loggerWebPort", this.loggerSettings.webPort);
     },
@@ -265,11 +268,11 @@ const integrationSettingsDialog = {
         createLoggerTab: function (tabFolder) {
             const loggerTab = new TabItem(tabFolder, SWT.NONE);
             loggerTab.setText("Logger");
-
+        
             const composite = new Composite(tabFolder, SWT.NONE);
             composite.setLayout(new GridLayout(2, false));
             loggerTab.setControl(composite);
-
+        
             // Enable Logging
             const enableLoggingButton = new Button(composite, SWT.CHECK);
             enableLoggingButton.setText("Enable Remote Logging");
@@ -280,7 +283,7 @@ const integrationSettingsDialog = {
                     integrationSettingsDialog.loggerSettings.enabled = enableLoggingButton.getSelection();
                 },
             });
-
+        
             // Logger API URL
             new Label(composite, SWT.NONE).setText("Logger API URL:");
             const apiUrlText = new Text(composite, SWT.BORDER);
@@ -289,7 +292,7 @@ const integrationSettingsDialog = {
             apiUrlText.addModifyListener(
                 (e) => (integrationSettingsDialog.loggerSettings.apiUrl = apiUrlText.getText())
             );
-
+        
             // Web Server Port
             new Label(composite, SWT.NONE).setText("Web Server Port:");
             const webPortText = new Text(composite, SWT.BORDER);
@@ -299,7 +302,7 @@ const integrationSettingsDialog = {
             webPortText.addModifyListener(
                 (e) => (integrationSettingsDialog.loggerSettings.webPort = webPortText.getText())
             );
-
+        
             // Start Logger Button
             const startLoggerButton = new Button(composite, SWT.PUSH);
             startLoggerButton.setText("Start Logger");
@@ -310,27 +313,27 @@ const integrationSettingsDialog = {
                     startLoggerExecutable();
                 }
             });
-
+        
             // Log Retention Period
             new Label(composite, SWT.NONE).setText("Log Retention Period:");
             const retentionComposite = new Composite(composite, SWT.NONE);
             retentionComposite.setLayout(new GridLayout(2, false));
             retentionComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
+        
             const retentionText = new Text(retentionComposite, SWT.BORDER);
             retentionText.setLayoutData(new GridData(50, SWT.DEFAULT));
             retentionText.setText(integrationSettingsDialog.loggerSettings.logRetentionPeriod);
             retentionText.addModifyListener(
                 (e) => (integrationSettingsDialog.loggerSettings.logRetentionPeriod = retentionText.getText())
             );
-
+        
             const retentionUnitCombo = new Combo(retentionComposite, SWT.READ_ONLY);
             retentionUnitCombo.setItems(["days", "hours", "minutes"]);
             retentionUnitCombo.setText(integrationSettingsDialog.loggerSettings.logRetentionUnit);
             retentionUnitCombo.addModifyListener(
                 (e) => (integrationSettingsDialog.loggerSettings.logRetentionUnit = retentionUnitCombo.getText())
             );
-
+        
             // Console Logging
             const consoleLoggingButton = new Button(composite, SWT.CHECK);
             consoleLoggingButton.setText("Enable Console Logging");
@@ -341,7 +344,18 @@ const integrationSettingsDialog = {
                     integrationSettingsDialog.loggerSettings.consoleLogging = consoleLoggingButton.getSelection();
                 },
             });
-
+        
+            // Markdown Logging
+            const markdownLoggingButton = new Button(composite, SWT.CHECK);
+            markdownLoggingButton.setText("Enable Markdown Logging");
+            markdownLoggingButton.setSelection(integrationSettingsDialog.loggerSettings.markdownLogging);
+            markdownLoggingButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
+            markdownLoggingButton.addSelectionListener({
+                widgetSelected: function (e) {
+                    integrationSettingsDialog.loggerSettings.markdownLogging = markdownLoggingButton.getSelection();
+                },
+            });
+        
             // Log level
             new Label(composite, SWT.NONE).setText("Log Level:");
             const logLevelCombo = new Combo(composite, SWT.READ_ONLY);
@@ -351,7 +365,7 @@ const integrationSettingsDialog = {
             logLevelCombo.addModifyListener(
                 (e) => (integrationSettingsDialog.loggerSettings.logLevel = logLevelCombo.getText())
             );
-
+        
             function updateWebPortAndButtonState() {
                 const isLocalhost = apiUrlText.getText().includes("localhost") || apiUrlText.getText().includes("127.0.0.1");
                 webPortText.setEnabled(isLocalhost);
@@ -368,7 +382,7 @@ const integrationSettingsDialog = {
             
             // Call this function initially to set the correct state
             updateWebPortAndButtonState();
-
+        
             function startLoggerExecutable() {
                 const apiPort = apiUrlText.getText().split(":")[2] || "4000";
                 const webPort = webPortText.getText() || "4001";

@@ -1,7 +1,7 @@
 /**
  * @name Test JArchi Logger
- * @version 1.3
- * @description Test script to exercise the JArchi Logger API (Updated for new logging approach)
+ * @version 1.4
+ * @description Test script to exercise the JArchi Logger API, including the new markdown logging capability
  */
 
 console.clear();
@@ -16,7 +16,6 @@ const Thread = Java.type('java.lang.Thread');
 // Function to simulate an asynchronous operation
 function simulateAsyncOperation(callback) {
     try {
-        // Sleep for 1 second
         Thread.sleep(1000);
         callback();
     } catch (e) {
@@ -58,6 +57,124 @@ try {
 } catch (error) {
     log.error('An error occurred', { error: error.toString(), stack: error.stack });
 }
+
+// Test markdown logging
+console.log("Testing markdown logging...");
+
+// Test headers
+log.markdown(`
+# Header 1
+## Header 2
+### Header 3
+#### Header 4
+##### Header 5
+###### Header 6
+`);
+
+// Test emphasis
+log.markdown(`
+*This text is italicized*
+_This text is also italicized_
+
+**This text is bold**
+__This text is also bold__
+
+***This text is bold and italicized***
+`);
+
+// Test lists
+log.markdown(`
+Unordered list:
+- Item 1
+- Item 2
+  - Subitem 2.1
+  - Subitem 2.2
+- Item 3
+
+Ordered list:
+1. First item
+2. Second item
+3. Third item
+   1. Subitem 3.1
+   2. Subitem 3.2
+`);
+
+// Test links and images
+log.markdown(`
+[Link to Google](https://www.google.com)
+
+![Archi Logo](https://www.archimatetool.com/wp-content/uploads/2023/08/Archi-60x60.png)
+`);
+
+// Test code blocks
+log.markdown(`
+Inline \`code\` has \`back-ticks around\` it.
+
+\`\`\`javascript
+function example() {
+    console.log("This is a code block");
+}
+\`\`\`
+`);
+
+// Test blockquotes
+log.markdown(`
+> This is a blockquote.
+> It can span multiple lines.
+>
+> It can also have multiple paragraphs.
+`);
+
+// Test tables
+log.markdown(`
+| Column 1 | Column 2 | Column 3 |
+|----------|----------|----------|
+| Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 |
+| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 |
+`);
+
+// Test horizontal rules
+log.markdown(`
+Above the line
+
+---
+
+Below the line
+`);
+
+// Test task lists
+log.markdown(`
+- [x] Completed task
+- [ ] Incomplete task
+- [x] Another completed task
+`);
+
+// Test strikethrough
+log.markdown(`
+This ~~is strikethrough~~ text.
+`);
+
+// Test footnotes
+log.markdown(`
+Here's a sentence with a footnote. [^1]
+
+[^1]: This is the footnote.
+`);
+
+// Test definition lists
+log.markdown(`
+Term 1
+: Definition 1
+
+Term 2
+: Definition 2a
+: Definition 2b
+`);
+
+// Test emoji
+log.markdown(`
+:smile: :heart: :thumbsup:
+`);
 
 console.log("Test script completed. Check the logger server or its console for the results.");
 

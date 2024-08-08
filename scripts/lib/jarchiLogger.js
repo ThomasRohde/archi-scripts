@@ -38,6 +38,10 @@ const jarchiLogger = {
         return this.preferenceStore.getBoolean('loggerConsoleLogging');
     },
 
+    isConsoleMarkdownLoggingEnabled: function() {
+        return this.preferenceStore.getBoolean('loggerMarkdownLogging');
+    },
+
     getApiUrl: function() {
         return this.preferenceStore.getString('loggerApiUrl');
     },
@@ -109,12 +113,36 @@ const jarchiLogger = {
             });
     },
 
+    sendMarkdownToConsole: function(markdown) {
+        if (!this.isConsoleMarkdownLoggingEnabled()) {
+            return;
+        }
+
+        const apiUrl = this.getApiUrl();
+        const request = HttpRequest.newBuilder()
+            .uri(URI.create(apiUrl + '/console'))
+            .header('Content-Type', 'application/json')
+            .POST(BodyPublishers.ofString(JSON.stringify({ markdown })))
+            .build();
+
+        this.httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+            .thenApply(response => {
+                if (response.statusCode() !== 200) {
+                    console.error('Failed to send markdown to console. Status code:', response.statusCode());
+                }
+            })
+            .exceptionally(e => {
+                console.error('Error sending markdown to console:', e.getMessage());
+            });
+    },
+
     createLogger: function(scriptName) {
         return {
             debug: (message, additionalData) => this.log('DEBUG', message, scriptName, additionalData),
             info: (message, additionalData) => this.log('INFO', message, scriptName, additionalData),
             warn: (message, additionalData) => this.log('WARN', message, scriptName, additionalData),
-            error: (message, additionalData) => this.log('ERROR', message, scriptName, additionalData)
+            error: (message, additionalData) => this.log('ERROR', message, scriptName, additionalData),
+            markdown: (content) => this.sendMarkdownToConsole(content)
         };
     }
 };
