@@ -12,83 +12,108 @@
         .log-row:nth-child(even) {
             background-color: #f9fafb;
         }
+
         .log-row:hover {
             background-color: #e5e7eb;
         }
+
         .log-row {
             border-bottom: 1px solid #e5e7eb;
         }
+
         .log-summary {
             cursor: pointer;
             padding: 0.1rem;
         }
+
         .log-details {
             padding: 0.1rem;
             background-color: #f8f8f8;
             border-top: 1px solid #e5e7eb;
         }
+
         /* JSON Formatter Styles */
         .json-formatter-row {
             font-family: monospace;
             margin-left: 1em;
         }
-        .json-formatter-row, .json-formatter-row a, .json-formatter-row a:hover {
+
+        .json-formatter-row,
+        .json-formatter-row a,
+        .json-formatter-row a:hover {
             color: #000;
             text-decoration: none;
         }
+
         .json-formatter-row .json-formatter-row {
             margin-left: 1em;
         }
+
         .json-formatter-row .json-formatter-children.json-formatter-empty {
             opacity: 0.5;
             margin-left: 1em;
         }
+
         .json-formatter-row .json-formatter-children.json-formatter-empty:after {
             display: none;
         }
+
         .json-formatter-row .json-formatter-children.json-formatter-empty.json-formatter-object:after {
             content: "No properties";
         }
+
         .json-formatter-row .json-formatter-children.json-formatter-empty.json-formatter-array:after {
             content: "[]";
         }
+
         .json-formatter-row .json-formatter-string,
         .json-formatter-row .json-formatter-stringifiable {
             color: #a31515;
             white-space: pre;
             word-wrap: break-word;
         }
+
         .json-formatter-row .json-formatter-number {
             color: #098658;
         }
+
         .json-formatter-row .json-formatter-boolean {
             color: #0000ff;
         }
+
         .json-formatter-row .json-formatter-null {
             color: #0000ff;
         }
+
         .json-formatter-row .json-formatter-undefined {
             color: #767676;
         }
+
         .json-formatter-row .json-formatter-function {
             color: #767676;
         }
+
         .json-formatter-row .json-formatter-date {
             color: #0000ff;
         }
+
         .json-formatter-row .json-formatter-url {
             color: #0000ff;
         }
+
         .json-formatter-row .json-formatter-bracket {
             color: #000000;
         }
+
         .json-formatter-row .json-formatter-key {
             color: #0451a5;
             padding-right: 0.2em;
         }
+
         .json-formatter-row .json-formatter-toggler-link {
             cursor: pointer;
         }
+
         .json-formatter-row .json-formatter-toggler {
             line-height: 1.2em;
             font-size: 0.7em;
@@ -97,28 +122,35 @@
             cursor: pointer;
             padding-right: 0.2em;
         }
+
         .json-formatter-row .json-formatter-toggler:after {
             display: inline-block;
             transition: transform 100ms ease-in;
             content: "►";
         }
-        .json-formatter-row > a > .json-formatter-preview-text {
+
+        .json-formatter-row>a>.json-formatter-preview-text {
             opacity: 0.3;
             transition: opacity 0.15s ease-in;
             font-style: italic;
         }
-        .json-formatter-row:hover > a > .json-formatter-preview-text {
+
+        .json-formatter-row:hover>a>.json-formatter-preview-text {
             opacity: 0.6;
         }
-        .json-formatter-row.json-formatter-open > .json-formatter-toggler-link .json-formatter-toggler:after {
+
+        .json-formatter-row.json-formatter-open>.json-formatter-toggler-link .json-formatter-toggler:after {
             transform: rotate(90deg);
         }
-        .json-formatter-row.json-formatter-open > .json-formatter-children:after {
+
+        .json-formatter-row.json-formatter-open>.json-formatter-children:after {
             display: inline-block;
         }
-        .json-formatter-row.json-formatter-open > a > .json-formatter-preview-text {
+
+        .json-formatter-row.json-formatter-open>a>.json-formatter-preview-text {
             display: none;
         }
+
         .json-formatter-row.json-formatter-open.json-formatter-empty:after {
             display: block;
         }
@@ -190,20 +222,23 @@
             const row = document.createElement('tr');
             row.className = 'log-row';
             const formattedTimestamp = log.timestamp ? formatTimestamp(log.timestamp) : 'N/A';
-            
+
             row.innerHTML = `
-                <td class="px-4 py-2 text-gray-500" data-timestamp="${log.timestamp || ''}">${formattedTimestamp}</td>
-                <td class="px-4 py-2">
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full text-white ${LOG_LEVEL_COLORS[log.level] || 'bg-gray-500'}">
-                        ${log.level || 'UNKNOWN'}
-                    </span>
-                </td>
-                <td class="px-4 py-2">${log.script || 'N/A'}</td>
-                <td>
-                    <div class="log-summary" onclick="toggleDetails(this)">${log.message || 'No message'}</div>
-                    <div class="log-details hidden"></div>
-                </td>
-            `;
+        <td class="px-4 py-2 text-gray-500" data-timestamp="${log.timestamp || ''}">${formattedTimestamp}</td>
+        <td class="px-4 py-2">
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full text-white ${LOG_LEVEL_COLORS[log.level] || 'bg-gray-500'}">
+                ${log.level || 'UNKNOWN'}
+            </span>
+        </td>
+        <td class="px-4 py-2">${log.script || 'N/A'}</td>
+        <td>
+            <div class="log-summary flex items-center ${log.additionalData ? 'cursor-pointer' : ''}">
+                ${log.additionalData ? '<svg class="expand-icon w-4 h-4 mr-2 text-gray-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>' : ''}
+                <span>${log.message || 'No message'}</span>
+            </div>
+            ${log.additionalData ? '<div class="log-details hidden"></div>' : ''}
+        </td>
+    `;
 
             if (log.additionalData) {
                 const formatter = new JSONFormatter(log.additionalData, 1, {
@@ -214,16 +249,25 @@
                     animateOpen: true,
                     animateClose: true
                 });
-                
+
                 row.querySelector('.log-details').appendChild(formatter.render());
+                row.querySelector('.log-summary').addEventListener('click', () => toggleDetails(row));
             }
 
             return row;
         }
 
-        function toggleDetails(element) {
-            const details = element.nextElementSibling;
-            details.classList.toggle('hidden');
+        function toggleDetails(row) {
+            const details = row.querySelector('.log-details');
+            const expandIcon = row.querySelector('.expand-icon');
+            if (details && expandIcon) {
+                details.classList.toggle('hidden');
+                if (details.classList.contains('hidden')) {
+                    expandIcon.innerHTML = '<path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />';
+                } else {
+                    expandIcon.innerHTML = '<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />';
+                }
+            }
         }
 
         filterInputs.forEach(input => {
