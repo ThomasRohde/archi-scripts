@@ -29,7 +29,7 @@ const File = Java.type("java.io.File");
 // Import Ollama client
 const { OllamaClient } = require("./lib/ollamaClient");
 
-// At the top of each script or module:
+// Initialize logger
 const jarchiLogger = require('./lib/jarchiLogger');
 const log = jarchiLogger.createLogger('Settings');
 

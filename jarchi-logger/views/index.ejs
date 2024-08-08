@@ -5,15 +5,122 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JArchi Logger</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/3.3.0/luxon.min.js"></script>
+    <link href="/output.css" rel="stylesheet">
+    <script src="/luxon.min.js"></script>
+    <script src="/json-formatter.umd.min.js"></script>
     <style>
         .log-row:nth-child(even) {
             background-color: #f9fafb;
         }
-
         .log-row:hover {
             background-color: #e5e7eb;
+        }
+        .log-row {
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .log-summary {
+            cursor: pointer;
+            padding: 0.1rem;
+        }
+        .log-details {
+            padding: 0.1rem;
+            background-color: #f8f8f8;
+            border-top: 1px solid #e5e7eb;
+        }
+        /* JSON Formatter Styles */
+        .json-formatter-row {
+            font-family: monospace;
+            margin-left: 1em;
+        }
+        .json-formatter-row, .json-formatter-row a, .json-formatter-row a:hover {
+            color: #000;
+            text-decoration: none;
+        }
+        .json-formatter-row .json-formatter-row {
+            margin-left: 1em;
+        }
+        .json-formatter-row .json-formatter-children.json-formatter-empty {
+            opacity: 0.5;
+            margin-left: 1em;
+        }
+        .json-formatter-row .json-formatter-children.json-formatter-empty:after {
+            display: none;
+        }
+        .json-formatter-row .json-formatter-children.json-formatter-empty.json-formatter-object:after {
+            content: "No properties";
+        }
+        .json-formatter-row .json-formatter-children.json-formatter-empty.json-formatter-array:after {
+            content: "[]";
+        }
+        .json-formatter-row .json-formatter-string,
+        .json-formatter-row .json-formatter-stringifiable {
+            color: #a31515;
+            white-space: pre;
+            word-wrap: break-word;
+        }
+        .json-formatter-row .json-formatter-number {
+            color: #098658;
+        }
+        .json-formatter-row .json-formatter-boolean {
+            color: #0000ff;
+        }
+        .json-formatter-row .json-formatter-null {
+            color: #0000ff;
+        }
+        .json-formatter-row .json-formatter-undefined {
+            color: #767676;
+        }
+        .json-formatter-row .json-formatter-function {
+            color: #767676;
+        }
+        .json-formatter-row .json-formatter-date {
+            color: #0000ff;
+        }
+        .json-formatter-row .json-formatter-url {
+            color: #0000ff;
+        }
+        .json-formatter-row .json-formatter-bracket {
+            color: #000000;
+        }
+        .json-formatter-row .json-formatter-key {
+            color: #0451a5;
+            padding-right: 0.2em;
+        }
+        .json-formatter-row .json-formatter-toggler-link {
+            cursor: pointer;
+        }
+        .json-formatter-row .json-formatter-toggler {
+            line-height: 1.2em;
+            font-size: 0.7em;
+            vertical-align: middle;
+            opacity: 0.6;
+            cursor: pointer;
+            padding-right: 0.2em;
+        }
+        .json-formatter-row .json-formatter-toggler:after {
+            display: inline-block;
+            transition: transform 100ms ease-in;
+            content: "►";
+        }
+        .json-formatter-row > a > .json-formatter-preview-text {
+            opacity: 0.3;
+            transition: opacity 0.15s ease-in;
+            font-style: italic;
+        }
+        .json-formatter-row:hover > a > .json-formatter-preview-text {
+            opacity: 0.6;
+        }
+        .json-formatter-row.json-formatter-open > .json-formatter-toggler-link .json-formatter-toggler:after {
+            transform: rotate(90deg);
+        }
+        .json-formatter-row.json-formatter-open > .json-formatter-children:after {
+            display: inline-block;
+        }
+        .json-formatter-row.json-formatter-open > a > .json-formatter-preview-text {
+            display: none;
+        }
+        .json-formatter-row.json-formatter-open.json-formatter-empty:after {
+            display: block;
         }
     </style>
 </head>
@@ -77,12 +184,13 @@
         function createLogRow(log) {
             if (!log || typeof log !== 'object') {
                 console.error('Invalid log entry:', log);
-                return document.createElement('tr'); // Return an empty row
+                return document.createElement('tr');
             }
 
             const row = document.createElement('tr');
             row.className = 'log-row';
             const formattedTimestamp = log.timestamp ? formatTimestamp(log.timestamp) : 'N/A';
+            
             row.innerHTML = `
                 <td class="px-4 py-2 text-gray-500" data-timestamp="${log.timestamp || ''}">${formattedTimestamp}</td>
                 <td class="px-4 py-2">
@@ -91,31 +199,31 @@
                     </span>
                 </td>
                 <td class="px-4 py-2">${log.script || 'N/A'}</td>
-                <td class="px-4 py-2 cursor-pointer" onclick="toggleDetails(this)">
-                    <div class="log-summary">${log.message || 'No message'}</div>
-                    ${log.additionalData ? `<pre class="log-details hidden mt-2 text-xs bg-gray-100 p-2 rounded">${JSON.stringify(log.additionalData, null, 2)}</pre>` : ''}
+                <td>
+                    <div class="log-summary" onclick="toggleDetails(this)">${log.message || 'No message'}</div>
+                    <div class="log-details hidden"></div>
                 </td>
             `;
+
+            if (log.additionalData) {
+                const formatter = new JSONFormatter(log.additionalData, 1, {
+                    hoverPreviewEnabled: true,
+                    hoverPreviewArrayCount: 100,
+                    hoverPreviewFieldCount: 5,
+                    theme: 'light',
+                    animateOpen: true,
+                    animateClose: true
+                });
+                
+                row.querySelector('.log-details').appendChild(formatter.render());
+            }
+
             return row;
         }
 
-        // Initial logs will be populated by the 'initialLogs' socket event
-
-        socket.on('newLog', (logEntry) => {
-            if (logEntry && typeof logEntry === 'object') {
-                const newRow = createLogRow(logEntry);
-                logTableBody.insertBefore(newRow, logTableBody.firstChild);
-                applyFilters();
-            } else {
-                console.error('Received invalid log entry:', logEntry);
-            }
-        });
-
         function toggleDetails(element) {
-            const details = element.querySelector('.log-details');
-            if (details) {
-                details.classList.toggle('hidden');
-            }
+            const details = element.nextElementSibling;
+            details.classList.toggle('hidden');
         }
 
         filterInputs.forEach(input => {
@@ -131,11 +239,6 @@
             };
 
             const rows = logTableBody.querySelectorAll('tr');
-            if (rows.length === 0) {
-                // If there are no rows, there's nothing to filter
-                return;
-            }
-
             rows.forEach(row => {
                 const cells = row.querySelectorAll('td');
                 const shouldShow = (
@@ -189,7 +292,6 @@
                         if (response.ok) {
                             console.log('Logs cleared successfully');
                             clearLogDisplay();
-                            // Add this line to force a refresh of the logs from the server
                             location.reload();
                         } else {
                             console.error('Failed to clear logs');
@@ -200,29 +302,37 @@
         });
 
         function clearLogDisplay() {
-            logTableBody.innerHTML = ''; // Clear the table body
-            // Reset filter inputs
+            logTableBody.innerHTML = '';
             filterInputs.forEach(input => {
                 input.value = '';
             });
-            // Apply filters to ensure everything is visible
             applyFilters();
-            console.log('Log display cleared'); // Add this line for debugging
+            console.log('Log display cleared');
         }
 
         socket.on('logsCleared', function () {
             clearLogDisplay();
-            console.log('Received logsCleared event'); // Add this line for debugging
+            console.log('Received logsCleared event');
         });
 
         socket.on('initialLogs', function (initialLogs) {
-            logTableBody.innerHTML = ''; // Clear existing logs
+            logTableBody.innerHTML = '';
             initialLogs.forEach(log => {
                 if (log && typeof log === 'object') {
                     logTableBody.appendChild(createLogRow(log));
                 }
             });
             applyFilters();
+        });
+
+        socket.on('newLog', (logEntry) => {
+            if (logEntry && typeof logEntry === 'object') {
+                const newRow = createLogRow(logEntry);
+                logTableBody.insertBefore(newRow, logTableBody.firstChild);
+                applyFilters();
+            } else {
+                console.error('Received invalid log entry:', logEntry);
+            }
         });
     </script>
 </body>

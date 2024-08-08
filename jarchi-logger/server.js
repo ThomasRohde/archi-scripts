@@ -24,7 +24,28 @@ webServer.set('view engine', 'ejs');
 webServer.set('views', path.join(__dirname, 'views'));
 
 apiServer.use(express.json());
+
+// Middleware to set correct MIME type for JavaScript files
+webServer.use((req, res, next) => {
+  if (req.url.endsWith('.js')) {
+    res.type('application/javascript');
+  }
+  next();
+});
+
+// Serve static files from the 'public' directory
 webServer.use(express.static('public'));
+
+// Serve specific JavaScript files
+webServer.get('/json-formatter.umd.min.js', (req, res) => {
+  res.type('application/javascript');
+  res.sendFile(path.join(__dirname, 'node_modules/json-formatter-js/dist/json-formatter.umd.js'));
+});
+
+webServer.get('/luxon.min.js', (req, res) => {
+  res.type('application/javascript');
+  res.sendFile(path.join(__dirname, 'node_modules/luxon/build/global/luxon.min.js'));
+});
 
 // Initialize an object to store logs
 const logs = [];
@@ -61,13 +82,12 @@ apiServer.get('/logs', (req, res) => {
 webServer.post('/clear-logs', (req, res) => {
     logs.length = 0; // Clear the logs array
     io.emit('logsCleared'); // Emit an event to all connected clients
-    console.log('Logs cleared on server'); // Add this line for debugging
+    console.log('Logs cleared on server');
     res.sendStatus(200);
 });
 
 // Web Routes
 webServer.get('/', (req, res) => {
-    console.log('Current logs:', logs);
     res.render('index', { logs });
 });
 
