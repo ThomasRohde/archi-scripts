@@ -1,9 +1,9 @@
 /**
  * @module IntelligentModelAnalyzer
  * @description An intelligent analyzer for ArchiMate models using Ollama LLM
- * @version 1.1
+ * @version 1.2
  * @author Claude AI Assistant
- * @lastModifiedDate 2024-08-08
+ * @lastModifiedDate 2024-08-09
  */
 
 console.clear();
@@ -18,7 +18,13 @@ const log = jarchiLogger.createLogger('IntelligentModelAnalyzer');
 const ollamaClient = new OllamaClient('http://localhost:11434');
 const MODEL_NAME = 'llama3.1';  // Adjust this to the model you have installed in Ollama
 
+function logToMarkdown(content) {
+    log.markdown(content);
+    // console.log(content);
+}
+
 async function analyzeModel() {
+    logToMarkdown("# Intelligent Model Analysis");
     log.info("Starting Intelligent Model Analysis");
 
     const elementAnalysis = [];
@@ -47,28 +53,30 @@ async function analyzeModel() {
 
     modelOverview = await generateModelOverview(elementAnalysis, viewAnalysis);
     log.info("Model overview generated");
-    console.log("\nModel Overview:");
-    console.log(modelOverview);
+    logToMarkdown("\n## Model Overview");
+    logToMarkdown(modelOverview);
 
+    logToMarkdown("\n## Element Analysis");
     for (const element of elementAnalysis) {
         const analysis = await analyzeElement(element);
         log.debug("Element analyzed", { name: element.name, type: element.type });
-        console.log(`\nAnalysis for ${element.name} (${element.type}):`);
-        console.log(analysis);
+        logToMarkdown(`\n### Analysis for ${element.name} (${element.type})`);
+        logToMarkdown(analysis);
 
         if (element.documentation) {
             const improvedDoc = await improveDocumentation(element);
             log.debug("Documentation improved", { name: element.name });
-            console.log("Improved Documentation:");
-            console.log(improvedDoc);
+            logToMarkdown("\n#### Improved Documentation");
+            logToMarkdown(improvedDoc);
         }
     }
 
+    logToMarkdown("\n## View Analysis");
     for (const view of viewAnalysis) {
         const viewInsights = await analyzeView(view);
         log.debug("View analyzed", { name: view.name });
-        console.log(`\nInsights for view "${view.name}":`);
-        console.log(viewInsights);
+        logToMarkdown(`\n### Insights for view "${view.name}"`);
+        logToMarkdown(viewInsights);
     }
 
     log.info("Intelligent Model Analysis completed");

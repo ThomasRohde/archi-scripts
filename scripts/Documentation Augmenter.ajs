@@ -108,7 +108,7 @@ async function generateViewDocumentation(view) {
             createViewPrompt(view.name, "final")
         ));
         log.debug('Final view documentation generated');
-
+        log.markdown(finalViewDocumentation)
         return {
             view: { id: view.id, documentation: finalViewDocumentation },
             elements: elementUpdates.elements,
@@ -290,6 +290,7 @@ async function generateElementDocumentation(view, systemContext, viewDocumentati
         const documentation = await retryOperation(() => generateDocumentation(systemContext + "\n" + viewDocumentation, docPrompt, false));
 
         if (documentation) {
+            log.markdown(documentation);
             if (type === 'element') {
                 updates.elements.push({ 
                     id: item.id, 
