@@ -1,10 +1,13 @@
 /**
  * @module DocumentationAugmenter
  * @description A script to automatically generate and enhance documentation for ArchiMate views and elements using AI
- * @version 3.3
+ * @version 3.4
  * @author Claude AI Assistant
- * @lastModifiedDate 2024-08-01
+ * @lastModifiedDate 2024-08-08
  */
+
+console.clear();
+console.show();
 
 const { OllamaClient, Message, GenerateOptions, ROLES } = require('./lib/ollamaClient');
 const modelTraversal = require('./lib/modelTraversal');
@@ -12,8 +15,9 @@ const modelTraversal = require('./lib/modelTraversal');
 // Import Java Thread class
 const Thread = Java.type('java.lang.Thread');
 
-console.clear();
-console.show();
+// Initialize logger
+const jarchiLogger = require('./lib/jarchiLogger');
+const log = jarchiLogger.createLogger('DocumentationAugmenter');
 
 // Load settings from preference store
 const preferenceStore = workbench.getPreferenceStore();
@@ -84,18 +88,18 @@ const ELEMENT_DOCUMENTATION_TOOL = {
 };
 
 async function generateViewDocumentation(view) {
-    console.log(`Generating documentation for view: ${view.name}`);
+    log.info('Generating documentation for view', { viewName: view.name });
 
     const systemContext = createSystemContext(view);
     const initialViewDocumentation = await retryOperation(() => generateViewDocumentationWithoutTool(
         systemContext, 
         createViewPrompt(view.name, "initial")
     ));
-    console.log("Initial view documentation generated.");
+    log.debug('Initial view documentation generated');
 
     if (initialViewDocumentation) {
         const elementUpdates = await generateElementDocumentation(view, systemContext, initialViewDocumentation);
-        console.log("Element documentation generation complete.");
+        log.debug('Element documentation generation complete');
 
         // Second pass for view documentation with element context
         const elementContext = createElementContext(elementUpdates);
@@ -103,7 +107,7 @@ async function generateViewDocumentation(view) {
             systemContext + "\n" + elementContext,
             createViewPrompt(view.name, "final")
         ));
-        console.log("Final view documentation generated.");
+        log.debug('Final view documentation generated');
 
         return {
             view: { id: view.id, documentation: finalViewDocumentation },
@@ -111,7 +115,7 @@ async function generateViewDocumentation(view) {
             relationships: elementUpdates.relationships
         };
     } else {
-        console.error("Failed to generate initial view documentation");
+        log.error('Failed to generate initial view documentation');
         return null;
     }
 }
@@ -272,12 +276,12 @@ async function generateElementDocumentation(view, systemContext, viewDocumentati
     }, view);
 
     const totalItems = items.length;
-    console.log(`Total items to process: ${totalItems}`);
+    log.info(`Processing elements and relationships`, { total: totalItems });
 
     for (let i = 0; i < items.length; i++) {
         const { type, item } = items[i];
         const itemName = type === 'element' ? item.name : (item.name || `${item.source.name} -> ${item.target.name}`);
-        console.log(`Processing ${type}: ${itemName} (${i + 1}/${totalItems})`);
+        log.debug(`Processing ${type}`, { name: itemName, progress: `${i + 1}/${totalItems}` });
 
         const docPrompt = `Analyze the ${type} '${itemName}' (${item.type}) within the context of the view. 
                            Provide a structured technical description focusing on its role, significance, and key characteristics. 
@@ -309,7 +313,7 @@ async function retryOperation(operation) {
             return await operation();
         } catch (error) {
             if (error.message.includes("Read timed out") && i < MAX_RETRIES - 1) {
-                console.log(`Attempt ${i + 1} failed. Retrying in ${RETRY_DELAY / 1000} seconds...`);
+                log.warn(`Operation attempt failed, retrying`, { attempt: i + 1, maxRetries: MAX_RETRIES, delay: RETRY_DELAY });
                 Thread.sleep(RETRY_DELAY);
             } else {
                 throw error;
@@ -319,7 +323,7 @@ async function retryOperation(operation) {
 }
 
 function applyUpdates(updates) {
-    console.log("Applying updates...");
+    log.info('Applying documentation updates');
     
     // Update view
     if (updates.view && updates.view.id) {
@@ -328,9 +332,9 @@ function applyUpdates(updates) {
             if (updates.view.documentation) {
                 view.first().documentation = updates.view.documentation;
             }
-            console.log("View updated: " + view.first().name);
+            log.debug('View updated', { viewName: view.first().name });
         } else {
-            console.error("View not found: " + updates.view.id);
+            log.error('View not found', { viewId: updates.view.id });
         }
     }
     
@@ -342,9 +346,9 @@ function applyUpdates(updates) {
                 if (elementUpdate.updates.documentation) {
                     element.first().documentation = elementUpdate.updates.documentation;
                 }
-                console.log("Element updated: " + element.first().name);
+                log.debug('Element updated', { elementName: element.first().name });
             } else {
-                console.error("Element not found: " + elementUpdate.id);
+                log.error('Element not found', { elementId: elementUpdate.id });
             }
         });
     }
@@ -357,31 +361,31 @@ function applyUpdates(updates) {
                 if (relationshipUpdate.updates.documentation) {
                     relationship.first().documentation = relationshipUpdate.updates.documentation;
                 }
-                console.log("Relationship updated: " + (relationship.first().name || "Unnamed relationship"));
+                log.debug('Relationship updated', { relationshipName: relationship.first().name || "Unnamed relationship" });
             } else {
-                console.error("Relationship not found: " + relationshipUpdate.id);
+                log.error('Relationship not found', { relationshipId: relationshipUpdate.id });
             }
         });
     }
     
-    console.log("Updates applied successfully.");
+    log.info('Documentation updates applied successfully');
 }
 
 async function generateAndApplyDocumentation(view) {
     try {
-        console.log(`Generating and applying documentation for view: ${view.name}`);
+        log.info('Starting documentation generation and application', { viewName: view.name });
         
         const updates = await generateViewDocumentation(view);
         
         if (updates) {
-            console.log("Generated documentation updates:");
+            log.debug('Documentation updates generated successfully');
             applyUpdates(updates);
-            console.log("Documentation generation and application complete.");
+            log.info('Documentation generation and application complete');
         } else {
-            console.error("Failed to generate documentation updates.");
+            log.error('Failed to generate documentation updates');
         }
     } catch (error) {
-        console.error("Error: " + error.toString());
+        log.error('Error in documentation generation process', { error: error.toString() });
     }
 }
 
@@ -391,5 +395,5 @@ const selectedView = $(selection).filter("archimate-diagram-model").first();
 if (selectedView) {
     generateAndApplyDocumentation(selectedView);
 } else {
-    console.error("No view selected. Please select a view and run the script again.");
+    log.error('No view selected. Please select a view and run the script again.');
 }

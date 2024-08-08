@@ -1,6 +1,6 @@
 /**
  * @name Test JArchi Logger
- * @version 1.2
+ * @version 1.3
  * @description Test script to exercise the JArchi Logger API (Updated for new logging approach)
  */
 
@@ -8,15 +8,7 @@ console.clear();
 console.show();
 
 const jarchiLogger = require('./lib/jarchiLogger');
-jarchiLogger.init('TestJArchiLogger');
-
-// Create shorthand logging functions
-const log = {
-    debug: jarchiLogger.debug.bind(jarchiLogger),
-    info: jarchiLogger.info.bind(jarchiLogger),
-    warn: jarchiLogger.warn.bind(jarchiLogger),
-    error: jarchiLogger.error.bind(jarchiLogger)
-};
+const log = jarchiLogger.createLogger('TestJArchiLogger');
 
 // Import Java's Thread class
 const Thread = Java.type('java.lang.Thread');

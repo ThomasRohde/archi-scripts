@@ -35,15 +35,7 @@
 
     // Initialize logger
     const jarchiLogger = require('./lib/jarchiLogger');
-    jarchiLogger.init('Menu');
-
-    // Create shorthand logging functions
-    const log = {
-        debug: jarchiLogger.debug.bind(jarchiLogger),
-        info: jarchiLogger.info.bind(jarchiLogger),
-        warn: jarchiLogger.warn.bind(jarchiLogger),
-        error: jarchiLogger.error.bind(jarchiLogger)
-    };
+    const log = jarchiLogger.createLogger('Menu');
 
     /**
      * Main dialog object for the JArchi Script Menu.
@@ -284,7 +276,7 @@
                 if (this.tutorialButton) {
                     this.tutorialButton.setEnabled(!!item.tutorial);
                 }
-                log.info('Script selected', { scriptName: item.name, category: item.category });
+                log.info('Script selected: ' + item.name, { scriptName: item.name, category: item.category });
             } else {
                 this.descriptionBrowser.setText(/* HTML */ `
                     ${commonStyles}

@@ -1,9 +1,9 @@
 /**
  * @module PublishViewToConfluence
  * @description Publishes the currently selected view to a Confluence page with enhanced structure, Markdown support, and expandable element sections
- * @version 4.0
+ * @version 4.1
  * @author Claude AI Assistant
- * @lastModifiedDate 2024-08-02
+ * @lastModifiedDate 2024-08-08
  */
 
 console.clear();
@@ -11,10 +11,10 @@ console.show();
 
 const confluenceIntegration = require("./lib/confluenceIntegration");
 const marked = require('./node_modules/marked/marked.min');
+const jarchiLogger = require('./lib/jarchiLogger');
+const log = jarchiLogger.createLogger('PublishViewToConfluence');
 
 function preprocessMarkdown(content) {
-    // Replace single newlines with two spaces followed by a newline
-    // This ensures that Markdown creates a line break
     return content.replace(/(?<!\n)\n(?!\n)/g, "  \n");
 }
 
@@ -50,18 +50,18 @@ async function publishViewToConfluence() {
     try {
         const selectedView = $(selection).filter("archimate-diagram-model").first();
         if (!selectedView) {
-            console.error("No view selected. Please select a view and run the script again.");
+            log.error("No view selected");
             return;
         }
 
         const confluenceSettings = confluenceIntegration.readConfluenceSettings();
         if (!confluenceSettings.baseUrl || !confluenceSettings.spaceKey || !confluenceSettings.username || !confluenceSettings.apiToken) {
-            console.error("Confluence settings are not properly configured. Please run the Confluence Settings script first.");
+            log.error("Confluence settings not properly configured");
             return;
         }
 
         const pageTitle = selectedView.name;
-        console.log(`Publishing view "${pageTitle}" to Confluence...`);
+        log.info(`Publishing view to Confluence`, { pageTitle });
 
         const viewImage = $.model.renderViewAsBase64(selectedView, "PNG", { scale: 2, margin: 20 });
 
@@ -87,10 +87,10 @@ async function publishViewToConfluence() {
 
         let pageInfo = await confluenceIntegration.getPageInfo(pageTitle);
         if (!pageInfo) {
-            console.log("Creating new page...");
+            log.info("Creating new page", { pageTitle });
             pageInfo = { pageId: "", pageVersion: 0 };
         } else {
-            console.log("Updating existing page...");
+            log.info("Updating existing page", { pageTitle, pageId: pageInfo.pageId });
         }
 
         const result = await confluenceIntegration.updateConfluencePage(
@@ -101,7 +101,7 @@ async function publishViewToConfluence() {
             pageContents
         );
 
-        console.log(`Page "${pageTitle}" ${pageInfo.pageId ? "updated" : "created"} successfully. Page ID: ${result.pageId}, Version: ${result.pageVersion}`);
+        log.info(`Page updated successfully`, { pageTitle, pageId: result.pageId, version: result.pageVersion });
 
         const attachmentComment = "View diagram";
         const attachmentResult = await confluenceIntegration.attachFile(
@@ -112,11 +112,12 @@ async function publishViewToConfluence() {
             attachmentComment
         );
 
-        console.log(`Image "${imageFileName}" attached successfully. Attachment ID: ${attachmentResult.id}, Version: ${attachmentResult.version}`);
+        log.info(`Image attached successfully`, { fileName: imageFileName, attachmentId: attachmentResult.id, version: attachmentResult.version });
 
-        console.log(`View published successfully. You can view it at: ${confluenceSettings.baseUrl}/wiki/spaces/${confluenceSettings.spaceKey}/pages/${result.pageId}`);
+        const pageUrl = `${confluenceSettings.baseUrl}/wiki/spaces/${confluenceSettings.spaceKey}/pages/${result.pageId}`;
+        log.info(`View published successfully`, { pageUrl });
     } catch (error) {
-        console.error("An error occurred:", error.message);
+        log.error("An error occurred while publishing view", { error: error.toString() });
     }
 }
 

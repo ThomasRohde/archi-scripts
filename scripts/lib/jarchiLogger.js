@@ -24,12 +24,10 @@ const jarchiLogger = {
     httpClient: HttpClient.newBuilder().build(),
     preferenceStore: null,
     defaultLogLevel: LOG_LEVELS.INFO,
-    scriptName: 'Unknown',
 
-    init: function(scriptName) {
+    initialize: function() {
         this.preferenceStore = workbench.getPreferenceStore();
         this.defaultLogLevel = this.getLogLevelFromPreferences();
-        this.scriptName = scriptName;
     },
 
     isEnabled: function() {
@@ -49,16 +47,16 @@ const jarchiLogger = {
         return LOG_LEVELS[levelString] || LOG_LEVELS.INFO;
     },
 
-    log: function(level, message, additionalData = {}) {
+    log: function(level, message, script, additionalData = {}) {
         const logLevel = LOG_LEVELS[level] || this.defaultLogLevel;
         
         if (logLevel < this.defaultLogLevel) {
-            return; // Skip logging if the message's level is lower than the default level
+            return;
         }
 
         const logData = {
             level: level,
-            script: this.scriptName,
+            script: script,
             message: message,
             timestamp: new Date().toISOString(),
             ...additionalData
@@ -75,13 +73,13 @@ const jarchiLogger = {
 
     logToConsole: function(logData) {
         const logMessage = `[${logData.timestamp}] ${logData.level} - ${logData.script} - ${logData.message}`;
-        const color = LOG_COLORS[logData.level] || [0, 0, 0];  // Default to black if level not found
+        const color = LOG_COLORS[logData.level] || [0, 0, 0];
         
         console.setTextColor(color[0], color[1], color[2]);
         console.log(logMessage);
         console.setDefaultTextColor();
 
-        if (Object.keys(logData).length > 4) { // If there's additional data
+        if (Object.keys(logData).length > 4) {
             console.log('Additional data:', JSON.stringify(logData, null, 2));
         }
     },
@@ -105,21 +103,16 @@ const jarchiLogger = {
             });
     },
 
-    debug: function(message, additionalData = {}) {
-        this.log('DEBUG', message, additionalData);
-    },
-
-    info: function(message, additionalData = {}) {
-        this.log('INFO', message, additionalData);
-    },
-
-    warn: function(message, additionalData = {}) {
-        this.log('WARN', message, additionalData);
-    },
-
-    error: function(message, additionalData = {}) {
-        this.log('ERROR', message, additionalData);
+    createLogger: function(scriptName) {
+        return {
+            debug: (message, additionalData) => this.log('DEBUG', message, scriptName, additionalData),
+            info: (message, additionalData) => this.log('INFO', message, scriptName, additionalData),
+            warn: (message, additionalData) => this.log('WARN', message, scriptName, additionalData),
+            error: (message, additionalData) => this.log('ERROR', message, scriptName, additionalData)
+        };
     }
 };
+
+jarchiLogger.initialize();
 
 module.exports = jarchiLogger;

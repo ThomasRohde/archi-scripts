@@ -25,8 +25,9 @@ const Color = Java.type("org.eclipse.swt.graphics.Color");
 const RGB = Java.type("org.eclipse.swt.graphics.RGB");
 const IDialogConstants = Java.type("org.eclipse.jface.dialogs.IDialogConstants");
 
-console.clear();
-console.show();
+// Initialize logger
+const jarchiLogger = require('./lib/jarchiLogger');
+const log = jarchiLogger.createLogger('Model Health Check');
 
 // Import the chartjsUtility module
 const chartjsUtility = require("./lib/chartjsUtility");
@@ -46,7 +47,7 @@ const modelHealthCheck = {
     run: function () {
         this.model = $.model;
         if (!this.model) {
-            console.error("No model found.");
+            log.error("No model found.");
             return;
         }
 

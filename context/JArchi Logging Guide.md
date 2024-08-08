@@ -1,6 +1,6 @@
 # JArchi Logging Guide
 
-This guide explains how to use the logging system in JArchi scripts.
+This guide explains how to use the updated logging system in JArchi scripts.
 
 ## Setting Up Logging
 
@@ -12,15 +12,7 @@ console.clear();
 console.show();
 
 const jarchiLogger = require('./lib/jarchiLogger');
-jarchiLogger.init('YourScriptName');
-
-// Create shorthand logging functions
-const log = {
-    debug: jarchiLogger.debug.bind(jarchiLogger),
-    info: jarchiLogger.info.bind(jarchiLogger),
-    warn: jarchiLogger.warn.bind(jarchiLogger),
-    error: jarchiLogger.error.bind(jarchiLogger)
-};
+const log = jarchiLogger.createLogger('YourScriptName');
 ```
 
 Replace 'YourScriptName' with a descriptive name for your script.
@@ -112,5 +104,19 @@ Logging behavior can be configured in the JArchi settings dialog. You can contro
 - The remote logging server URL (if applicable)
 
 Remember to check these settings if you're not seeing the expected logging behavior.
+
+## Using in Multiple Scripts or Modules
+
+If you have multiple scripts or modules in your project, you can create a separate logger for each:
+
+```javascript
+// In script1.js
+const log = jarchiLogger.createLogger('Script1');
+
+// In script2.js
+const log = jarchiLogger.createLogger('Script2');
+```
+
+This allows for more granular logging and easier identification of the source of each log message.
 
 By following these guidelines, you can effectively use logging in your JArchi scripts to aid in debugging, monitoring, and maintaining your scripts.

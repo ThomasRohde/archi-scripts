@@ -29,6 +29,13 @@ const File = Java.type("java.io.File");
 // Import Ollama client
 const { OllamaClient } = require("./lib/ollamaClient");
 
+// At the top of each script or module:
+const jarchiLogger = require('./lib/jarchiLogger');
+const log = jarchiLogger.createLogger('Settings');
+
+// Then use it as before:
+log.info('Entering settings');
+
 // Global constants
 const DEFAULT_MODELS = ["llama3.1"];
 let OLLAMA_MODELS = [];
@@ -38,19 +45,19 @@ const OLLAMA_INSTALLED = true; // Set this to false if Ollama is not installed
 
 function fetchOllamaModels() {
     if (!OLLAMA_INSTALLED) {
-        console.log("Ollama is not installed. Skipping model fetch.");
+        log.warn("Ollama is not installed. Skipping model fetch.");
         return Promise.resolve([]);
     }
-    console.log("Fetching Ollama models...");
+    log.info("Fetching Ollama models...");
     const ollama = new OllamaClient("http://localhost:11434");
     return ollama
         .listModels()
         .then((models) => {
-            console.log("Fetched Ollama models:", models);
+            log.info("Fetched Ollama models:", models);
             return models.map((model) => model.name);
         })
         .catch((error) => {
-            console.error("Error fetching Ollama models:", error);
+            log.error("Error fetching Ollama models:", error);
             return [];
         });
 }
@@ -83,7 +90,7 @@ const integrationSettingsDialog = {
         return new Promise((resolve) => {
             fetchOllamaModels().then((models) => {
                 OLLAMA_MODELS = models;
-                console.log("Initialized Ollama models:", OLLAMA_MODELS);
+                log.info("Initialized Ollama models:", OLLAMA_MODELS);
                 Display.getDefault().asyncExec(() => {
                     const result = this.dialog.open();
                     resolve(result === 0); // OK = 0, Cancel = 1
@@ -371,15 +378,15 @@ const integrationSettingsDialog = {
                 // Construct the path to the jarchi-logger executable
                 const executableFile = new File(new File(__DIR__).getParentFile(), "jarchi-logger" + File.separator + executableName);
                 const executablePath = executableFile.getAbsolutePath();
-                console.log(executablePath);
+                log.info(executablePath);
                 const command = `"${executablePath}" --api-port ${apiPort} --web-port ${webPort}`;
                 
                 const runtime = java.lang.Runtime.getRuntime();
                 try {
                     runtime.exec(command);
-                    console.log(`Started logger executable: ${command}`);
+                    log.info(`Started logger executable: ${command}`);
                 } catch (error) {
-                    console.error(`Failed to start logger executable: ${error}`);
+                    log.error(`Failed to start logger executable: ${error}`);
                     MessageDialog.openError(shell, "Error", `Failed to start logger executable: ${error}`);
                 }
             }
@@ -413,13 +420,13 @@ integrationSettingsDialog
     .open()
     .then((result) => {
         if (result) {
-            console.log("Integration settings saved successfully.");
+            log.info("Integration settings saved successfully.");
         } else {
-            console.log("Integration settings update cancelled.");
+            log.warn("Integration settings update cancelled.");
         }
     })
     .catch((error) => {
-        console.error("Error in settings dialog:", error);
+        log.error("Error in settings dialog:", error);
         Display.getDefault().asyncExec(() => {
             MessageDialog.openError(shell, "Error", "An error occurred: " + error.message);
         });

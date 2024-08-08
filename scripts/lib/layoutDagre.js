@@ -1,5 +1,3 @@
-// @ts-check
-
 /**
  * @module layoutDagre
  * @description A module to layout a view using Dagre

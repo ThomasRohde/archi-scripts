@@ -1,12 +1,14 @@
 /**
  * @module confluenceIntegration
  * @description A module for integrating jArchi scripts with Atlassian Confluence Cloud using apiClient
- * @version 3.0
+ * @version 3.1
  * @author Claude AI Assistant
- * @lastModifiedDate 2024-08-02
+ * @lastModifiedDate 2024-08-08
  */
 
 const apiClient = require('./apiClient');
+const jarchiLogger = require('./jarchiLogger');
+const log = jarchiLogger.createLogger('confluenceIntegration');
 
 function readConfluenceSettings() {
     const preferenceStore = workbench.getPreferenceStore();
@@ -53,6 +55,7 @@ async function getPageInfo(pageTitle, opts = {}) {
         if (error.response && error.response.status === 404) {
             return null;
         }
+        log.error('Error getting page info', { error: error.toString(), pageTitle });
         throw error;
     }
 }
@@ -69,7 +72,7 @@ async function getSpaceId(spaceKey) {
         }
         throw new Error(`Space with key ${spaceKey} not found`);
     } catch (error) {
-        console.error("Error fetching space ID:", error);
+        log.error('Error fetching space ID', { error: error.toString(), spaceKey });
         throw error;
     }
 }
@@ -114,12 +117,13 @@ async function updateConfluencePage(pageId, parentId, pageTitle, pageVersion, pa
             ...opts
         });
 
+        log.info('Confluence page updated successfully', { pageId: response.data.id, pageVersion: response.data.version.number });
         return {
             pageId: response.data.id,
             pageVersion: response.data.version.number
         };
     } catch (error) {
-        console.error("Error updating Confluence page:", error.response ? error.response.data : error.message);
+        log.error('Error updating Confluence page', { error: error.toString(), pageTitle });
         throw error;
     }
 }
@@ -149,28 +153,26 @@ async function getAttachmentInfo(pageId, fileName, opts = {}) {
         if (error.response && error.response.status === 404) {
             return null;
         }
+        log.error('Error getting attachment info', { error: error.toString(), pageId, fileName });
         throw error;
     }
 }
 
 async function attachFile(pageId, fileName, fileContent, fileType, comment, opts = {}) {
     try {
-        // First, check if the attachment already exists
         const existingAttachment = await getAttachmentInfo(pageId, fileName);
         
         let url;
         let method;
         
         if (existingAttachment) {
-            // If the attachment exists, update it
             url = `/wiki/rest/api/content/${pageId}/child/attachment/${existingAttachment.id}/data`;
             method = 'POST';
-            console.log(`Updating existing attachment: ${fileName}`);
+            log.info('Updating existing attachment', { fileName });
         } else {
-            // If the attachment doesn't exist, create a new one
             url = `/wiki/rest/api/content/${pageId}/child/attachment`;
             method = 'POST';
-            console.log(`Creating new attachment: ${fileName}`);
+            log.info('Creating new attachment', { fileName });
         }
 
         const response = await confluenceApi.uploadFile(url, {
@@ -187,13 +189,19 @@ async function attachFile(pageId, fileName, fileContent, fileType, comment, opts
             ...opts
         });
 
+        log.info('File attached successfully', { 
+            id: response.data.results[0].id, 
+            title: response.data.results[0].title, 
+            version: response.data.results[0].version.number 
+        });
+
         return {
             id: response.data.results[0].id,
             title: response.data.results[0].title,
             version: response.data.results[0].version.number
         };
     } catch (error) {
-        console.error("Error attaching file:", error.message);
+        log.error('Error attaching file', { error: error.toString(), pageId, fileName });
         throw error;
     }
 }

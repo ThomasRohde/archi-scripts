@@ -1,9 +1,9 @@
 /**
  * @module IntelligentModelAnalyzer
  * @description An intelligent analyzer for ArchiMate models using Ollama LLM
- * @version 1.0
+ * @version 1.1
  * @author Claude AI Assistant
- * @lastModifiedDate 2024-07-31
+ * @lastModifiedDate 2024-08-08
  */
 
 console.clear();
@@ -11,12 +11,15 @@ console.show();
 
 const { OllamaClient, Message, ROLES, GenerateOptions } = require('./lib/ollamaClient');
 const modelTraversal = require('./lib/modelTraversal');
+const jarchiLogger = require('./lib/jarchiLogger');
+
+const log = jarchiLogger.createLogger('IntelligentModelAnalyzer');
 
 const ollamaClient = new OllamaClient('http://localhost:11434');
 const MODEL_NAME = 'llama3.1';  // Adjust this to the model you have installed in Ollama
 
 async function analyzeModel() {
-    console.log("Starting Intelligent Model Analysis...");
+    log.info("Starting Intelligent Model Analysis");
 
     const elementAnalysis = [];
     const viewAnalysis = [];
@@ -40,17 +43,22 @@ async function analyzeModel() {
     };
     
     modelTraversal.traverse(handlers);
+    log.debug("Model traversal completed", { elements: elementAnalysis.length, views: viewAnalysis.length });
+
     modelOverview = await generateModelOverview(elementAnalysis, viewAnalysis);
+    log.info("Model overview generated");
     console.log("\nModel Overview:");
     console.log(modelOverview);
 
     for (const element of elementAnalysis) {
         const analysis = await analyzeElement(element);
+        log.debug("Element analyzed", { name: element.name, type: element.type });
         console.log(`\nAnalysis for ${element.name} (${element.type}):`);
         console.log(analysis);
 
         if (element.documentation) {
             const improvedDoc = await improveDocumentation(element);
+            log.debug("Documentation improved", { name: element.name });
             console.log("Improved Documentation:");
             console.log(improvedDoc);
         }
@@ -58,14 +66,16 @@ async function analyzeModel() {
 
     for (const view of viewAnalysis) {
         const viewInsights = await analyzeView(view);
+        log.debug("View analyzed", { name: view.name });
         console.log(`\nInsights for view "${view.name}":`);
         console.log(viewInsights);
     }
 
-    console.log("\nIntelligent Model Analysis completed.");
+    log.info("Intelligent Model Analysis completed");
 }
 
 async function generateModelOverview(elements, views) {
+    log.debug("Generating model overview");
     const prompt = `As an ArchiMate expert, provide a brief overview of the following model:
     - Total elements: ${elements.length}
     - Element types: ${[...new Set(elements.map(e => e.type))].join(', ')}
@@ -76,12 +86,18 @@ async function generateModelOverview(elements, views) {
 
     const options = new GenerateOptions({ stream: false });
 
-    const response = await ollamaClient.generateChatCompletion(MODEL_NAME, [new Message(ROLES.USER, prompt)], options);
-
-    return response.message.content;
+    try {
+        const response = await ollamaClient.generateChatCompletion(MODEL_NAME, [new Message(ROLES.USER, prompt)], options);
+        log.debug("Model overview generated successfully");
+        return response.message.content;
+    } catch (error) {
+        log.error("Error generating model overview", { error: error.toString() });
+        throw error;
+    }
 }
 
 async function analyzeElement(element) {
+    log.debug("Analyzing element", { name: element.name, type: element.type });
     const prompt = `As an ArchiMate expert, analyze the following element:
     Name: ${element.name}
     Type: ${element.type}
@@ -93,11 +109,18 @@ async function analyzeElement(element) {
     3. Suggestions for improving its representation in the model`;
 
     const options = new GenerateOptions({ stream: false });
-    const response = await ollamaClient.generateChatCompletion(MODEL_NAME, [new Message(ROLES.USER, prompt)], options);
-    return response.message.content;
+    try {
+        const response = await ollamaClient.generateChatCompletion(MODEL_NAME, [new Message(ROLES.USER, prompt)], options);
+        log.debug("Element analysis completed", { name: element.name });
+        return response.message.content;
+    } catch (error) {
+        log.error("Error analyzing element", { name: element.name, error: error.toString() });
+        throw error;
+    }
 }
 
 async function improveDocumentation(element) {
+    log.debug("Improving documentation", { name: element.name });
     const prompt = `As an ArchiMate expert, improve the following element documentation:
     Element Name: ${element.name}
     Element Type: ${element.type}
@@ -109,11 +132,18 @@ async function improveDocumentation(element) {
     3. Includes any missing crucial information for this type of element`;
 
     const options = new GenerateOptions({ stream: false });
-    const response = await ollamaClient.generateChatCompletion(MODEL_NAME, [new Message(ROLES.USER, prompt)], options);
-    return response.message.content;
+    try {
+        const response = await ollamaClient.generateChatCompletion(MODEL_NAME, [new Message(ROLES.USER, prompt)], options);
+        log.debug("Documentation improvement completed", { name: element.name });
+        return response.message.content;
+    } catch (error) {
+        log.error("Error improving documentation", { name: element.name, error: error.toString() });
+        throw error;
+    }
 }
 
 async function analyzeView(view) {
+    log.debug("Analyzing view", { name: view.name });
     const prompt = `As an ArchiMate expert, analyze the following view:
     Name: ${view.name}
     Element Count: ${view.elementCount}
@@ -125,9 +155,15 @@ async function analyzeView(view) {
     3. Potential missing elements or relationships that could enhance the view`;
 
     const options = new GenerateOptions({ stream: false });
-    const response = await ollamaClient.generateChatCompletion(MODEL_NAME, [new Message(ROLES.USER, prompt)], options);
-    return response.message.content;
+    try {
+        const response = await ollamaClient.generateChatCompletion(MODEL_NAME, [new Message(ROLES.USER, prompt)], options);
+        log.debug("View analysis completed", { name: view.name });
+        return response.message.content;
+    } catch (error) {
+        log.error("Error analyzing view", { name: view.name, error: error.toString() });
+        throw error;
+    }
 }
 
 // Run the analysis
-analyzeModel().catch(error => console.error("Error during analysis:", error));
+analyzeModel().catch(error => log.error("Error during analysis", { error: error.toString() }));

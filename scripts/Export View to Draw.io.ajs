@@ -2,6 +2,8 @@
  * @name Export to draw.io (Hierarchical)
  * @version 4.7
  * @description Exports the selected ArchiMate view to a draw.io diagram file, handling nested elements using groups, correct coordinate systems, text formatting, scaled font size, and proper label positioning for grouped objects
+ * @author Claude AI Assistant
+ * @lastModifiedDate 2024-08-08
  */
 
 console.clear();
@@ -23,21 +25,27 @@ const StreamResult = Java.type("javax.xml.transform.stream.StreamResult");
 // Import mapping functions
 const { mapArchiMateTypeToDrawIo, mapArchiMateRelationshipToDrawIo } = require("./lib/archiMateDrawIoMappings");
 
+// Set up logging
+const jarchiLogger = require('./lib/jarchiLogger');
+const log = jarchiLogger.createLogger('ExportViewToDrawIo');
+
 // Constants
 const FONT_SIZE_SCALE_FACTOR = 1.5;
 
 function exportToDiagram() {
     const selectedView = $(selection).filter("archimate-diagram-model").first();
     if (!selectedView) {
-        console.error("No view selected. Please select an ArchiMate view and run the script again.");
+        log.error("No view selected. Please select an ArchiMate view and run the script again.");
         return;
     }
 
+    log.info('Starting export to draw.io', { viewName: selectedView.name });
     const diagram = createDrawIoDiagram(selectedView);
     saveDrawIoDiagram(diagram, selectedView.name);
 }
 
 function createDrawIoDiagram(view) {
+    log.debug('Creating draw.io diagram');
     const dbFactory = DocumentBuilderFactory.newInstance();
     const dBuilder = dbFactory.newDocumentBuilder();
     const doc = dBuilder.newDocument();
@@ -451,22 +459,33 @@ function getFillColor(element) {
 }
 
 function saveDrawIoDiagram(diagram, viewName) {
+    log.info('Saving draw.io diagram', { viewName: viewName });
     const fileDialog = new FileDialog(shell, SWT.SAVE);
     fileDialog.setFilterExtensions(["*.drawio"]);
     fileDialog.setFileName(viewName.replace(/[^a-zA-Z0-9]/g, "_") + ".drawio");
     const filePath = fileDialog.open();
 
     if (filePath) {
-        const transformerFactory = TransformerFactory.newInstance();
-        const transformer = transformerFactory.newTransformer();
-        const source = new DOMSource(diagram);
-        const result = new StreamResult(Files.newOutputStream(Paths.get(filePath)));
-        transformer.transform(source, result);
-        console.log(`Diagram saved successfully: ${filePath}`);
+        try {
+            const transformerFactory = TransformerFactory.newInstance();
+            const transformer = transformerFactory.newTransformer();
+            const source = new DOMSource(diagram);
+            const result = new StreamResult(Files.newOutputStream(Paths.get(filePath)));
+            transformer.transform(source, result);
+            log.info('Diagram saved successfully', { filePath: filePath });
+        } catch (error) {
+            log.error('Error saving diagram', { error: error.toString(), stack: error.stack });
+        }
     } else {
-        console.log("Export cancelled by user.");
+        log.info('Export cancelled by user');
     }
 }
 
 // Execute the export function
-exportToDiagram();
+try {
+    log.info('Starting Export View to Draw.io script');
+    exportToDiagram();
+    log.info('Export View to Draw.io script completed successfully');
+} catch (error) {
+    log.error('An error occurred during export', { error: error.toString(), stack: error.stack });
+}
