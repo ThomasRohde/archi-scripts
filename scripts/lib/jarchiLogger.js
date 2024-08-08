@@ -78,9 +78,15 @@ const jarchiLogger = {
         console.setTextColor(color[0], color[1], color[2]);
         console.log(logMessage);
         console.setDefaultTextColor();
-
-        if (Object.keys(logData).length > 4) {
-            console.log('Additional data:', JSON.stringify(logData, null, 2));
+    
+        const additionalData = {...logData};
+        delete additionalData.timestamp;
+        delete additionalData.level;
+        delete additionalData.script;
+        delete additionalData.message;
+    
+        if (Object.keys(additionalData).length > 0) {
+            console.log('Additional data:', JSON.stringify(additionalData, null, 2));
         }
     },
 
