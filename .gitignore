@@ -95,3 +95,7 @@ Thumbs.db
 .aider*
 jarchi-logger/jarchi-logger-macos
 jarchi-logger/jarchi-logger-win.exe
+jarchi-logger/public/vendor/json-formatter.umd.js
+jarchi-logger/public/vendor/luxon.min.js
+jarchi-logger/public/vendor/marked.min.js
+jarchi-logger/public/vendor/socket.io.min.js

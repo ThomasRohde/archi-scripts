@@ -4,8 +4,9 @@
   "main": "server.js",
   "scripts": {
     "build-css": "tailwindcss -i ./public/styles.css -o ./public/output.css",
-    "start": "npm run build-css && node server.js",
-    "build": "npm run build-css && pkg . --targets node18-macos-x64,node18-win-x64 --output jarchi-logger --options preserve-symlinks"
+    "copy-deps": "node copy-deps.js",
+    "start": "npm run build-css && npm run copy-deps && node server.js",
+    "build": "npm run build-css && npm run copy-deps && pkg . --targets node18-macos-x64,node18-win-x64 --output jarchi-logger --options preserve-symlinks"
   },
   "bin": "server.js",
   "pkg": {

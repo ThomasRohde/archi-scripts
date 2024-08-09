@@ -6,8 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JArchi Logger</title>
     <link href="/output.css" rel="stylesheet">
-    <script src="/luxon.min.js"></script>
-    <script src="/json-formatter.umd.min.js"></script>
+    <script src="/vendor/luxon.min.js"></script>
+    <script src="/vendor/json-formatter.umd.js"></script>
+    <script src="/vendor/socket.io.min.js"></script>
     <style>
         .log-row:nth-child(even) {
             background-color: #f9fafb;
@@ -191,8 +192,6 @@
             </table>
         </div>
     </div>
-
-    <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
         const logTableBody = document.getElementById('logTableBody');
