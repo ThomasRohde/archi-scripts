@@ -4,7 +4,6 @@ const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
 const { program } = require('commander');
-const { marked } = require('marked');
 
 program
   .option('--api-port <port>', 'API server port')
@@ -26,16 +25,11 @@ webServer.set('views', path.join(__dirname, 'views'));
 
 apiServer.use(express.json());
 
-// Serve static files from the 'public' directory
 webServer.use(express.static('public'));
 
-// Initialize an object to store logs
 const logs = [];
-
-// Add this line to store console content
 let consoleContent = [];
 
-// Helper function to process and store a log entry
 function processLogEntry(logData) {
     const { level, script, message, timestamp, ...additionalData } = logData;
     
@@ -52,50 +46,42 @@ function processLogEntry(logData) {
     return logEntry;
 }
 
-// API Routes
 apiServer.post('/log', (req, res) => {
     const logEntry = processLogEntry(req.body);
     res.sendStatus(200);
 });
 
-// Endpoint to get all logs
 apiServer.get('/logs', (req, res) => {
     res.json(logs);
 });
 
-// Update this endpoint for receiving markdown
+// Updated to send raw markdown instead of HTML
 apiServer.post('/console', (req, res) => {
     const { markdown } = req.body;
     if (!markdown) {
         return res.status(400).json({ error: 'Markdown content is required' });
     }
-    const htmlContent = marked.parse(markdown);
-    consoleContent.push(htmlContent);
-    io.emit('newConsoleContent', htmlContent);
+    consoleContent.push(markdown);
+    io.emit('newConsoleContent', markdown);
     res.sendStatus(200);
 });
 
-// Add this new route to get all console content
 apiServer.get('/console-content', (req, res) => {
     res.json(consoleContent);
 });
 
-// Web Routes
 webServer.get('/', (req, res) => {
     res.render('index', { logs });
 });
 
-// Keep this route on the webServer for serving the console page
 webServer.get('/console', (req, res) => {
     res.render('console', { initialContent: consoleContent });
 });
 
 io.on('connection', (socket) => {
     console.log('A user connected');
-    // Send current logs to the newly connected client
     socket.emit('initialLogs', logs);
     
-    // Handle console reset
     socket.on('resetConsole', () => {
         consoleContent = [];
         io.emit('consoleReset');
@@ -106,24 +92,13 @@ io.on('connection', (socket) => {
     });
 });
 
-// Clear logs endpoint
 webServer.post('/clear-logs', (req, res) => {
-    logs.length = 0; // Clear the logs array
-    io.emit('logsCleared'); // Emit an event to all connected clients
+    logs.length = 0;
+    io.emit('logsCleared');
     console.log('Logs cleared on server');
     res.sendStatus(200);
 });
 
-io.on('connection', (socket) => {
-    console.log('A user connected');
-    // Send current logs to the newly connected client
-    socket.emit('initialLogs', logs);
-    socket.on('disconnect', () => {
-        console.log('User disconnected');
-    });
-});
-
-// Start servers
 apiServer.listen(API_PORT, () => {
     console.log(`API Server running on http://localhost:${API_PORT}`);
 });
