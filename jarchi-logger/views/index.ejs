@@ -155,18 +155,46 @@
         .json-formatter-row.json-formatter-open.json-formatter-empty:after {
             display: block;
         }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .button {
+            font-weight: bold;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 
 <body class="bg-gray-100 font-sans">
     <div class="container mx-auto p-4">
-        <h1 class="text-2xl font-bold mb-4">JArchi Logger</h1>
-        <button id="clearLogsBtn" class="mb-4 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-            Clear Logs
-        </button>
-        <a href="/console" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-block">
-            View Console
-        </a>
+        <div class="header-container">
+            <h1 class="text-2xl font-bold">JArchi Logger</h1>
+            <div class="button-container">
+                <button id="clearLogsBtn" class="button bg-red-500 hover:bg-red-700 text-white">
+                    Clear Logs
+                </button>
+                <a href="/console" class="button bg-blue-500 hover:bg-blue-700 text-white">
+                    View Console
+                </a>
+            </div>
+        </div>
         <div id="logContainer" class="bg-white shadow-md rounded-lg overflow-hidden">
             <table class="w-full text-sm text-left">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-200">
@@ -395,7 +423,7 @@
             addLogEntry(logEntry);
             applyFilters();
         });
-        
+
     </script>
 </body>
 
