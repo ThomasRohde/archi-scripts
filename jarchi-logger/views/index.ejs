@@ -276,6 +276,29 @@
             input.addEventListener('input', applyFilters);
         });
 
+        function addLogEntry(log, prepend = true) {
+            if (log && typeof log === 'object') {
+                const newRow = createLogRow(log);
+                if (prepend) {
+                    logTableBody.insertBefore(newRow, logTableBody.firstChild);
+                } else {
+                    logTableBody.appendChild(newRow);
+                }
+            } else {
+                console.error('Received invalid log entry:', log);
+            }
+        }
+
+        function sortLogs() {
+            const rows = Array.from(logTableBody.querySelectorAll('tr'));
+            rows.sort((a, b) => {
+                const dateA = new Date(a.querySelector('td[data-timestamp]').dataset.timestamp);
+                const dateB = new Date(b.querySelector('td[data-timestamp]').dataset.timestamp);
+                return dateB - dateA;
+            });
+            rows.forEach(row => logTableBody.appendChild(row));
+        }
+
         function applyFilters() {
             const filters = {
                 timestamp: document.getElementById('filterTimestamp').value.toLowerCase(),
@@ -363,23 +386,16 @@
 
         socket.on('initialLogs', function (initialLogs) {
             logTableBody.innerHTML = '';
-            initialLogs.forEach(log => {
-                if (log && typeof log === 'object') {
-                    logTableBody.appendChild(createLogRow(log));
-                }
-            });
+            initialLogs.forEach(log => addLogEntry(log, false));
+            sortLogs();
             applyFilters();
         });
 
         socket.on('newLog', (logEntry) => {
-            if (logEntry && typeof logEntry === 'object') {
-                const newRow = createLogRow(logEntry);
-                logTableBody.insertBefore(newRow, logTableBody.firstChild);
-                applyFilters();
-            } else {
-                console.error('Received invalid log entry:', logEntry);
-            }
+            addLogEntry(logEntry);
+            applyFilters();
         });
+        
     </script>
 </body>
 
