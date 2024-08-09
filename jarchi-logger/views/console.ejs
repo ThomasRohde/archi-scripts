@@ -97,15 +97,34 @@
         .copy-icon:hover {
             opacity: 1;
         }
+
+        .button-container {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .button {
+            font-weight: bold;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
     </style>
 </head>
 
 <body class="bg-gray-100 font-sans">
     <div class="container mx-auto p-4">
         <h1 class="text-2xl font-bold mb-4">JArchi Console</h1>
-        <button id="resetButton" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mb-4">
-            Reset Console
-        </button>
+        <div class="button-container">
+            <button id="resetButton" class="button bg-red-500 hover:bg-red-700 text-white">
+                Reset Console
+            </button>
+            <a href="/" class="button bg-blue-500 hover:bg-blue-700 text-white text-center">
+                Return to Logs
+            </a>
+        </div>
         <div id="consoleOutput" class="bg-white shadow-md rounded-lg p-4 overflow-auto h-[calc(100vh-12rem)]">
         </div>
     </div>
