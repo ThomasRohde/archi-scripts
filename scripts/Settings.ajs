@@ -69,7 +69,7 @@ const integrationSettingsDialog = {
         spaceKey: "",
         baseUrl: "",
     },
-    documentationAugmenterSettings: {
+    ollama: {
         model: "llama3.1",
         temperature: "0.7",
         topK: "40",
@@ -107,11 +107,11 @@ const integrationSettingsDialog = {
         this.confluenceSettings.apiToken = preferenceStore.getString("confluencePassword") || "";
         this.confluenceSettings.spaceKey = preferenceStore.getString("confluenceDefaultSpaceKey") || "";
         this.confluenceSettings.baseUrl = preferenceStore.getString("confluenceBaseUrl") || "";
-        // Load Documentation Augmenter settings
-        this.documentationAugmenterSettings.model = preferenceStore.getString("docAugmenterModel") || "llama3.1";
-        this.documentationAugmenterSettings.temperature = preferenceStore.getString("docAugmenterTemperature") || "0.7";
-        this.documentationAugmenterSettings.topK = preferenceStore.getString("docAugmenterTopK") || "40";
-        this.documentationAugmenterSettings.topP = preferenceStore.getString("docAugmenterTopP") || "0.9";
+        // Load Ollama settings
+        this.ollama.model = preferenceStore.getString("ollamaModel") || "llama3.1";
+        this.ollama.temperature = preferenceStore.getString("ollamaTemperature") || "0.7";
+        this.ollama.topK = preferenceStore.getString("ollamaTopK") || "40";
+        this.ollama.topP = preferenceStore.getString("ollamaTopP") || "0.9";
         // Load Logger settings
         this.loggerSettings.enabled = preferenceStore.getBoolean("loggerEnabled") || false;
         this.loggerSettings.apiUrl = preferenceStore.getString("loggerApiUrl") || "http://localhost:4000";
@@ -130,11 +130,11 @@ const integrationSettingsDialog = {
         preferenceStore.setValue("confluencePassword", this.confluenceSettings.apiToken);
         preferenceStore.setValue("confluenceDefaultSpaceKey", this.confluenceSettings.spaceKey);
         preferenceStore.setValue("confluenceBaseUrl", this.confluenceSettings.baseUrl);
-        // Save Documentation Augmenter settings
-        preferenceStore.setValue("docAugmenterModel", this.documentationAugmenterSettings.model);
-        preferenceStore.setValue("docAugmenterTemperature", this.documentationAugmenterSettings.temperature);
-        preferenceStore.setValue("docAugmenterTopK", this.documentationAugmenterSettings.topK);
-        preferenceStore.setValue("docAugmenterTopP", this.documentationAugmenterSettings.topP);
+        // Save Ollama settings
+        preferenceStore.setValue("ollamaModel", this.ollama.model);
+        preferenceStore.setValue("ollamaTemperature", this.ollama.temperature);
+        preferenceStore.setValue("ollamaTopK", this.ollama.topK);
+        preferenceStore.setValue("ollamaTopP", this.ollama.topP);
         // Save Logger settings
         preferenceStore.setValue("loggerEnabled", this.loggerSettings.enabled);
         preferenceStore.setValue("loggerApiUrl", this.loggerSettings.apiUrl);
@@ -162,7 +162,7 @@ const integrationSettingsDialog = {
             tabFolder.setLayoutData(new GridData(GridData.FILL_BOTH));
 
             this.createConfluenceTab(tabFolder);
-            this.createDocumentationAugmenterTab(tabFolder);
+            this.createOllamaTab(tabFolder);
             this.createLoggerTab(tabFolder);
 
             return container;
@@ -213,9 +213,9 @@ const integrationSettingsDialog = {
             );
         },
 
-        createDocumentationAugmenterTab: function (tabFolder) {
+        createOllamaTab: function (tabFolder) {
             const docAugmenterTab = new TabItem(tabFolder, SWT.NONE);
-            docAugmenterTab.setText("Documentation Augmenter");
+            docAugmenterTab.setText("Ollama");
 
             const composite = new Composite(tabFolder, SWT.NONE);
             composite.setLayout(new GridLayout(2, false));
@@ -229,10 +229,10 @@ const integrationSettingsDialog = {
             this.populateModelCombo();
 
             integrationSettingsDialog.modelCombo.setText(
-                integrationSettingsDialog.documentationAugmenterSettings.model
+                integrationSettingsDialog.ollama.model
             );
             integrationSettingsDialog.modelCombo.addModifyListener((e) => {
-                integrationSettingsDialog.documentationAugmenterSettings.model =
+                integrationSettingsDialog.ollama.model =
                     integrationSettingsDialog.modelCombo.getText();
             });
 
@@ -240,28 +240,28 @@ const integrationSettingsDialog = {
             new Label(composite, SWT.NONE).setText("Temperature:");
             const temperatureText = new Text(composite, SWT.BORDER);
             temperatureText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-            temperatureText.setText(integrationSettingsDialog.documentationAugmenterSettings.temperature);
+            temperatureText.setText(integrationSettingsDialog.ollama.temperature);
             temperatureText.addModifyListener(
                 (e) =>
-                    (integrationSettingsDialog.documentationAugmenterSettings.temperature = temperatureText.getText())
+                    (integrationSettingsDialog.ollama.temperature = temperatureText.getText())
             );
 
             // Top K
             new Label(composite, SWT.NONE).setText("Top K:");
             const topKText = new Text(composite, SWT.BORDER);
             topKText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-            topKText.setText(integrationSettingsDialog.documentationAugmenterSettings.topK);
+            topKText.setText(integrationSettingsDialog.ollama.topK);
             topKText.addModifyListener(
-                (e) => (integrationSettingsDialog.documentationAugmenterSettings.topK = topKText.getText())
+                (e) => (integrationSettingsDialog.ollama.topK = topKText.getText())
             );
 
             // Top P
             new Label(composite, SWT.NONE).setText("Top P:");
             const topPText = new Text(composite, SWT.BORDER);
             topPText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-            topPText.setText(integrationSettingsDialog.documentationAugmenterSettings.topP);
+            topPText.setText(integrationSettingsDialog.ollama.topP);
             topPText.addModifyListener(
-                (e) => (integrationSettingsDialog.documentationAugmenterSettings.topP = topPText.getText())
+                (e) => (integrationSettingsDialog.ollama.topP = topPText.getText())
             );
         },
 
