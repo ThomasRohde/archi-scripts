@@ -1,0 +1,26 @@
+const { AnthropicClient, GenerateOptions, Message, ROLES, MODELS } = require('./lib/anthropicClient');
+const jarchiLogger = require('./lib/jarchiLogger');
+const log = jarchiLogger.createLogger('AnthropicTest');
+
+async function main() {
+    const client = new AnthropicClient();
+
+    log.info('Available models:', MODELS);
+
+    // Generate a chat completion
+    const options = new GenerateOptions({
+        model: 'claude-3-haiku-20240307',
+        maxTokens: 500,
+        temperature: 0.7,
+        system: "You are a helpful assistant." // System prompt is now part of options
+    });
+
+    const messages = [
+        new Message(ROLES.USER, "Hello, Claude! Can you explain what API you're running on?")
+    ];
+
+    const response = await client.generateChatCompletion(messages, [], options);
+    log.debug('Response:', response);
+}
+
+main().catch(console.error);
