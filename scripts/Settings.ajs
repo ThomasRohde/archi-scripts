@@ -1,9 +1,9 @@
 /**
  * @module IntegrationSettings
- * @description A script to manage integration settings for jArchi, including Confluence and Documentation Augmenter
- * @version 6.0
+ * @description A script to manage integration settings for jArchi, including Confluence, Documentation Augmenter, Logger, and Anthropic
+ * @version 7.1
  * @author Claude AI Assistant
- * @lastModifiedDate 2024-07-31
+ * @lastModifiedDate 2024-08-10
  */
 
 console.clear();
@@ -28,6 +28,9 @@ const File = Java.type("java.io.File");
 
 // Import Ollama client
 const { OllamaClient } = require("./lib/ollamaClient");
+
+// Import Anthropic client
+const { MODELS: ANTHROPIC_MODELS } = require("./lib/anthropicClient");
 
 // Initialize logger
 const jarchiLogger = require('./lib/jarchiLogger');
@@ -85,6 +88,14 @@ const integrationSettingsDialog = {
         logRetentionPeriod: "7",
         logRetentionUnit: "days",
     },
+    anthropicSettings: {
+        apiKey: "",
+        model: "claude-3-sonnet-20240229",
+        maxTokens: "1000",
+        temperature: "0.7",
+        topP: "0.9",
+        topK: "40",
+    },
 
     open: function () {
         this.loadSettings();
@@ -118,9 +129,16 @@ const integrationSettingsDialog = {
         this.loggerSettings.logRetentionPeriod = preferenceStore.getString("loggerRetentionPeriod") || "7";
         this.loggerSettings.logRetentionUnit = preferenceStore.getString("loggerRetentionUnit") || "days";
         this.loggerSettings.consoleLogging = preferenceStore.getBoolean("loggerConsoleLogging") || false;
-        this.loggerSettings.markdownLogging = preferenceStore.getBoolean("loggerMarkdownLogging") || false;  // Add this line
+        this.loggerSettings.markdownLogging = preferenceStore.getBoolean("loggerMarkdownLogging") || false;
         this.loggerSettings.logLevel = preferenceStore.getString("loggerLogLevel") || "INFO";
         this.loggerSettings.webPort = preferenceStore.getString('loggerWebPort') || "4001";
+        // Load Anthropic settings
+        this.anthropicSettings.apiKey = preferenceStore.getString("anthropicApiKey") || "";
+        this.anthropicSettings.model = preferenceStore.getString("anthropicModel") || "claude-3-sonnet-20240229";
+        this.anthropicSettings.maxTokens = preferenceStore.getString("anthropicMaxTokens") || "1000";
+        this.anthropicSettings.temperature = preferenceStore.getString("anthropicTemperature") || "0.7";
+        this.anthropicSettings.topP = preferenceStore.getString("anthropicTopP") || "0.9";
+        this.anthropicSettings.topK = preferenceStore.getString("anthropicTopK") || "40";
     },
 
     saveSettings: function () {
@@ -141,9 +159,16 @@ const integrationSettingsDialog = {
         preferenceStore.setValue("loggerRetentionPeriod", this.loggerSettings.logRetentionPeriod);
         preferenceStore.setValue("loggerRetentionUnit", this.loggerSettings.logRetentionUnit);
         preferenceStore.setValue("loggerConsoleLogging", this.loggerSettings.consoleLogging);
-        preferenceStore.setValue("loggerMarkdownLogging", this.loggerSettings.markdownLogging);  // Add this line
+        preferenceStore.setValue("loggerMarkdownLogging", this.loggerSettings.markdownLogging);
         preferenceStore.setValue("loggerLogLevel", this.loggerSettings.logLevel);
         preferenceStore.setValue("loggerWebPort", this.loggerSettings.webPort);
+        // Save Anthropic settings
+        preferenceStore.setValue("anthropicApiKey", this.anthropicSettings.apiKey);
+        preferenceStore.setValue("anthropicModel", this.anthropicSettings.model);
+        preferenceStore.setValue("anthropicMaxTokens", this.anthropicSettings.maxTokens);
+        preferenceStore.setValue("anthropicTemperature", this.anthropicSettings.temperature);
+        preferenceStore.setValue("anthropicTopP", this.anthropicSettings.topP);
+        preferenceStore.setValue("anthropicTopK", this.anthropicSettings.topK);
     },
 
     dialog: new Dialog(shell, {
@@ -164,6 +189,7 @@ const integrationSettingsDialog = {
             this.createConfluenceTab(tabFolder);
             this.createOllamaTab(tabFolder);
             this.createLoggerTab(tabFolder);
+            this.createAnthropicTab(tabFolder);
 
             return container;
         },
@@ -404,6 +430,70 @@ const integrationSettingsDialog = {
                     MessageDialog.openError(shell, "Error", `Failed to start logger executable: ${error}`);
                 }
             }
+        },
+
+        createAnthropicTab: function (tabFolder) {
+            const anthropicTab = new TabItem(tabFolder, SWT.NONE);
+            anthropicTab.setText("Anthropic");
+
+            const composite = new Composite(tabFolder, SWT.NONE);
+            composite.setLayout(new GridLayout(2, false));
+            anthropicTab.setControl(composite);
+
+            // API Key
+            new Label(composite, SWT.NONE).setText("API Key:");
+            const apiKeyText = new Text(composite, SWT.BORDER | SWT.PASSWORD);
+            apiKeyText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            apiKeyText.setText(integrationSettingsDialog.anthropicSettings.apiKey);
+            apiKeyText.addModifyListener(
+                (e) => (integrationSettingsDialog.anthropicSettings.apiKey = apiKeyText.getText())
+            );
+
+            // Model
+            new Label(composite, SWT.NONE).setText("Model:");
+            const modelCombo = new Combo(composite, SWT.READ_ONLY);
+            modelCombo.setItems(ANTHROPIC_MODELS);
+            modelCombo.setText(integrationSettingsDialog.anthropicSettings.model);
+            modelCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            modelCombo.addModifyListener(
+                (e) => (integrationSettingsDialog.anthropicSettings.model = modelCombo.getText())
+            );
+
+            // Max Tokens
+            new Label(composite, SWT.NONE).setText("Max Tokens:");
+            const maxTokensText = new Text(composite, SWT.BORDER);
+            maxTokensText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            maxTokensText.setText(integrationSettingsDialog.anthropicSettings.maxTokens);
+            maxTokensText.addModifyListener(
+                (e) => (integrationSettingsDialog.anthropicSettings.maxTokens = maxTokensText.getText())
+            );
+
+            // Temperature
+            new Label(composite, SWT.NONE).setText("Temperature:");
+            const temperatureText = new Text(composite, SWT.BORDER);
+            temperatureText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            temperatureText.setText(integrationSettingsDialog.anthropicSettings.temperature);
+            temperatureText.addModifyListener(
+                (e) => (integrationSettingsDialog.anthropicSettings.temperature = temperatureText.getText())
+            );
+
+            // Top P
+            new Label(composite, SWT.NONE).setText("Top P:");
+            const topPText = new Text(composite, SWT.BORDER);
+            topPText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            topPText.setText(integrationSettingsDialog.anthropicSettings.topP);
+            topPText.addModifyListener(
+                (e) => (integrationSettingsDialog.anthropicSettings.topP = topPText.getText())
+            );
+
+            // Top K
+            new Label(composite, SWT.NONE).setText("Top K:");
+            const topKText = new Text(composite, SWT.BORDER);
+            topKText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            topKText.setText(integrationSettingsDialog.anthropicSettings.topK);
+            topKText.addModifyListener(
+                (e) => (integrationSettingsDialog.anthropicSettings.topK = topKText.getText())
+            );
         },
 
         populateModelCombo: function () {

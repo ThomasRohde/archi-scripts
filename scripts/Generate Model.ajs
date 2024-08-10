@@ -1,0 +1,123 @@
+/**
+ * @name Generate ArchiMate Model from Description
+ * @description This script generates an ArchiMate model based on a user's description using the Anthropic API.
+ */
+
+console.clear();
+console.show();
+
+const { AnthropicClient, Message, GenerateOptions, ROLES } = require('./lib/anthropicClient');
+const SWT = Java.type('org.eclipse.swt.SWT');
+const Shell = Java.type('org.eclipse.swt.widgets.Shell');
+const Display = Java.type('org.eclipse.swt.widgets.Display');
+const InputDialog = Java.type('org.eclipse.jface.dialogs.InputDialog');
+
+// Initialize logger
+const jarchiLogger = require('./lib/jarchiLogger');
+const log = jarchiLogger.createLogger('GenerateArchiMateModel');
+
+// Initialize Anthropic client
+const anthropicClient = new AnthropicClient();
+
+// Function to show input dialog and get user description
+function getUserDescription() {
+    const prompt = window.prompt("Generate ArchiMate Model", "Enter a description of the system or organization:");
+    return prompt;
+}
+
+// Function to generate ArchiMate model using Anthropic API
+async function generateArchiMateModel(userDescription) {
+    const prompt = `You are an AI assistant tasked with creating an Archimate model based on a user's description. Your goal is to analyze the description and generate a JSON object that represents the Archimate model.\n\nHere is the user's description of the system or organization:\n<user_description>\n${userDescription}\n</user_description>\n\nYou will create a JSON object to represent the Archimate model. The structure of the JSON object should be as follows:\n\n<json_structure>\n{\n    \"nodes\": [\n        {\n            \"id\": \"<unique id>\",\n            \"type\": \"<JArchi concept name>\",\n            \"description\": \"<description of node>\",\n            \"name\": \"<name of concept>\",\n            \"children\": [ ... child nodes ...]\n        },\n        ... more nodes ...\n    ],\n    \"relationships\": [\n        {\n            \"name\": \"<optional name>\",\n            \"source\": \"<id of source node>\",\n            \"target\": \"<id of target node>\",\n            \"type\": \"<JArchi relationship name>\"\n        },\n        ... more relationships ...\n    ]\n}\n</json_structure>\n\nTo create the Archimate model:\n\n1. Carefully read and analyze the user description.\n2. Identify key elements that correspond to Archimate concepts (refer to the JArchi to ArchiMate Concept Mapping provided earlier).\n3. Create nodes for each identified element, assigning unique IDs, appropriate types, names, and descriptions.\n4. Identify relationships between the nodes and create corresponding relationship objects.\n5. If applicable, create hierarchical structures using the \"children\" property of nodes.\n\nWhen creating nodes and relationships:\n- Ensure each node has a unique ID (e.g., \"node1\", \"node2\", etc.)\n- Use the correct JArchi concept name for the \"type\" field. See the ArchiMate to JArchi mapping below.\n- Provide clear and concise descriptions for each node\n- Create meaningful relationships between nodes, using appropriate relationship types\n\nAfter analyzing the description and creating the model, format your response as a valid JSON object representing the Archimate model. Enclose the entire JSON object within <archimate_model> tags.\n\nRemember to think carefully about the structure and relationships within the model to accurately represent the described system or organization.\n\n<archimate_mapping>\n| JArchi Name | ArchiMate Concept Name | Description |\n|-------------|------------------------|-------------|\n| resource | Resource | An asset owned or controlled by an individual or organization. |  \n| capability | Capability | An ability that an active structure element, such as an organization, person, or system, possesses. |\n| course-of-action | Course of Action | An approach or plan for configuring some capabilities and resources of the enterprise, undertaken to achieve a goal. |\n| value-stream | Value Stream | A sequence of activities that create an overall result for a customer, stakeholder, or end user. |\n| business-actor | Business Actor | A business entity that is capable of performing behavior. |\n| business-role | Business Role | The responsibility for performing specific behavior, to which an actor can be assigned. |\n| business-collaboration | Business Collaboration | An aggregate of two or more business internal active structure elements that work together to perform collective behavior. |\n| business-interface | Business Interface | A point of access where a business service is made available to the environment. |\n| business-process | Business Process | A sequence of business behaviors that achieves a specific outcome. |\n| business-function | Business Function | A collection of business behavior based on a chosen set of criteria (typically required business resources and/or competencies). |\n| business-interaction | Business Interaction | A unit of collective business behavior performed by (a collaboration of) two or more business actors, business roles, or business collaborations. |\n| business-event | Business Event | Something that happens (internally or externally) and influences behavior. |\n| business-service | Business Service | A service that fulfills a business need for a customer (internal or external to the organization). |\n| business-object | Business Object | A concept used within a particular business domain. |\n| contract | Contract | A formal or informal specification of an agreement between a provider and a consumer that specifies the rights and obligations associated with a product. |\n| representation | Representation | A perceptible form of the information carried by a business object. |\n| product | Product | A coherent collection of services and/or passive structure elements, accompanied by a contract, which is offered as a whole to (internal or external) customers. |\n| application-component | Application Component | An encapsulation of application functionality aligned to implementation structure. |\n| application-collaboration | Application Collaboration | An aggregate of two or more application components that work together to perform collective application behavior. |\n| application-interface | Application Interface | A point of access where application services are made available to a user, another application component, or a node. |\n| application-function | Application Function | Automated behavior that can be performed by an application component. |\n| application-process | Application Process | A sequence of application behaviors that achieves a specific outcome. |\n| application-interaction | Application Interaction | A unit of collective application behavior performed by (a collaboration of) two or more application components. |\n| application-event | Application Event | An occurrence of a state change. |\n| application-service | Application Service | A service that exposes automated behavior. |\n| data-object | Data Object | Data structured for automated processing. |\n| node | Node | A computational or physical resource that hosts, manipulates, or interacts with other computational or physical resources. |\n| device | Device | A physical IT resource upon which system software and artifacts may be stored or deployed for execution. |\n| system-software | System Software | Software that provides or contributes to an environment for storing, executing, and using software or data deployed within it. |\n| technology-collaboration | Technology Collaboration | An aggregate of two or more technology internal active structure elements that work together to perform collective technology behavior. |\n| technology-interface | Technology Interface | A point of access where technology services offered by a node can be accessed. |\n| path | Path | A link between two or more nodes, through which these nodes can exchange data or material. |\n| communication-network | Communication Network | A set of structures that connects nodes for transmission, routing, and reception of data. |\n| technology-function | Technology Function | A collection of technology behavior that can be performed by a node. |\n| technology-process | Technology Process | A sequence of technology behaviors that achieves a specific outcome. |\n| technology-interaction | Technology Interaction | A unit of collective technology behavior performed by (a collaboration of) two or more nodes. |\n| technology-event | Technology Event | An occurrence of a state change. |\n| technology-service | Technology Service | An explicitly defined exposed technology behavior. |\n| artifact | Artifact | A piece of data that is used or produced in a software development process, or by deployment and operation of an IT system. |\n| equipment | Equipment | One or more physical machines, tools, or instruments that can create, use, store, move, or transform materials. |\n| facility | Facility | A physical structure or environment. |\n| distribution-network | Distribution Network | A physical network used to transport materials or energy. |\n| material | Material | Tangible physical matter or physical elements. |\n| stakeholder | Stakeholder | An individual, team, or organization having an interest in the outcome of the architecture. |\n| driver | Driver | An external or internal condition that motivates the organization to define its goals and implement the changes necessary to achieve them. |\n| assessment | Assessment | The outcome of an analysis of the state of affairs of the enterprise with respect to some driver. |\n| goal | Goal | An end state that a stakeholder intends to achieve. |\n| outcome | Outcome | An end result that has been achieved. |\n| principle | Principle | A qualitative statement of intent that should be met by the architecture. |\n| requirement | Requirement | A statement of need that must be realized by a system. |\n| constraint | Constraint | A limiting factor that affects the realization of goals. |\n| meaning | Meaning | The knowledge or expertise present in, or the interpretation given to, a concept in a particular context. |\n| value | Value | The relative worth, utility, or importance of a concept. |\n| work-package | Work Package | A series of actions designed to achieve specific results within specified time and resource constraints. |\n| deliverable | Deliverable | A precise statement of the results to be achieved by a work package. |\n| implementation-even | Implementation Event | A state change related to implementation or migration. |\n| plateau | Plateau | A relatively stable state of the architecture that exists during a limited period of time. |\n| gap | Gap | A statement of difference between two plateaus. |\n| location | Location | A conceptual or physical place or position where concepts are located (e.g., structure elements) or performed (e.g., behaviors). |\n| grouping | Grouping | The act of putting concepts together for a specific purpose. |\n| junction | Junction | Used to connect dynamic relationships of the same type. |\n| composition-relationship | Composition Relationship | Indicates that an element consists of one or more other concepts. |\n| aggregation-relationship | Aggregation Relationship | Indicates that an element combines one or more other concepts. |\n| assignment-relationship | Assignment Relationship | Models the allocation of responsibility, performance of behavior, or execution. |\n| realization-relationship | Realization Relationship | Indicates that an entity plays a critical role in the creation, achievement, sustenance, or operation of a more abstract entity. |\n| serving-relationship | Serving Relationship | Models that an element provides its functionality to another element. |  \n| access-relationship | Access Relationship | Models the ability of behavior and active structure elements to observe or act upon passive structure elements. |\n| influence-relationship | Influence Relationship | Models that an element affects the implementation or achievement of some motivation element. |\n| triggering-relationship | Triggering Relationship | Describes a temporal or causal relationship between elements. |\n| flow-relationship | Flow Relationship | Describes the exchange or transfer of information or value between elements. |\n| specialization-relationship | Specialization Relationship | Indicates that an element is a particular kind of another element. |\n| association-relationship | Association Relationship | Used to model an unspecified relationship, or to specify a relationship that is not represented by another ArchiMate relationship. |\n| association-relationship | Association Relationship | Used to model an unspecified relationship, or to specify a relationship that is not represented by another ArchiMate relationship. |\n| diagram-model-note | NA | A visual element used to add notes or annotations to an ArchiMate diagram. |\n| diagram-model-group | NA | A visual element used to group other elements in an ArchiMate diagram for organizational or presentation purposes. |  \n| diagram-model-connection | NA | A visual connector used to link diagram elements in an ArchiMate diagram. It does not necessarily represent an ArchiMate relationship. |\n| diagram-model-image | NA | An element that allows embedding images in an ArchiMate diagram for supplementary information or visual aids. |\n| diagram-model-reference | NA | A visual element used to reference or link to other diagrams or model elements in an ArchiMate model. |\n| sketch-model-sticky | NA | A flexible notation element in an ArchiMate sketch that can contain text or images for capturing ideas or unstructured information. |\n| sketch-model-actor | NA | A visual element in an ArchiMate sketch representing an actor, often used in early design phases or user journeys. |\n| canvas-model-block | NA | A structural element in an ArchiMate canvas, used to organize or categorize information in a freeform manner. |\n| canvas-model-sticky | NA | A flexible element in an ArchiMate canvas for capturing and displaying text or images, similar to sticky notes. |\n| canvas-model-image | NA | An element that allows embedding images in an ArchiMate canvas for visual communication or context. |\n| archimate-diagram-model | NA | Represents an ArchiMate diagram view, which is a visual representation of a part of the architecture model using ArchiMate elements and relationships. |\n| sketch-model | NA | Represents an Archi sketch view, used for capturing and communicating ideas or designs in a less formal or unstructured manner compared to ArchiMate diagrams. |\n| canvas-model | NA | Represents an Archi canvas view, providing a freeform space for organizing and presenting architectural concepts or ideas using various canvas elements. |\n</archimate_mapping>`;
+
+    const messages = [
+        new Message(ROLES.USER, prompt)
+    ];
+
+    const options = new GenerateOptions({
+        model: 'claude-3-haiku-20240307',
+        maxTokens: 2000,
+        temperature: 0.7
+    });
+
+    try {
+        const response = await anthropicClient.generateChatCompletion(messages, [], options);
+        const content = response.content[0].text;
+        const jsonMatch = content.match(/<archimate_model>([\s\S]*?)<\/archimate_model>/);
+        if (jsonMatch) {
+            return JSON.parse(jsonMatch[1]);
+        } else {
+            throw new Error("JSON structure not found in the response");
+        }
+    } catch (error) {
+        log.error('Error generating ArchiMate model', { error: error.toString() });
+        throw error;
+    }
+}
+
+// Function to create ArchiMate elements in Archi
+function createArchiMateElements(modelJson) {
+    let view = $(selection).filter("archimate-diagram-model").first();
+    
+    if (!view) {
+        view = model.createArchimateView("Generated View");
+    }
+
+    const elementMap = new Map();
+
+    // Create nodes
+    modelJson.nodes.forEach(node => {
+        let element;
+        if (node.type === "archimate-diagram-model" || node.type === "sketch-model" || node.type === "canvas-model") {
+            log.debug("Creating view", { "name" : node.name, "type": node.type});
+            element = model.createView(node.type, node.name);
+        } else {
+            log.debug("Creating element", { "name" : node.name, "type": node.type});
+            element = model.createElement(node.type, node.name);
+        }
+        element.documentation = node.description;
+
+        if (node.type !== "archimate-diagram-model" && node.type !== "sketch-model" && node.type !== "canvas-model") {
+            elementRef = view.add(element, 0, 0, 120, 55);
+            elementMap.set(node.id, elementRef);
+        }
+    });
+
+    // Create relationships
+    modelJson.relationships.forEach(rel => {
+        const source = elementMap.get(rel.source);
+        const target = elementMap.get(rel.target);
+        if (source && target) {
+            try {
+                const relationship = model.createRelationship(rel.type, rel.name, source.concept, target.concept);
+                view.add(relationship, source, target);
+            } catch(error) {
+                log.error('Error in relationship creation. Trying basic relation: ', { error: error.toString() })
+                try {
+                    const relationship = model.createRelationship("association-relationship", rel.name, source.concept, target.concept);
+                    view.add(relationship, source, target);
+                } catch(error)
+                {
+                    log.error('Error in relationship creation', { error: error.toString() })
+                }
+            }
+        }
+    });
+}
+
+// Main execution
+(async function() {
+    try {
+        const userDescription = getUserDescription();
+        if (userDescription) {
+            log.info('Generating ArchiMate model from user description');
+            const modelJson = await generateArchiMateModel(userDescription);
+            log.info('Creating ArchiMate elements in Archi');
+            createArchiMateElements(modelJson);
+            log.info('ArchiMate model generation complete');
+        } else {
+            log.warn('User cancelled or provided no description');
+        }
+    } catch (error) {
+        log.error('Error in main execution', { error: error.toString() });
+    }
+})();
