@@ -7,6 +7,7 @@ console.clear();
 console.show();
 
 const { AnthropicClient, Message, GenerateOptions, ROLES } = require('./lib/anthropicClient');
+const layoutDagre = require('./lib/layoutDagre');
 const SWT = Java.type('org.eclipse.swt.SWT');
 const Shell = Java.type('org.eclipse.swt.widgets.Shell');
 const Display = Java.type('org.eclipse.swt.widgets.Display');
@@ -35,7 +36,7 @@ async function generateArchiMateModel(userDescription) {
 
     const options = new GenerateOptions({
         model: 'claude-3-haiku-20240307',
-        maxTokens: 2000,
+        maxTokens: 4000,
         temperature: 0.7
     });
 
@@ -54,10 +55,10 @@ async function generateArchiMateModel(userDescription) {
     }
 }
 
+let view = $(selection).filter("archimate-diagram-model").first();
+
 // Function to create ArchiMate elements in Archi
-function createArchiMateElements(modelJson) {
-    let view = $(selection).filter("archimate-diagram-model").first();
-    
+function createArchiMateElements(modelJson) {   
     if (!view) {
         view = model.createArchimateView("Generated View");
     }
@@ -93,7 +94,7 @@ function createArchiMateElements(modelJson) {
             } catch(error) {
                 log.error('Error in relationship creation. Trying basic relation: ', { error: error.toString() })
                 try {
-                    const relationship = model.createRelationship("association-relationship", rel.name, source.concept, target.concept);
+                    const relationship = model.createRelationship("association-relationship", rel.name + " : " + rel.type, source.concept, target.concept);
                     view.add(relationship, source, target);
                 } catch(error)
                 {
@@ -102,6 +103,25 @@ function createArchiMateElements(modelJson) {
             }
         }
     });
+
+    return view;
+}
+
+// Function to apply Dagre layout
+function applyDagreLayout(view) {
+    const settings = {
+        rankdir: 'TB',
+        align: 'UL',
+        nodesep: 50,
+        edgesep: 10,
+        ranksep: 50,
+        marginx: 5,
+        marginy: 5,
+        acyclicer: undefined,
+        ranker: 'network-simplex'
+    };
+
+    layoutDagre(view, settings);
 }
 
 // Main execution
@@ -112,8 +132,10 @@ function createArchiMateElements(modelJson) {
             log.info('Generating ArchiMate model from user description');
             const modelJson = await generateArchiMateModel(userDescription);
             log.info('Creating ArchiMate elements in Archi');
-            createArchiMateElements(modelJson);
-            log.info('ArchiMate model generation complete');
+            const view = createArchiMateElements(modelJson);
+            log.info('Applying Dagre layout');
+            applyDagreLayout(view);
+            log.info('ArchiMate model generation and layout complete');
         } else {
             log.warn('User cancelled or provided no description');
         }
