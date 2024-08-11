@@ -1,0 +1,346 @@
+/**
+ * @name Expand Model
+ * @description This script expands an ArchiMate model based on a selected element using the Anthropic API.
+ */
+
+console.clear();
+console.show();
+
+const { AnthropicClient, Message, GenerateOptions, ROLES } = require('./lib/anthropicClient');
+const layoutDagre = require('./lib/layoutDagre');
+const modelTraversal = require('./lib/modelTraversal');
+const SWT = Java.type('org.eclipse.swt.SWT');
+const Shell = Java.type('org.eclipse.swt.widgets.Shell');
+const Display = Java.type('org.eclipse.swt.widgets.Display');
+const InputDialog = Java.type('org.eclipse.jface.dialogs.InputDialog');
+
+// Initialize logger
+const jarchiLogger = require('./lib/jarchiLogger');
+const log = jarchiLogger.createLogger('ExpandArchiMateModel');
+
+// Initialize Anthropic client
+const anthropicClient = new AnthropicClient();
+
+// Function to get the selected element
+function getSelectedElement() {
+    const selectedElements = $(selection).filter("element");
+    if (selectedElements.size() === 1) {
+        return selectedElements.first();
+    } else {
+        return null;
+    }
+}
+
+// Function to create a JSON representation of the entire model
+function createModelJson() {
+    const modelJson = {
+        nodes: [],
+        relationships: []
+    };
+
+    modelTraversal.traverse({
+        elementHandler: (element) => {
+            modelJson.nodes.push({
+                id: element.id,
+                type: element.type,
+                name: element.name,
+                description: element.documentation
+            });
+        },
+        relationshipHandler: (relationship) => {
+            modelJson.relationships.push({
+                id: relationship.id,
+                type: relationship.type,
+                name: relationship.name,
+                source: relationship.source.id,
+                target: relationship.target.id
+            });
+        }
+    });
+
+    return modelJson;
+}
+
+// Function to generate expanded model using Anthropic API
+async function expandArchiMateModel(selectedElement, modelJson) {
+    const prompt = `You are an AI assistant tasked with expanding an Archimate model based on a selected element. Your goal is to analyze the current model and suggest new elements and relationships to expand the model around the selected element.
+
+Current model context:
+${JSON.stringify(modelJson, null, 2)}
+
+Selected element:
+${JSON.stringify({
+    id: selectedElement.id,
+    type: selectedElement.type,
+    name: selectedElement.name,
+    description: selectedElement.documentation
+}, null, 2)}
+
+Please suggest new elements and relationships to expand the model around the selected element. Your response should be a JSON object enclosed in <archimate_model> tags with the following structure:
+
+<archimate_model>
+{
+    "nodes": [
+        {
+            "id": "<unique id>",
+            "type": "<JArchi concept name>",
+            "description": "<description of node>",
+            "name": "<name of concept>",
+            "children": [ ... child nodes ...]
+        },
+        ... more nodes ...
+    ],
+    "relationships": [
+        {
+            "name": "<optional name>",
+            "source": "<id of source node>",
+            "target": "<id of target node>",
+            "type": "<JArchi relationship name>"
+        },
+        ... more relationships ...
+    ]
+}
+</archimate_model>
+
+To create the Archimate model:
+
+1. Carefully read and analyze the user description.
+2. Identify key elements that correspond to Archimate concepts (refer to the JArchi to ArchiMate Concept Mapping provided earlier).
+3. Create nodes for each identified element, assigning unique IDs, appropriate types, names, and descriptions.
+4. Reuse the ID of existing nodes in the model
+5. Identify relationships between the nodes and create corresponding relationship objects.
+6. If applicable, create hierarchical structures using the "children" property of nodes.
+
+When creating nodes and relationships:
+- Ensure each new node has a unique ID (e.g., "node1", "node2", etc.).
+- Use the correct JArchi concept name for the "type" field. See the ArchiMate to JArchi mapping below.
+- Provide clear and concise descriptions for each node
+- Create meaningful relationships between nodes, using appropriate relationship types
+
+After analyzing the description and creating the model, format your response as a valid JSON object representing the Archimate model. Enclose the entire JSON object within <archimate_model> tags. ONLY enclose the JSON object in <archimate_model> tags!
+
+Remember to think carefully about the structure and relationships within the model to accurately represent the described system or organization.
+
+<archimate_mapping>
+| JArchi Name | ArchiMate Concept Name | Description |
+|-------------|------------------------|-------------|
+| resource | Resource | An asset owned or controlled by an individual or organization. |  
+| capability | Capability | An ability that an active structure element, such as an organization, person, or system, possesses. |
+| course-of-action | Course of Action | An approach or plan for configuring some capabilities and resources of the enterprise, undertaken to achieve a goal. |
+| value-stream | Value Stream | A sequence of activities that create an overall result for a customer, stakeholder, or end user. |
+| business-actor | Business Actor | A business entity that is capable of performing behavior. |
+| business-role | Business Role | The responsibility for performing specific behavior, to which an actor can be assigned. |
+| business-collaboration | Business Collaboration | An aggregate of two or more business internal active structure elements that work together to perform collective behavior. |
+| business-interface | Business Interface | A point of access where a business service is made available to the environment. |
+| business-process | Business Process | A sequence of business behaviors that achieves a specific outcome. |
+| business-function | Business Function | A collection of business behavior based on a chosen set of criteria (typically required business resources and/or competencies). |
+| business-interaction | Business Interaction | A unit of collective business behavior performed by (a collaboration of) two or more business actors, business roles, or business collaborations. |
+| business-event | Business Event | Something that happens (internally or externally) and influences behavior. |
+| business-service | Business Service | A service that fulfills a business need for a customer (internal or external to the organization). |
+| business-object | Business Object | A concept used within a particular business domain. |
+| contract | Contract | A formal or informal specification of an agreement between a provider and a consumer that specifies the rights and obligations associated with a product. |
+| representation | Representation | A perceptible form of the information carried by a business object. |
+| product | Product | A coherent collection of services and/or passive structure elements, accompanied by a contract, which is offered as a whole to (internal or external) customers. |
+| application-component | Application Component | An encapsulation of application functionality aligned to implementation structure. |
+| application-collaboration | Application Collaboration | An aggregate of two or more application components that work together to perform collective application behavior. |
+| application-interface | Application Interface | A point of access where application services are made available to a user, another application component, or a node. |
+| application-function | Application Function | Automated behavior that can be performed by an application component. |
+| application-process | Application Process | A sequence of application behaviors that achieves a specific outcome. |
+| application-interaction | Application Interaction | A unit of collective application behavior performed by (a collaboration of) two or more application components. |
+| application-event | Application Event | An occurrence of a state change. |
+| application-service | Application Service | A service that exposes automated behavior. |
+| data-object | Data Object | Data structured for automated processing. |
+| node | Node | A computational or physical resource that hosts, manipulates, or interacts with other computational or physical resources. |
+| device | Device | A physical IT resource upon which system software and artifacts may be stored or deployed for execution. |
+| system-software | System Software | Software that provides or contributes to an environment for storing, executing, and using software or data deployed within it. |
+| technology-collaboration | Technology Collaboration | An aggregate of two or more technology internal active structure elements that work together to perform collective technology behavior. |
+| technology-interface | Technology Interface | A point of access where technology services offered by a node can be accessed. |
+| path | Path | A link between two or more nodes, through which these nodes can exchange data or material. |
+| communication-network | Communication Network | A set of structures that connects nodes for transmission, routing, and reception of data. |
+| technology-function | Technology Function | A collection of technology behavior that can be performed by a node. |
+| technology-process | Technology Process | A sequence of technology behaviors that achieves a specific outcome. |
+| technology-interaction | Technology Interaction | A unit of collective technology behavior performed by (a collaboration of) two or more nodes. |
+| technology-event | Technology Event | An occurrence of a state change. |
+| technology-service | Technology Service | An explicitly defined exposed technology behavior. |
+| artifact | Artifact | A piece of data that is used or produced in a software development process, or by deployment and operation of an IT system. |
+| equipment | Equipment | One or more physical machines, tools, or instruments that can create, use, store, move, or transform materials. |
+| facility | Facility | A physical structure or environment. |
+| distribution-network | Distribution Network | A physical network used to transport materials or energy. |
+| material | Material | Tangible physical matter or physical elements. |
+| stakeholder | Stakeholder | An individual, team, or organization having an interest in the outcome of the architecture. |
+| driver | Driver | An external or internal condition that motivates the organization to define its goals and implement the changes necessary to achieve them. |
+| assessment | Assessment | The outcome of an analysis of the state of affairs of the enterprise with respect to some driver. |
+| goal | Goal | An end state that a stakeholder intends to achieve. |
+| outcome | Outcome | An end result that has been achieved. |
+| principle | Principle | A qualitative statement of intent that should be met by the architecture. |
+| requirement | Requirement | A statement of need that must be realized by a system. |
+| constraint | Constraint | A limiting factor that affects the realization of goals. |
+| meaning | Meaning | The knowledge or expertise present in, or the interpretation given to, a concept in a particular context. |
+| value | Value | The relative worth, utility, or importance of a concept. |
+| work-package | Work Package | A series of actions designed to achieve specific results within specified time and resource constraints. |
+| deliverable | Deliverable | A precise statement of the results to be achieved by a work package. |
+| implementation-even | Implementation Event | A state change related to implementation or migration. |
+| plateau | Plateau | A relatively stable state of the architecture that exists during a limited period of time. |
+| gap | Gap | A statement of difference between two plateaus. |
+| location | Location | A conceptual or physical place or position where concepts are located (e.g., structure elements) or performed (e.g., behaviors). |
+| grouping | Grouping | The act of putting concepts together for a specific purpose. |
+| junction | Junction | Used to connect dynamic relationships of the same type. |
+| composition-relationship | Composition Relationship | Indicates that an element consists of one or more other concepts. |
+| aggregation-relationship | Aggregation Relationship | Indicates that an element combines one or more other concepts. |
+| assignment-relationship | Assignment Relationship | Models the allocation of responsibility, performance of behavior, or execution. |
+| realization-relationship | Realization Relationship | Indicates that an entity plays a critical role in the creation, achievement, sustenance, or operation of a more abstract entity. |
+| serving-relationship | Serving Relationship | Models that an element provides its functionality to another element. |  
+| access-relationship | Access Relationship | Models the ability of behavior and active structure elements to observe or act upon passive structure elements. |
+| influence-relationship | Influence Relationship | Models that an element affects the implementation or achievement of some motivation element. |
+| triggering-relationship | Triggering Relationship | Describes a temporal or causal relationship between elements. |
+| flow-relationship | Flow Relationship | Describes the exchange or transfer of information or value between elements. |
+| specialization-relationship | Specialization Relationship | Indicates that an element is a particular kind of another element. |
+| association-relationship | Association Relationship | Used to model an unspecified relationship, or to specify a relationship that is not represented by another ArchiMate relationship. |
+| association-relationship | Association Relationship | Used to model an unspecified relationship, or to specify a relationship that is not represented by another ArchiMate relationship. |
+| diagram-model-note | NA | A visual element used to add notes or annotations to an ArchiMate diagram. |
+| diagram-model-group | NA | A visual element used to group other elements in an ArchiMate diagram for organizational or presentation purposes. |  
+| diagram-model-connection | NA | A visual connector used to link diagram elements in an ArchiMate diagram. It does not necessarily represent an ArchiMate relationship. |
+| diagram-model-image | NA | An element that allows embedding images in an ArchiMate diagram for supplementary information or visual aids. |
+| diagram-model-reference | NA | A visual element used to reference or link to other diagrams or model elements in an ArchiMate model. |
+| sketch-model-sticky | NA | A flexible notation element in an ArchiMate sketch that can contain text or images for capturing ideas or unstructured information. |
+| sketch-model-actor | NA | A visual element in an ArchiMate sketch representing an actor, often used in early design phases or user journeys. |
+| canvas-model-block | NA | A structural element in an ArchiMate canvas, used to organize or categorize information in a freeform manner. |
+| canvas-model-sticky | NA | A flexible element in an ArchiMate canvas for capturing and displaying text or images, similar to sticky notes. |
+| canvas-model-image | NA | An element that allows embedding images in an ArchiMate canvas for visual communication or context. |
+| archimate-diagram-model | NA | Represents an ArchiMate diagram view, which is a visual representation of a part of the architecture model using ArchiMate elements and relationships. |
+| sketch-model | NA | Represents an Archi sketch view, used for capturing and communicating ideas or designs in a less formal or unstructured manner compared to ArchiMate diagrams. |
+| canvas-model | NA | Represents an Archi canvas view, providing a freeform space for organizing and presenting architectural concepts or ideas using various canvas elements. |
+</archimate_mapping>`;
+
+    const messages = [
+        new Message(ROLES.USER, prompt)
+    ];
+
+    const options = new GenerateOptions({
+        model: 'claude-3-haiku-20240307',
+        maxTokens: 4000,
+        temperature: 0.7
+    });
+
+    try {
+        const response = await anthropicClient.generateChatCompletion(messages, [], options);
+        const content = response.content[0].text;
+        const jsonMatch = content.match(/<archimate_model>([\s\S]*?)<\/archimate_model>/);
+        if (jsonMatch) {
+            return JSON.parse(jsonMatch[1]);
+        } else {
+            throw new Error("JSON structure not found in the response");
+        }
+    } catch (error) {
+        log.error('Error expanding ArchiMate model', { error: error.toString() });
+        throw error;
+    }
+}
+
+// Function to update the view with new elements and relationships
+function updateView(view, expansionJson) {
+    const elementMap = new Map();
+
+    // Helper function to find or create an element
+    function getOrCreateElement(newElement) {
+        // Check if element already exists in the model
+        let element = $("*").filter(function (o) {
+            return (o.id == newElement.id) || (o.name.toLowerCase() === newElement.name.toLowerCase())
+        }).first();
+
+        if (element) {
+            log.debug(`Existing element: ${element.name}`)
+        }
+        if (!element) {
+            // If not, create a new element
+            log.debug(`Creating element: ${newElement.name}`)
+            element = model.createElement(newElement.type, newElement.name);
+            element.id = newElement.id; // Set the ID to match the one from expansionJson
+        }
+        element.documentation = newElement.description;
+        return element;
+    }
+
+    function findInView(v, e) {
+        return $(v).find("element").filter(function(o) {
+            return o.concept.id == e.id;
+        }).first();
+    }
+
+    // Function to recursively create elements and their children
+    function createElementHierarchy(newElement, parentRef) {
+        const element = getOrCreateElement(newElement);
+        let elementRef;
+
+        if (parentRef) {
+            elementRef = parentRef.add(element, 0, 0, -1, -1);
+        } else {
+            existingRef = findInView(view, element);
+            if (!existingRef)
+                elementRef = view.add(element, 0, 0, -1, -1);
+            else {
+                log.debug(`Found existing element in view: ${existingRef.name}`);
+                elementRef = existingRef;
+            }
+        }
+
+        elementMap.set(newElement.id, elementRef);
+
+        // Recursively create children
+        if (newElement.children && Array.isArray(newElement.children)) {
+            newElement.children.forEach(child => createElementHierarchy(child, elementRef));
+        }
+    }
+
+    // Create elements and their hierarchies
+    expansionJson.nodes.forEach(newElement => createElementHierarchy(newElement));
+
+    // Create new relationships
+    expansionJson.relationships.forEach(rel => {
+        const source = elementMap.get(rel.source);
+        const target = elementMap.get(rel.target);
+        if (source && target) {
+            try {
+                const relationship = model.createRelationship(rel.type, rel.name, source.concept, target.concept);
+                view.add(relationship, source, target);
+            } catch(error) {
+                log.error('Error in relationship creation. Trying basic relation: ', { error: error.toString() });
+                try {
+                    const relationship = model.createRelationship("association-relationship", rel.name + " : " + rel.type, source.concept, target.concept);
+                    view.add(relationship, source, target);
+                } catch(error) {
+                    log.error('Error in relationship creation', { error: error.toString() });
+                }
+            }
+        } else {
+            log.warn(`Source or target not found for relationship: ${rel.source} -> ${rel.target}`);
+        }
+    });
+}
+
+// Main execution
+(async function() {
+    try {
+        const selectedElement = getSelectedElement();
+        if (selectedElement) {
+            const view = selectedElement.view
+            if (view) {
+                log.info('Expanding ArchiMate model based on selected element', { elementName: selectedElement.name, elementType: selectedElement.type });
+                const modelJson = createModelJson();
+                const expansionJson = await expandArchiMateModel(selectedElement, modelJson);
+                log.info('Updating view with expanded model');
+                updateView(view, expansionJson);
+                log.info('Applying Dagre layout');
+                layoutDagre(view);
+                log.info('Model expansion and layout complete');
+                console.log("Explanation of expansion:", expansionJson.explanation);
+            } else {
+                log.warn('Selected element is not in any view');
+            }
+        } else {
+            log.warn('No single element selected. Please select one element and run the script again.');
+        }
+    } catch (error) {
+        log.error('Error in main execution', { error: error.toString() });
+    }
+})();

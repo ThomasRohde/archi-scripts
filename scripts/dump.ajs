@@ -1,0 +1,3 @@
+$("*").not("relationship").each(o => {
+    console.log(`Name: ${o.name} Type: ${o.type} Id: ${o.id}`)
+})
