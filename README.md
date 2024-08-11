@@ -6,10 +6,11 @@ This repository contains a collection of JArchi scripts designed to enhance and 
 
 ## Features
 
-- **Diverse Functionality**: Scripts for various tasks such as model analysis, bulk operations, reporting, and more.
+- **Diverse Functionality**: Scripts for various tasks such as model analysis, bulk operations, reporting, and AI-assisted modeling.
 - **Easy Integration**: All scripts are designed to work seamlessly within the Archi environment.
 - **Customizable**: Many scripts can be easily customized to fit specific modeling needs.
 - **Time-Saving**: Automate repetitive tasks and complex operations with a single click.
+- **AI-Powered**: Leverage artificial intelligence for model generation and expansion.
 
 ## Prerequisites
 
@@ -17,6 +18,7 @@ This repository contains a collection of JArchi scripts designed to enhance and 
 - jArchi plugin installed and activated in Archi
 - Node.js and npm (for managing dependencies and building the logger)
 - Ollama (for AI-powered scripts)
+- Anthropic API key (for AI-assisted modeling scripts)
 
 ## Installation
 
@@ -73,6 +75,17 @@ You have two options for installing the scripts:
 - **Publish View to Confluence**: Publish the currently selected view to a Confluence page.
 - **Documentation Augmenter**: Automatically generate and enhance documentation for ArchiMate views and elements using AI.
 - **Export View to Draw.io**: Export the currently selected ArchiMate view to a draw.io diagram file.
+- **Generate Model**: Create a complete ArchiMate model from a textual description using AI.
+- **Expand Model**: Expand an existing ArchiMate model based on a selected element and a textual description using AI.
+
+## AI-Assisted Modeling
+
+The Generate Model and Expand Model scripts use the Anthropic API to provide AI-assisted modeling capabilities:
+
+- **Generate Model**: Creates a full ArchiMate model based on a textual description of a system or organization.
+- **Expand Model**: Allows you to select an existing element in your model and expand the architecture around it based on a description.
+
+These scripts require a valid Anthropic API key to be configured in the Settings script.
 
 ## JArchi Logger
 
@@ -113,4 +126,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - The Archi team for creating an excellent ArchiMate modelling tool.
 - The jArchi plugin developers for enabling scripting capabilities in Archi.
+- The creators of Ollama
+- Anthropic for providing the AI capabilities used in the Generate Model and Expand Model scripts.
 - All contributors and users of these scripts.
