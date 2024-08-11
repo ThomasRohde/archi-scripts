@@ -21,6 +21,17 @@ const log = jarchiLogger.createLogger("ExpandArchiMateModel");
 // Initialize Anthropic client
 const anthropicClient = new AnthropicClient();
 
+// Function to show input dialog and get user description
+function getUserDescription(element) {
+    const prompt = window.prompt("Generate ArchiMate Model", `What do you want to do with: ${element.name}`);
+    console.log(prompt)
+    if (!prompt) {
+        log.warn("User did not enter a prompt");
+        exit();
+    }
+    return prompt;
+}
+
 // Function to get the selected element
 function getSelectedElement() {
     const selectedElements = $(selection).filter("element");
@@ -62,13 +73,18 @@ function createModelJson() {
 }
 
 // Function to generate expanded model using Anthropic API
-async function expandArchiMateModel(selectedElement, modelJson) {
-    const prompt = `You are an AI assistant tasked with expanding an Archimate model based on a selected element. Your goal is to analyze the current model and suggest new elements and relationships to expand the model around the selected element.
+async function expandArchiMateModel(selectedElement, modelJson, userDescription) {
+    const prompt = `You are an AI assistant tasked with expanding an Archimate model based on a selected element. Your goal is to analyze the current model and suggest new elements and relationships based on the users description and the selected element.
 
-Current model context:
+<user_description>
+${userDescription}
+</user_description>
+
+<current_ model_context>
 ${JSON.stringify(modelJson, null, 2)}
+</current_ model_context>
 
-Selected element:
+<selected_element>
 ${JSON.stringify(
     {
         id: selectedElement.id,
@@ -79,6 +95,7 @@ ${JSON.stringify(
     null,
     2
 )}
+</selected_element>
 
 Please suggest new elements and relationships to expand the model around the selected element. Your response should be a JSON object enclosed in <archimate_model> tags with the following structure:
 
@@ -373,12 +390,13 @@ function updateView(view, expansionJson) {
         if (selectedElement) {
             const view = selectedElement.view;
             if (view) {
+                userDescription = getUserDescription(selectedElement);
                 log.info("Expanding ArchiMate model based on selected element", {
                     elementName: selectedElement.name,
                     elementType: selectedElement.type,
                 });
                 const modelJson = createModelJson();
-                const expansionJson = await expandArchiMateModel(selectedElement, modelJson);
+                const expansionJson = await expandArchiMateModel(selectedElement, modelJson, userDescription);
                 log.info("Updating view with expanded model");
                 updateView(view, expansionJson);
                 log.info("Applying Dagre layout");
