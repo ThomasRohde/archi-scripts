@@ -26,9 +26,41 @@
 
         #consoleOutput h1,
         #consoleOutput h2,
-        #consoleOutput h3 {
+        #consoleOutput h3,
+        #consoleOutput h4,
+        #consoleOutput h5,
+        #consoleOutput h6 {
             color: #007bff;
-            margin-top: 0;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        #consoleOutput h1 {
+            font-size: 2em;
+        }
+
+        #consoleOutput h2 {
+            font-size: 1.5em;
+        }
+
+        #consoleOutput h3 {
+            font-size: 1.17em;
+        }
+
+        #consoleOutput h4 {
+            font-size: 1em;
+        }
+
+        #consoleOutput h5 {
+            font-size: 0.83em;
+        }
+
+        #consoleOutput h6 {
+            font-size: 0.67em;
+        }
+
+        #consoleOutput p {
+            margin-bottom: 1rem;
         }
 
         #consoleOutput code {
@@ -43,6 +75,53 @@
             padding: 1rem;
             border-radius: 4px;
             overflow-x: auto;
+            margin-bottom: 1rem;
+        }
+
+        #consoleOutput pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+
+        #consoleOutput ul,
+        #consoleOutput ol {
+            margin-bottom: 1rem;
+            padding-left: 2rem;
+        }
+
+        #consoleOutput ul {
+            list-style-type: disc;
+        }
+
+        #consoleOutput ol {
+            list-style-type: decimal;
+        }
+
+        #consoleOutput li {
+            margin-bottom: 0.5rem;
+        }
+
+        #consoleOutput blockquote {
+            border-left: 4px solid #ced4da;
+            padding-left: 1rem;
+            margin-left: 0;
+            margin-bottom: 1rem;
+            color: #6c757d;
+        }
+
+        #consoleOutput a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        #consoleOutput a:hover {
+            text-decoration: underline;
+        }
+
+        #consoleOutput img {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 1rem;
         }
 
         #consoleOutput table {
@@ -74,6 +153,12 @@
 
         #consoleOutput tbody tr:hover {
             background-color: #e9ecef;
+        }
+
+        #consoleOutput hr {
+            border: 0;
+            border-top: 1px solid #ced4da;
+            margin: 1rem 0;
         }
 
         .error-message {
@@ -156,7 +241,7 @@
     </div>
 
     <script>
-        window.initialContent = <%- JSON.stringify(initialContent) %>;
+        window.initialContent = <% - JSON.stringify(initialContent) %>;
     </script>
 
     <script src="/socket.io/socket.io.js"></script>

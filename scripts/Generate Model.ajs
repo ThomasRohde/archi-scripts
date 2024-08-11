@@ -230,27 +230,52 @@ function createArchiMateElements(modelJson) {
         return { width, height };
     }
     
-    function createElementHierarchy(node, parentRef, x = 0, y = 0) {
-        let element;
-        if (node.type === "archimate-diagram-model" || node.type === "sketch-model" || node.type === "canvas-model") {
-            log.debug("Creating view", { "name" : node.name, "type": node.type});
-            element = model.createView(node.type, node.name);
-        } else {
-            log.debug("Creating element", { "name" : node.name, "type": node.type});
+    function getOrCreateElement(node) {
+        // Check if element already exists in the model
+        let element = $("*").filter(function(o) {
+            return o.name.toLowerCase() === node.name.toLowerCase();
+        }).first();
+
+        if (!element) {
+            // If not, create a new element
+            log.debug(`Creating element: ${node.name}`);
             element = model.createElement(node.type, node.name);
+        } else {
+            log.debug(`Existing element: ${element.name}`);
         }
         element.documentation = node.description;
+        elementMap.set(node.id, element.id);
+        return element;
+    }
 
+    function findInView(v, e) {
+        return $(v).find("element").filter(function(o) {
+            return o.concept.id == e.id;
+        }).first();
+    }
+    
+    function createElementHierarchy(node, parentRef, x = 0, y = 0) {
+        const element = getOrCreateElement(node);
         let elementRef;
+
         const predictedSize = predictSize(node);
 
-        if (node.type !== "archimate-diagram-model" && node.type !== "sketch-model" && node.type !== "canvas-model") {
-            if (parentRef) {
-                elementRef = parentRef.add(element, x, y, predictedSize.width, predictedSize.height);
-            } else {
+        if (parentRef) {
+            elementRef = parentRef.add(element, x, y, predictedSize.width, predictedSize.height);
+        } else {
+            const existingRef = findInView(view, element);
+            if (!existingRef) {
                 elementRef = view.add(element, x, y, predictedSize.width, predictedSize.height);
+            } else {
+                log.debug(`Found existing element in view: ${existingRef.name}`);
+                elementRef = existingRef;
+                elementRef.bounds = {
+                    x: x,
+                    y: y,
+                    width: predictedSize.width,
+                    height: predictedSize.height
+                };
             }
-            elementMap.set(node.id, elementRef);
         }
 
         // Recursively create children
@@ -271,22 +296,39 @@ function createArchiMateElements(modelJson) {
 
     // Create relationships
     modelJson.relationships.forEach(rel => {
-        const source = elementMap.get(rel.source);
-        const target = elementMap.get(rel.target);
+        const sourceId = elementMap.get(rel.source) || rel.source;
+        const targetId = elementMap.get(rel.target) || rel.target;
+        
+        const source = $("#" + sourceId).first();
+        const target = $("#" + targetId).first();
+        
         if (source && target) {
             try {
-                const relationship = model.createRelationship(rel.type, rel.name, source.concept, target.concept);
-                view.add(relationship, source, target);
-            } catch(error) {
-                log.error('Error in relationship creation. Trying basic relation: ', { error: error.toString() })
+                const relationship = model.createRelationship(rel.type, rel.name, source, target);
+                const sourceInView = findInView(view, source);
+                const targetInView = findInView(view, target);
+                if (sourceInView && targetInView) {
+                    view.add(relationship, sourceInView, targetInView);
+                } else {
+                    log.debug(`Relationship created but not added to view: ${source.name} -> ${target.name}`);
+                }
+            } catch (error) {
+                log.error('Error in relationship creation. Trying basic relation: ', { error: error.toString() });
                 try {
-                    const relationship = model.createRelationship("association-relationship", rel.name + " : " + rel.type, source.concept, target.concept);
-                    view.add(relationship, source, target);
-                } catch(error)
-                {
-                    log.error('Error in relationship creation', { error: error.toString() })
+                    const relationship = model.createRelationship("association-relationship", rel.name + " : " + rel.type, source, target);
+                    const sourceInView = findInView(view, source);
+                    const targetInView = findInView(view, target);
+                    if (sourceInView && targetInView) {
+                        view.add(relationship, sourceInView, targetInView);
+                    } else {
+                        log.debug(`Basic relationship created but not added to view: ${source.name} -> ${target.name}`);
+                    }
+                } catch (error) {
+                    log.error('Error in basic relationship creation', { error: error.toString() });
                 }
             }
+        } else {
+            log.warn(`Source or target not found for relationship: ${rel.source} -> ${rel.target}`);
         }
     });
 

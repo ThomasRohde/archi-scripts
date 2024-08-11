@@ -24,7 +24,6 @@ const anthropicClient = new AnthropicClient();
 // Function to show input dialog and get user description
 function getUserDescription(element) {
     const prompt = window.prompt("Generate ArchiMate Model", `What do you want to do with: ${element.name}`);
-    console.log(prompt)
     if (!prompt) {
         log.warn("User did not enter a prompt");
         exit();
@@ -107,7 +106,7 @@ Please suggest new elements and relationships to expand the model around the sel
             "type": "<JArchi concept name>",
             "description": "<description of node>",
             "name": "<name of concept>",
-            "children": [ ... child nodes ...]
+            "children": [ ... full definition of child nodes ...]
         },
         ... more nodes ...
     ],
@@ -268,20 +267,19 @@ function updateView(view, expansionJson) {
         // Check if element already exists in the model
         let element = $("*")
             .filter(function (o) {
-                return o.id == newElement.id || o.name.toLowerCase() === newElement.name.toLowerCase();
+                return o.name.toLowerCase() === newElement.name.toLowerCase();
             })
             .first();
 
-        if (element) {
-            log.debug(`Existing element: ${element.name}`);
-        }
         if (!element) {
             // If not, create a new element
             log.debug(`Creating element: ${newElement.name}`);
             element = model.createElement(newElement.type, newElement.name);
-            element.id = newElement.id; // Set the ID to match the one from expansionJson
+        } else {
+            log.debug(`Existing element: ${element.name}`);
         }
         element.documentation = newElement.description;
+        elementMap.set(newElement.id, element.id);
         return element;
     }
 
@@ -306,7 +304,7 @@ function updateView(view, expansionJson) {
                 childrenWidth += childSize.width;
                 childrenHeight = Math.max(childrenHeight, childSize.height);
             });
-            width = Math.max(width, childrenWidth + 70); // 20px padding
+            width = Math.max(width, childrenWidth + 70); // 70px padding
             height += childrenHeight + 20; // 20px padding
         }
 
@@ -337,8 +335,6 @@ function updateView(view, expansionJson) {
             }
         }
 
-        elementMap.set(newElement.id, elementRef);
-
         // Recursively create children
         if (newElement.children && Array.isArray(newElement.children)) {
             let childX = x + 10;
@@ -357,24 +353,40 @@ function updateView(view, expansionJson) {
 
     // Create new relationships
     expansionJson.relationships.forEach((rel) => {
-        const source = elementMap.get(rel.source);
-        const target = elementMap.get(rel.target);
+        const sourceId = elementMap.get(rel.source) || rel.source;
+        const targetId = elementMap.get(rel.target) || rel.target;
+        
+        const source = $("#" + sourceId).first();
+        const target = $("#" + targetId).first();
+        
         if (source && target) {
             try {
-                const relationship = model.createRelationship(rel.type, rel.name, source.concept, target.concept);
-                view.add(relationship, source, target);
+                const relationship = model.createRelationship(rel.type, rel.name, source, target);
+                const sourceInView = findInView(view, source);
+                const targetInView = findInView(view, target);
+                if (sourceInView && targetInView) {
+                    view.add(relationship, sourceInView, targetInView);
+                } else {
+                    log.debug(`Relationship created but not added to view: ${source.name} -> ${target.name}`);
+                }
             } catch (error) {
                 log.error("Error in relationship creation. Trying basic relation: ", { error: error.toString() });
                 try {
                     const relationship = model.createRelationship(
                         "association-relationship",
                         rel.name + " : " + rel.type,
-                        source.concept,
-                        target.concept
+                        source,
+                        target
                     );
-                    view.add(relationship, source, target);
+                    const sourceInView = findInView(view, source);
+                    const targetInView = findInView(view, target);
+                    if (sourceInView && targetInView) {
+                        view.add(relationship, sourceInView, targetInView);
+                    } else {
+                        log.debug(`Basic relationship created but not added to view: ${source.name} -> ${target.name}`);
+                    }
                 } catch (error) {
-                    log.error("Error in relationship creation", { error: error.toString() });
+                    log.error("Error in basic relationship creation", { error: error.toString() });
                 }
             }
         } else {

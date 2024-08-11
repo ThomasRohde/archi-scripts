@@ -1,0 +1,144 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Tutorial: Expand Model</title>
+            
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.3;
+        color: #333;
+        margin: 0;
+        padding: 10px;
+    }
+    h1 {
+        color: #2c3e50;
+        font-size: 20px;
+        margin: 10px 0 5px 0;
+    }
+    h2 {
+        color: #3498db;
+        font-size: 16px;
+        margin: 8px 0 4px 0;
+    }
+    p {
+        margin: 0 0 5px 0;
+    }
+    ul,
+    ol {
+        margin: 0 0 5px 0;
+        padding-left: 20px;
+    }
+    li {
+        margin-bottom: 2px;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 5px 0;
+    }
+    table,
+    th,
+    td {
+        border: 1px solid black;
+        font-size: 12px;
+        padding: 2px;
+    }
+</style>
+
+        </head>
+        <body>
+            <h1>Tutorial: Expand Model</h1>
+            <p>The Expand Model script is an AI-powered tool that helps you grow and refine your existing ArchiMate models. It allows you to select an element in your model and expand the architecture around it based on a textual description. This tutorial will guide you through using this script effectively.</p>
+<h2>Prerequisites</h2>
+<ol>
+<li>Ensure you have the latest version of Archi installed.</li>
+<li>The jArchi plugin must be installed and configured.</li>
+<li>You need a valid Anthropic API key configured in your jArchi settings.</li>
+<li>An active internet connection is required.</li>
+<li>An existing ArchiMate model with at least one element.</li>
+</ol>
+<h2>Step-by-Step Guide</h2>
+<h3>1. Prepare Your Model</h3>
+<ol>
+<li>Open your existing ArchiMate model in Archi.</li>
+<li>Identify the element you want to expand upon. This could be a business process, application component, or any other ArchiMate element.</li>
+</ol>
+<h3>2. Select the Element</h3>
+<ol>
+<li>In your ArchiMate view, click on the element you want to expand.</li>
+<li>Ensure only one element is selected.</li>
+</ol>
+<h3>3. Run the Script</h3>
+<ol>
+<li>Open the jArchi Scripts menu.</li>
+<li>Select &quot;Expand Model&quot;.</li>
+</ol>
+<h3>4. Provide Expansion Description</h3>
+<ol>
+<li>A prompt will appear asking what you want to do with the selected element.</li>
+<li>Enter a description of how you want to expand the model around this element. Be as specific as possible.</li>
+</ol>
+<p>Example:</p>
+<pre><code>Expand the &#39;Customer Management System&#39; by adding related data objects it manages, the services it provides to other components, and any external systems it integrates with. Also, include any key business processes that utilize this system.
+</code></pre>
+<h3>5. Wait for Processing</h3>
+<p>The script will analyze your current model, the selected element, and your description. It will then use the Anthropic API to generate suggested expansions. This may take a few moments.</p>
+<h3>6. Review the Expanded Model</h3>
+<p>Once processing is complete, your view will be updated with new elements and relationships:</p>
+<ol>
+<li>New elements will be added to your view, connected to your selected element.</li>
+<li>New relationships will be created between existing and new elements.</li>
+<li>The layout will be automatically adjusted to accommodate the new components.</li>
+</ol>
+<h3>7. Refine the Expansion</h3>
+<p>The AI-generated expansion is a starting point. You should now refine it:</p>
+<ol>
+<li>Review all new elements and relationships for accuracy and relevance.</li>
+<li>Adjust element names, types, and properties as needed.</li>
+<li>Add or update element documentation to provide more context.</li>
+<li>Fine-tune the layout if necessary for better readability.</li>
+</ol>
+<h3>8. Iterate if Necessary</h3>
+<p>If you want to further expand the model:</p>
+<ol>
+<li>You can run the script again, selecting a different element or even one of the newly added elements.</li>
+<li>Provide a new description focusing on different aspects or greater detail.</li>
+</ol>
+<h2>Tips for Best Results</h2>
+<ul>
+<li>Be specific in your expansion descriptions. Mention particular types of elements or relationships you&#39;re interested in.</li>
+<li>Consider the context of your selected element. How does it fit into the larger system or process?</li>
+<li>Use ArchiMate terminology in your descriptions when possible.</li>
+<li>Start with smaller, focused expansions and gradually build up your model.</li>
+</ul>
+<h2>Troubleshooting</h2>
+<ul>
+<li>If no new elements are added, check if your description was specific enough or try rephrasing it.</li>
+<li>If unexpected elements are added, review your description and consider if it could be interpreted differently.</li>
+<li>For any errors, check the jArchi console for specific error messages.</li>
+<li>Ensure your Anthropic API key is correctly configured if you encounter authentication issues.</li>
+</ul>
+<h2>Best Practices</h2>
+<ol>
+<li><p><strong>Validate Expansions</strong>: Always review and validate the AI-generated expansions. While the AI is powerful, it may not have complete context of your specific organization or project.</p>
+</li>
+<li><p><strong>Maintain Consistency</strong>: Ensure that the expanded parts of your model maintain consistency with your existing architecture principles and standards.</p>
+</li>
+<li><p><strong>Document Changes</strong>: As you expand your model, make sure to document significant changes or decisions in element properties or separate documentation.</p>
+</li>
+<li><p><strong>Incremental Expansion</strong>: For complex systems, consider expanding your model incrementally, focusing on one area at a time.</p>
+</li>
+<li><p><strong>Collaboration</strong>: Use the expand feature as a starting point for discussions with stakeholders to further refine and validate the architecture.</p>
+</li>
+</ol>
+<h2>Conclusion</h2>
+<p>The Expand Model script is a powerful tool for growing and refining your ArchiMate models. It can significantly speed up the process of detailing your architecture and can provide valuable insights and suggestions. However, always complement its use with your professional expertise and knowledge of your specific context. Use this tool to enhance your modeling process, spark new ideas, and ensure your architecture models are comprehensive and well-connected.</p>
+
+        </body>
+        </html>
+    

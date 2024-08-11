@@ -353,4 +353,54 @@ const menuItems = [
         script: "Remove all bend points.ajs",
         category: "Layout",
     },
+    {
+        name: "Generate Model",
+        description: `
+            <h2>Generate ArchiMate Model</h2>
+            <p>This script generates an ArchiMate model based on a user's description using the Anthropic API.</p>
+            <h3>Features:</h3>
+            <ul>
+                <li>Creates a complete ArchiMate model from a text description</li>
+                <li>Utilizes AI to interpret user requirements and generate appropriate elements and relationships</li>
+                <li>Automatically creates a new view with the generated model</li>
+                <li>Applies an automatic layout to the generated view for better readability</li>
+            </ul>
+            <h3>Usage:</h3>
+            <ol>
+                <li>Run the "Generate Model" script</li>
+                <li>Enter a description of the system or organization you want to model</li>
+                <li>Wait for the AI to generate the model</li>
+                <li>Review and refine the generated model as needed</li>
+            </ol>
+            <p>This script requires a configured Anthropic API key and an active internet connection to function.</p>
+        `,
+        script: "Generate Model.ajs",
+        category: "AI-Assisted Modeling",
+        tutorial: "Generate Model"
+    },
+    {
+        name: "Expand Model",
+        description: `
+            <h2>Expand ArchiMate Model</h2>
+            <p>This script expands an existing ArchiMate model based on a selected element using the Anthropic API.</p>
+            <h3>Features:</h3>
+            <ul>
+                <li>Expands the model around a selected element</li>
+                <li>Uses AI to suggest new elements and relationships based on the existing model context</li>
+                <li>Integrates new elements seamlessly into the current view</li>
+                <li>Applies automatic layout to maintain diagram clarity</li>
+            </ul>
+            <h3>Usage:</h3>
+            <ol>
+                <li>Select an element in your ArchiMate view</li>
+                <li>Run the "Expand Model" script</li>
+                <li>Enter a description of how you want to expand the model around the selected element</li>
+                <li>Review and adjust the AI-generated expansions as needed</li>
+            </ol>
+            <p>This script requires a configured Anthropic API key and an active internet connection. It works best when starting from an existing model or element to provide context for the expansion.</p>
+        `,
+        script: "Expand Model.ajs",
+        category: "AI-Assisted Modeling",
+        tutorial: "Expand Model"
+    }
 ];
