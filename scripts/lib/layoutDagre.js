@@ -75,8 +75,6 @@ function layoutDagre(view, options = {}) {
             }));
         }
     });
-
-    console.log("View layout complete!");
 }
 
 // Example usage:

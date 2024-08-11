@@ -267,29 +267,62 @@ function updateView(view, expansionJson) {
         }).first();
     }
 
-    // Function to recursively create elements and their children
-    function createElementHierarchy(newElement, parentRef) {
+    function predictSize(newElement) {
+        let width = 120;  // Base width for an element
+        let height = 55;  // Base height for an element
+    
+        if (newElement.children && newElement.children.length > 0) {
+            let childrenWidth = 0;
+            let childrenHeight = 0;
+            newElement.children.forEach(child => {
+                const childSize = predictSize(child);
+                childrenWidth += childSize.width;
+                childrenHeight = Math.max(childrenHeight, childSize.height);
+            });
+            width = Math.max(width, childrenWidth + 70);  // 20px padding
+            height += childrenHeight + 20;  // 20px padding
+        }
+    
+        return { width, height };
+    }
+    
+    function createElementHierarchy(newElement, parentRef, x = 0, y = 0) {
         const element = getOrCreateElement(newElement);
         let elementRef;
-
+    
+        const predictedSize = predictSize(newElement);
+    
         if (parentRef) {
-            elementRef = parentRef.add(element, 0, 0, -1, -1);
+            elementRef = parentRef.add(element, x, y, predictedSize.width, predictedSize.height);
         } else {
             existingRef = findInView(view, element);
-            if (!existingRef)
-                elementRef = view.add(element, 0, 0, -1, -1);
-            else {
+            if (!existingRef) {
+                elementRef = view.add(element, x, y, predictedSize.width, predictedSize.height);
+            } else {
                 log.debug(`Found existing element in view: ${existingRef.name}`);
                 elementRef = existingRef;
+                elementRef.bounds = {
+                    x: x,
+                    y: y,
+                    width: predictedSize.width,
+                    height: predictedSize.height
+                };
             }
         }
-
+    
         elementMap.set(newElement.id, elementRef);
-
+    
         // Recursively create children
         if (newElement.children && Array.isArray(newElement.children)) {
-            newElement.children.forEach(child => createElementHierarchy(child, elementRef));
+            let childX = x + 10;
+            let childY = y + 55;  // Start below the parent element
+            newElement.children.forEach(child => {
+                const childRef = createElementHierarchy(child, elementRef, childX, childY);
+                childX += childRef.bounds.width + 10;  // Move next child to the right
+            });
         }
+    
+        return elementRef;
     }
 
     // Create elements and their hierarchies
@@ -333,7 +366,6 @@ function updateView(view, expansionJson) {
                 log.info('Applying Dagre layout');
                 layoutDagre(view);
                 log.info('Model expansion and layout complete');
-                console.log("Explanation of expansion:", expansionJson.explanation);
             } else {
                 log.warn('Selected element is not in any view');
             }
