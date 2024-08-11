@@ -183,6 +183,12 @@ Remember to think carefully about the structure and relationships within the mod
     try {
         const response = await anthropicClient.generateChatCompletion(messages, [], options);
         const content = response.content[0].text;
+        
+        // Log the response as markdown, excluding the <archimate_model> content
+        const logContent = content.replace(/<archimate_model>[\s\S]*?<\/archimate_model>/, '');
+        console.log(logContent);
+        log.markdown(logContent);
+
         const jsonMatch = content.match(/<archimate_model>([\s\S]*?)<\/archimate_model>/);
         if (jsonMatch) {
             return JSON.parse(jsonMatch[1]);
@@ -190,7 +196,7 @@ Remember to think carefully about the structure and relationships within the mod
             throw new Error("JSON structure not found in the response");
         }
     } catch (error) {
-        log.error('Error generating ArchiMate model', { error: error.toString() });
+        log.error('Error expanding ArchiMate model', { error: error.toString() });
         throw error;
     }
 }
@@ -205,8 +211,26 @@ function createArchiMateElements(modelJson) {
 
     const elementMap = new Map();
 
-    // Create nodes
-    modelJson.nodes.forEach(node => {
+    function predictSize(node) {
+        let width = 120;  // Base width for an element
+        let height = 55;  // Base height for an element
+    
+        if (node.children && node.children.length > 0) {
+            let childrenWidth = 0;
+            let childrenHeight = 0;
+            node.children.forEach(child => {
+                const childSize = predictSize(child);
+                childrenWidth += childSize.width;
+                childrenHeight = Math.max(childrenHeight, childSize.height);
+            });
+            width = Math.max(width, childrenWidth + 70);  // 70px padding
+            height += childrenHeight + 20;  // 20px padding
+        }
+    
+        return { width, height };
+    }
+    
+    function createElementHierarchy(node, parentRef, x = 0, y = 0) {
         let element;
         if (node.type === "archimate-diagram-model" || node.type === "sketch-model" || node.type === "canvas-model") {
             log.debug("Creating view", { "name" : node.name, "type": node.type});
@@ -217,11 +241,33 @@ function createArchiMateElements(modelJson) {
         }
         element.documentation = node.description;
 
+        let elementRef;
+        const predictedSize = predictSize(node);
+
         if (node.type !== "archimate-diagram-model" && node.type !== "sketch-model" && node.type !== "canvas-model") {
-            elementRef = view.add(element, 0, 0, 120, 55);
+            if (parentRef) {
+                elementRef = parentRef.add(element, x, y, predictedSize.width, predictedSize.height);
+            } else {
+                elementRef = view.add(element, x, y, predictedSize.width, predictedSize.height);
+            }
             elementMap.set(node.id, elementRef);
         }
-    });
+
+        // Recursively create children
+        if (node.children && Array.isArray(node.children)) {
+            let childX = x + 10;
+            let childY = y + 55;  // Start below the parent element
+            node.children.forEach(child => {
+                const childRef = createElementHierarchy(child, elementRef, childX, childY);
+                childX += childRef.bounds.width + 10;  // Move next child to the right
+            });
+        }
+
+        return elementRef;
+    }
+
+    // Create nodes
+    modelJson.nodes.forEach(node => createElementHierarchy(node));
 
     // Create relationships
     modelJson.relationships.forEach(rel => {

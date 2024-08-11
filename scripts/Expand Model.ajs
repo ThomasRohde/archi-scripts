@@ -6,17 +6,17 @@
 console.clear();
 console.show();
 
-const { AnthropicClient, Message, GenerateOptions, ROLES } = require('./lib/anthropicClient');
-const layoutDagre = require('./lib/layoutDagre');
-const modelTraversal = require('./lib/modelTraversal');
-const SWT = Java.type('org.eclipse.swt.SWT');
-const Shell = Java.type('org.eclipse.swt.widgets.Shell');
-const Display = Java.type('org.eclipse.swt.widgets.Display');
-const InputDialog = Java.type('org.eclipse.jface.dialogs.InputDialog');
+const { AnthropicClient, Message, GenerateOptions, ROLES } = require("./lib/anthropicClient");
+const layoutDagre = require("./lib/layoutDagre");
+const modelTraversal = require("./lib/modelTraversal");
+const SWT = Java.type("org.eclipse.swt.SWT");
+const Shell = Java.type("org.eclipse.swt.widgets.Shell");
+const Display = Java.type("org.eclipse.swt.widgets.Display");
+const InputDialog = Java.type("org.eclipse.jface.dialogs.InputDialog");
 
 // Initialize logger
-const jarchiLogger = require('./lib/jarchiLogger');
-const log = jarchiLogger.createLogger('ExpandArchiMateModel');
+const jarchiLogger = require("./lib/jarchiLogger");
+const log = jarchiLogger.createLogger("ExpandArchiMateModel");
 
 // Initialize Anthropic client
 const anthropicClient = new AnthropicClient();
@@ -35,7 +35,7 @@ function getSelectedElement() {
 function createModelJson() {
     const modelJson = {
         nodes: [],
-        relationships: []
+        relationships: [],
     };
 
     modelTraversal.traverse({
@@ -44,7 +44,7 @@ function createModelJson() {
                 id: element.id,
                 type: element.type,
                 name: element.name,
-                description: element.documentation
+                description: element.documentation,
             });
         },
         relationshipHandler: (relationship) => {
@@ -53,9 +53,9 @@ function createModelJson() {
                 type: relationship.type,
                 name: relationship.name,
                 source: relationship.source.id,
-                target: relationship.target.id
+                target: relationship.target.id,
             });
-        }
+        },
     });
 
     return modelJson;
@@ -69,12 +69,16 @@ Current model context:
 ${JSON.stringify(modelJson, null, 2)}
 
 Selected element:
-${JSON.stringify({
-    id: selectedElement.id,
-    type: selectedElement.type,
-    name: selectedElement.name,
-    description: selectedElement.documentation
-}, null, 2)}
+${JSON.stringify(
+    {
+        id: selectedElement.id,
+        type: selectedElement.type,
+        name: selectedElement.name,
+        description: selectedElement.documentation,
+    },
+    null,
+    2
+)}
 
 Please suggest new elements and relationships to expand the model around the selected element. Your response should be a JSON object enclosed in <archimate_model> tags with the following structure:
 
@@ -212,27 +216,28 @@ Remember to think carefully about the structure and relationships within the mod
 | canvas-model | NA | Represents an Archi canvas view, providing a freeform space for organizing and presenting architectural concepts or ideas using various canvas elements. |
 </archimate_mapping>`;
 
-    const messages = [
-        new Message(ROLES.USER, prompt)
-    ];
+    const messages = [new Message(ROLES.USER, prompt)];
 
     const options = new GenerateOptions({
-        model: 'claude-3-haiku-20240307',
+        model: "claude-3-haiku-20240307",
         maxTokens: 4000,
-        temperature: 0.7
+        temperature: 0.7,
     });
 
     try {
         const response = await anthropicClient.generateChatCompletion(messages, [], options);
         const content = response.content[0].text;
         const jsonMatch = content.match(/<archimate_model>([\s\S]*?)<\/archimate_model>/);
+        // Log the response as markdown, excluding the <archimate_model> content
+        const logContent = content.replace(/<archimate_model>[\s\S]*?<\/archimate_model>/, "");
+        log.markdown(logContent);
         if (jsonMatch) {
             return JSON.parse(jsonMatch[1]);
         } else {
             throw new Error("JSON structure not found in the response");
         }
     } catch (error) {
-        log.error('Error expanding ArchiMate model', { error: error.toString() });
+        log.error("Error expanding ArchiMate model", { error: error.toString() });
         throw error;
     }
 }
@@ -244,16 +249,18 @@ function updateView(view, expansionJson) {
     // Helper function to find or create an element
     function getOrCreateElement(newElement) {
         // Check if element already exists in the model
-        let element = $("*").filter(function (o) {
-            return (o.id == newElement.id) || (o.name.toLowerCase() === newElement.name.toLowerCase())
-        }).first();
+        let element = $("*")
+            .filter(function (o) {
+                return o.id == newElement.id || o.name.toLowerCase() === newElement.name.toLowerCase();
+            })
+            .first();
 
         if (element) {
-            log.debug(`Existing element: ${element.name}`)
+            log.debug(`Existing element: ${element.name}`);
         }
         if (!element) {
             // If not, create a new element
-            log.debug(`Creating element: ${newElement.name}`)
+            log.debug(`Creating element: ${newElement.name}`);
             element = model.createElement(newElement.type, newElement.name);
             element.id = newElement.id; // Set the ID to match the one from expansionJson
         }
@@ -262,36 +269,39 @@ function updateView(view, expansionJson) {
     }
 
     function findInView(v, e) {
-        return $(v).find("element").filter(function(o) {
-            return o.concept.id == e.id;
-        }).first();
+        return $(v)
+            .find("element")
+            .filter(function (o) {
+                return o.concept.id == e.id;
+            })
+            .first();
     }
 
     function predictSize(newElement) {
-        let width = 120;  // Base width for an element
-        let height = 55;  // Base height for an element
-    
+        let width = 120; // Base width for an element
+        let height = 55; // Base height for an element
+
         if (newElement.children && newElement.children.length > 0) {
             let childrenWidth = 0;
             let childrenHeight = 0;
-            newElement.children.forEach(child => {
+            newElement.children.forEach((child) => {
                 const childSize = predictSize(child);
                 childrenWidth += childSize.width;
                 childrenHeight = Math.max(childrenHeight, childSize.height);
             });
-            width = Math.max(width, childrenWidth + 70);  // 20px padding
-            height += childrenHeight + 20;  // 20px padding
+            width = Math.max(width, childrenWidth + 70); // 20px padding
+            height += childrenHeight + 20; // 20px padding
         }
-    
+
         return { width, height };
     }
-    
+
     function createElementHierarchy(newElement, parentRef, x = 0, y = 0) {
         const element = getOrCreateElement(newElement);
         let elementRef;
-    
+
         const predictedSize = predictSize(newElement);
-    
+
         if (parentRef) {
             elementRef = parentRef.add(element, x, y, predictedSize.width, predictedSize.height);
         } else {
@@ -305,44 +315,49 @@ function updateView(view, expansionJson) {
                     x: x,
                     y: y,
                     width: predictedSize.width,
-                    height: predictedSize.height
+                    height: predictedSize.height,
                 };
             }
         }
-    
+
         elementMap.set(newElement.id, elementRef);
-    
+
         // Recursively create children
         if (newElement.children && Array.isArray(newElement.children)) {
             let childX = x + 10;
-            let childY = y + 55;  // Start below the parent element
-            newElement.children.forEach(child => {
+            let childY = y + 55; // Start below the parent element
+            newElement.children.forEach((child) => {
                 const childRef = createElementHierarchy(child, elementRef, childX, childY);
-                childX += childRef.bounds.width + 10;  // Move next child to the right
+                childX += childRef.bounds.width + 10; // Move next child to the right
             });
         }
-    
+
         return elementRef;
     }
 
     // Create elements and their hierarchies
-    expansionJson.nodes.forEach(newElement => createElementHierarchy(newElement));
+    expansionJson.nodes.forEach((newElement) => createElementHierarchy(newElement));
 
     // Create new relationships
-    expansionJson.relationships.forEach(rel => {
+    expansionJson.relationships.forEach((rel) => {
         const source = elementMap.get(rel.source);
         const target = elementMap.get(rel.target);
         if (source && target) {
             try {
                 const relationship = model.createRelationship(rel.type, rel.name, source.concept, target.concept);
                 view.add(relationship, source, target);
-            } catch(error) {
-                log.error('Error in relationship creation. Trying basic relation: ', { error: error.toString() });
+            } catch (error) {
+                log.error("Error in relationship creation. Trying basic relation: ", { error: error.toString() });
                 try {
-                    const relationship = model.createRelationship("association-relationship", rel.name + " : " + rel.type, source.concept, target.concept);
+                    const relationship = model.createRelationship(
+                        "association-relationship",
+                        rel.name + " : " + rel.type,
+                        source.concept,
+                        target.concept
+                    );
                     view.add(relationship, source, target);
-                } catch(error) {
-                    log.error('Error in relationship creation', { error: error.toString() });
+                } catch (error) {
+                    log.error("Error in relationship creation", { error: error.toString() });
                 }
             }
         } else {
@@ -352,27 +367,30 @@ function updateView(view, expansionJson) {
 }
 
 // Main execution
-(async function() {
+(async function () {
     try {
         const selectedElement = getSelectedElement();
         if (selectedElement) {
-            const view = selectedElement.view
+            const view = selectedElement.view;
             if (view) {
-                log.info('Expanding ArchiMate model based on selected element', { elementName: selectedElement.name, elementType: selectedElement.type });
+                log.info("Expanding ArchiMate model based on selected element", {
+                    elementName: selectedElement.name,
+                    elementType: selectedElement.type,
+                });
                 const modelJson = createModelJson();
                 const expansionJson = await expandArchiMateModel(selectedElement, modelJson);
-                log.info('Updating view with expanded model');
+                log.info("Updating view with expanded model");
                 updateView(view, expansionJson);
-                log.info('Applying Dagre layout');
+                log.info("Applying Dagre layout");
                 layoutDagre(view);
-                log.info('Model expansion and layout complete');
+                log.info("Model expansion and layout complete");
             } else {
-                log.warn('Selected element is not in any view');
+                log.warn("Selected element is not in any view");
             }
         } else {
-            log.warn('No single element selected. Please select one element and run the script again.');
+            log.warn("No single element selected. Please select one element and run the script again.");
         }
     } catch (error) {
-        log.error('Error in main execution', { error: error.toString() });
+        log.error("Error in main execution", { error: error.toString() });
     }
 })();
