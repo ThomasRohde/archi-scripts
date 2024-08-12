@@ -186,12 +186,13 @@ Remember to think carefully about the structure and relationships within the mod
         
         // Log the response as markdown, excluding the <archimate_model> content
         const logContent = content.replace(/<archimate_model>[\s\S]*?<\/archimate_model>/, '');
-        console.log(logContent);
         log.markdown(logContent);
 
         const jsonMatch = content.match(/<archimate_model>([\s\S]*?)<\/archimate_model>/);
         if (jsonMatch) {
-            return JSON.parse(jsonMatch[1]);
+            const jsonObject = JSON.parse(jsonMatch[1]);
+            log.code(jsonObject)
+            return jsonObject;
         } else {
             throw new Error("JSON structure not found in the response");
         }
@@ -315,7 +316,7 @@ function createArchiMateElements(modelJson) {
             } catch (error) {
                 log.error('Error in relationship creation. Trying basic relation: ', { error: error.toString() });
                 try {
-                    const relationship = model.createRelationship("association-relationship", rel.name + " : " + rel.type, source, target);
+                    const relationship = model.createRelationship("association-relationship", rel.name, source, target);
                     const sourceInView = findInView(view, source);
                     const targetInView = findInView(view, target);
                     if (sourceInView && targetInView) {

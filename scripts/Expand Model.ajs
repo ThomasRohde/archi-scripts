@@ -23,7 +23,7 @@ const anthropicClient = new AnthropicClient();
 
 // Function to show input dialog and get user description
 function getUserDescription(element) {
-    const prompt = window.prompt("Generate ArchiMate Model", `What do you want to do with: ${element.name}`);
+    const prompt = window.prompt("Expand an ArchiMate Model", `What do you want to do with: ${element.name}`);
     if (!prompt) {
         log.warn("User did not enter a prompt");
         exit();
@@ -248,7 +248,9 @@ Remember to think carefully about the structure and relationships within the mod
         const logContent = content.replace(/<archimate_model>[\s\S]*?<\/archimate_model>/, "");
         log.markdown(logContent);
         if (jsonMatch) {
-            return JSON.parse(jsonMatch[1]);
+            const jsonObject = JSON.parse(jsonMatch[1]);
+            log.code(jsonObject)
+            return jsonObject;
         } else {
             throw new Error("JSON structure not found in the response");
         }
@@ -374,7 +376,7 @@ function updateView(view, expansionJson) {
                 try {
                     const relationship = model.createRelationship(
                         "association-relationship",
-                        rel.name + " : " + rel.type,
+                        rel.name,
                         source,
                         target
                     );

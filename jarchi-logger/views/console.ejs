@@ -241,7 +241,7 @@
     </div>
 
     <script>
-        window.initialContent = <% - JSON.stringify(initialContent) %>;
+        window.initialContent = <%- JSON.stringify(initialContent || []) %>;
     </script>
 
     <script src="/socket.io/socket.io.js"></script>

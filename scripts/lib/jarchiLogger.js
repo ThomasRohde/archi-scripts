@@ -136,13 +136,20 @@ const jarchiLogger = {
             });
     },
 
+    sendCodeToConsole: function(obj, scriptName) {
+        const formattedCode = JSON.stringify(obj, null, 2);
+        const markdown = `\`\`\`json\n${formattedCode}\n\`\`\``;
+        this.sendMarkdownToConsole(`${scriptName} - Code Output:\n${markdown}`);
+    },
+
     createLogger: function(scriptName) {
         return {
             debug: (message, additionalData) => this.log('DEBUG', message, scriptName, additionalData),
             info: (message, additionalData) => this.log('INFO', message, scriptName, additionalData),
             warn: (message, additionalData) => this.log('WARN', message, scriptName, additionalData),
             error: (message, additionalData) => this.log('ERROR', message, scriptName, additionalData),
-            markdown: (content) => this.sendMarkdownToConsole(content)
+            markdown: (content) => this.sendMarkdownToConsole(content),
+            code: (obj) => this.sendCodeToConsole(obj, scriptName)
         };
     }
 };
