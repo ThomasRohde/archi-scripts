@@ -7,7 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2024-08-13
+
 ### Added
+- New `modelManipulation.js` module for shared code between Generate Model and Expand Model scripts
+- JSDoc comments for `modelManipulation.js` to improve code documentation
+
+### Changed
+- Refactored Generate Model and Expand Model scripts to use the new `modelManipulation.js` module
+- Updated AnthropicClient to include cost logging for API calls
+- Modified Settings script to accommodate new LLM wrapper configurations
+
+### Fixed
+- Improved error handling in model generation and expansion processes
+
+## [1.2.0] - 2024-08-12
+
+### Added
+- New LLM wrapper library (`llm.js`) for unified interaction with different LLM providers
+- Test script for the LLM wrapper library
+
+### Changed
+- Updated AnthropicClient to include cost logging for API calls
+- Modified Settings script to accommodate new LLM wrapper configurations
+
+### Fixed
+- Resolved issues with different method signatures between Anthropic and Ollama in the LLM wrapper
+- Corrected handling of single messages vs. arrays of messages in LLM wrapper
+- Fixed Ollama model reference from Llama2 to llama3.1 in test scripts
+
+## [1.1.0] - 2024-08-12
+
+### Added
+- Cost logging for Anthropic API calls in the AnthropicClient
+- Pricing constants for different Claude models (Sonnet, Opus, Haiku)
 - New AI-assisted modeling scripts:
   - Generate Model: Create complete ArchiMate models from textual descriptions
   - Expand Model: Expand existing models based on selected elements and descriptions
@@ -18,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Updated README.md with information about new AI-assisted modeling features
 - Enhanced Settings script to include Anthropic API configuration
+- Modified AnthropicClient to calculate and log costs for each API call
 
 ### Fixed
 - Improved error handling in several scripts
@@ -42,6 +76,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Various bug fixes and improvements across all scripts
-
-[Unreleased]: https://github.com/yourusername/jarchi-scripts/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/yourusername/jarchi-scripts/releases/tag/v1.0.0

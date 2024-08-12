@@ -1,13 +1,19 @@
 /**
  * @name Generate ArchiMate Model from Description
  * @description This script generates an ArchiMate model based on a user's description using the Anthropic API.
+ * @version 1.1
+ * @author Claude AI Assistant
+ * @lastModifiedDate 2024-08-12
  */
+
+
 
 console.clear();
 console.show();
 
 const { AnthropicClient, Message, GenerateOptions, ROLES } = require('./lib/anthropicClient');
 const layoutDagre = require('./lib/layoutDagre');
+const modelManipulation = require('./lib/modelManipulation');
 const SWT = Java.type('org.eclipse.swt.SWT');
 const Shell = Java.type('org.eclipse.swt.widgets.Shell');
 const Display = Java.type('org.eclipse.swt.widgets.Display');
@@ -204,155 +210,6 @@ Remember to think carefully about the structure and relationships within the mod
 
 let view = $(selection).filter("archimate-diagram-model").first();
 
-// Function to create ArchiMate elements in Archi
-function createArchiMateElements(modelJson) {   
-    if (!view) {
-        view = model.createArchimateView("Generated View");
-    }
-
-    const elementMap = new Map();
-
-    function predictSize(node) {
-        let width = 120;  // Base width for an element
-        let height = 55;  // Base height for an element
-    
-        if (node.children && node.children.length > 0) {
-            let childrenWidth = 0;
-            let childrenHeight = 0;
-            node.children.forEach(child => {
-                const childSize = predictSize(child);
-                childrenWidth += childSize.width;
-                childrenHeight = Math.max(childrenHeight, childSize.height);
-            });
-            width = Math.max(width, childrenWidth + 70);  // 70px padding
-            height += childrenHeight + 20;  // 20px padding
-        }
-    
-        return { width, height };
-    }
-    
-    function getOrCreateElement(node) {
-        // Check if element already exists in the model
-        let element = $("*").filter(function(o) {
-            return o.name.toLowerCase() === node.name.toLowerCase();
-        }).first();
-
-        if (!element) {
-            // If not, create a new element
-            log.debug(`Creating element: ${node.name}`);
-            element = model.createElement(node.type, node.name);
-        } else {
-            log.debug(`Existing element: ${element.name}`);
-        }
-        element.documentation = node.description;
-        elementMap.set(node.id, element.id);
-        return element;
-    }
-
-    function findInView(v, e) {
-        return $(v).find("element").filter(function(o) {
-            return o.concept.id == e.id;
-        }).first();
-    }
-    
-    function createElementHierarchy(node, parentRef, x = 0, y = 0) {
-        const element = getOrCreateElement(node);
-        let elementRef;
-
-        const predictedSize = predictSize(node);
-
-        if (parentRef) {
-            elementRef = parentRef.add(element, x, y, predictedSize.width, predictedSize.height);
-        } else {
-            const existingRef = findInView(view, element);
-            if (!existingRef) {
-                elementRef = view.add(element, x, y, predictedSize.width, predictedSize.height);
-            } else {
-                log.debug(`Found existing element in view: ${existingRef.name}`);
-                elementRef = existingRef;
-                elementRef.bounds = {
-                    x: x,
-                    y: y,
-                    width: predictedSize.width,
-                    height: predictedSize.height
-                };
-            }
-        }
-
-        // Recursively create children
-        if (node.children && Array.isArray(node.children)) {
-            let childX = x + 10;
-            let childY = y + 55;  // Start below the parent element
-            node.children.forEach(child => {
-                const childRef = createElementHierarchy(child, elementRef, childX, childY);
-                childX += childRef.bounds.width + 10;  // Move next child to the right
-            });
-        }
-
-        return elementRef;
-    }
-
-    // Create nodes
-    modelJson.nodes.forEach(node => createElementHierarchy(node));
-
-    // Create relationships
-    modelJson.relationships.forEach(rel => {
-        const sourceId = elementMap.get(rel.source) || rel.source;
-        const targetId = elementMap.get(rel.target) || rel.target;
-        
-        const source = $("#" + sourceId).first();
-        const target = $("#" + targetId).first();
-        
-        if (source && target) {
-            try {
-                const relationship = model.createRelationship(rel.type, rel.name, source, target);
-                const sourceInView = findInView(view, source);
-                const targetInView = findInView(view, target);
-                if (sourceInView && targetInView) {
-                    view.add(relationship, sourceInView, targetInView);
-                } else {
-                    log.debug(`Relationship created but not added to view: ${source.name} -> ${target.name}`);
-                }
-            } catch (error) {
-                log.error('Error in relationship creation. Trying basic relation: ', { error: error.toString() });
-                try {
-                    const relationship = model.createRelationship("association-relationship", rel.name, source, target);
-                    const sourceInView = findInView(view, source);
-                    const targetInView = findInView(view, target);
-                    if (sourceInView && targetInView) {
-                        view.add(relationship, sourceInView, targetInView);
-                    } else {
-                        log.debug(`Basic relationship created but not added to view: ${source.name} -> ${target.name}`);
-                    }
-                } catch (error) {
-                    log.error('Error in basic relationship creation', { error: error.toString() });
-                }
-            }
-        } else {
-            log.warn(`Source or target not found for relationship: ${rel.source} -> ${rel.target}`);
-        }
-    });
-
-    return view;
-}
-
-// Function to apply Dagre layout
-function applyDagreLayout(view) {
-    const settings = {
-        rankdir: 'TB',
-        align: 'UL',
-        nodesep: 50,
-        edgesep: 10,
-        ranksep: 50,
-        marginx: 5,
-        marginy: 5,
-        acyclicer: undefined,
-        ranker: 'network-simplex'
-    };
-
-    layoutDagre(view, settings);
-}
-
 // Main execution
 (async function() {
     try {
@@ -361,9 +218,12 @@ function applyDagreLayout(view) {
             log.info('Generating ArchiMate model from user description');
             const modelJson = await generateArchiMateModel(userDescription);
             log.info('Creating ArchiMate elements in Archi');
-            const view = createArchiMateElements(modelJson);
+            if (!view) {
+                view = model.createArchimateView("Generated View");
+            }
+            modelManipulation.updateView(view, modelJson);
             log.info('Applying Dagre layout');
-            applyDagreLayout(view);
+            layoutDagre(view);
             log.info('ArchiMate model generation and layout complete');
         } else {
             log.warn('User cancelled or provided no description');

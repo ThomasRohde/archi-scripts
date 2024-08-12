@@ -1,6 +1,9 @@
 /**
  * @name Expand Model
  * @description This script expands an ArchiMate model based on a selected element using the Anthropic API.
+ * @version 1.1
+ * @author Claude AI Assistant
+ * @lastModifiedDate 2024-08-12
  */
 
 console.clear();
@@ -9,6 +12,7 @@ console.show();
 const { AnthropicClient, Message, GenerateOptions, ROLES } = require("./lib/anthropicClient");
 const layoutDagre = require("./lib/layoutDagre");
 const modelTraversal = require("./lib/modelTraversal");
+const modelManipulation = require("./lib/modelManipulation");
 const SWT = Java.type("org.eclipse.swt.SWT");
 const Shell = Java.type("org.eclipse.swt.widgets.Shell");
 const Display = Java.type("org.eclipse.swt.widgets.Display");
@@ -39,36 +43,6 @@ function getSelectedElement() {
     } else {
         return null;
     }
-}
-
-// Function to create a JSON representation of the entire model
-function createModelJson() {
-    const modelJson = {
-        nodes: [],
-        relationships: [],
-    };
-
-    modelTraversal.traverse({
-        elementHandler: (element) => {
-            modelJson.nodes.push({
-                id: element.id,
-                type: element.type,
-                name: element.name,
-                description: element.documentation,
-            });
-        },
-        relationshipHandler: (relationship) => {
-            modelJson.relationships.push({
-                id: relationship.id,
-                type: relationship.type,
-                name: relationship.name,
-                source: relationship.source.id,
-                target: relationship.target.id,
-            });
-        },
-    });
-
-    return modelJson;
 }
 
 // Function to generate expanded model using Anthropic API
@@ -260,143 +234,6 @@ Remember to think carefully about the structure and relationships within the mod
     }
 }
 
-// Function to update the view with new elements and relationships
-function updateView(view, expansionJson) {
-    const elementMap = new Map();
-
-    // Helper function to find or create an element
-    function getOrCreateElement(newElement) {
-        // Check if element already exists in the model
-        let element = $("*")
-            .filter(function (o) {
-                return o.name.toLowerCase() === newElement.name.toLowerCase();
-            })
-            .first();
-
-        if (!element) {
-            // If not, create a new element
-            log.debug(`Creating element: ${newElement.name}`);
-            element = model.createElement(newElement.type, newElement.name);
-        } else {
-            log.debug(`Existing element: ${element.name}`);
-        }
-        element.documentation = newElement.description;
-        elementMap.set(newElement.id, element.id);
-        return element;
-    }
-
-    function findInView(v, e) {
-        return $(v)
-            .find("element")
-            .filter(function (o) {
-                return o.concept.id == e.id;
-            })
-            .first();
-    }
-
-    function predictSize(newElement) {
-        let width = 120; // Base width for an element
-        let height = 55; // Base height for an element
-
-        if (newElement.children && newElement.children.length > 0) {
-            let childrenWidth = 0;
-            let childrenHeight = 0;
-            newElement.children.forEach((child) => {
-                const childSize = predictSize(child);
-                childrenWidth += childSize.width;
-                childrenHeight = Math.max(childrenHeight, childSize.height);
-            });
-            width = Math.max(width, childrenWidth + 70); // 70px padding
-            height += childrenHeight + 20; // 20px padding
-        }
-
-        return { width, height };
-    }
-
-    function createElementHierarchy(newElement, parentRef, x = 0, y = 0) {
-        const element = getOrCreateElement(newElement);
-        let elementRef;
-
-        const predictedSize = predictSize(newElement);
-
-        if (parentRef) {
-            elementRef = parentRef.add(element, x, y, predictedSize.width, predictedSize.height);
-        } else {
-            existingRef = findInView(view, element);
-            if (!existingRef) {
-                elementRef = view.add(element, x, y, predictedSize.width, predictedSize.height);
-            } else {
-                log.debug(`Found existing element in view: ${existingRef.name}`);
-                elementRef = existingRef;
-                elementRef.bounds = {
-                    x: x,
-                    y: y,
-                    width: predictedSize.width,
-                    height: predictedSize.height,
-                };
-            }
-        }
-
-        // Recursively create children
-        if (newElement.children && Array.isArray(newElement.children)) {
-            let childX = x + 10;
-            let childY = y + 55; // Start below the parent element
-            newElement.children.forEach((child) => {
-                const childRef = createElementHierarchy(child, elementRef, childX, childY);
-                childX += childRef.bounds.width + 10; // Move next child to the right
-            });
-        }
-
-        return elementRef;
-    }
-
-    // Create elements and their hierarchies
-    expansionJson.nodes.forEach((newElement) => createElementHierarchy(newElement));
-
-    // Create new relationships
-    expansionJson.relationships.forEach((rel) => {
-        const sourceId = elementMap.get(rel.source) || rel.source;
-        const targetId = elementMap.get(rel.target) || rel.target;
-        
-        const source = $("#" + sourceId).first();
-        const target = $("#" + targetId).first();
-        
-        if (source && target) {
-            try {
-                const relationship = model.createRelationship(rel.type, rel.name, source, target);
-                const sourceInView = findInView(view, source);
-                const targetInView = findInView(view, target);
-                if (sourceInView && targetInView) {
-                    view.add(relationship, sourceInView, targetInView);
-                } else {
-                    log.debug(`Relationship created but not added to view: ${source.name} -> ${target.name}`);
-                }
-            } catch (error) {
-                log.error("Error in relationship creation. Trying basic relation: ", { error: error.toString() });
-                try {
-                    const relationship = model.createRelationship(
-                        "association-relationship",
-                        rel.name,
-                        source,
-                        target
-                    );
-                    const sourceInView = findInView(view, source);
-                    const targetInView = findInView(view, target);
-                    if (sourceInView && targetInView) {
-                        view.add(relationship, sourceInView, targetInView);
-                    } else {
-                        log.debug(`Basic relationship created but not added to view: ${source.name} -> ${target.name}`);
-                    }
-                } catch (error) {
-                    log.error("Error in basic relationship creation", { error: error.toString() });
-                }
-            }
-        } else {
-            log.warn(`Source or target not found for relationship: ${rel.source} -> ${rel.target}`);
-        }
-    });
-}
-
 // Main execution
 (async function () {
     try {
@@ -409,10 +246,10 @@ function updateView(view, expansionJson) {
                     elementName: selectedElement.name,
                     elementType: selectedElement.type,
                 });
-                const modelJson = createModelJson();
+                const modelJson = modelManipulation.createModelJson();
                 const expansionJson = await expandArchiMateModel(selectedElement, modelJson, userDescription);
                 log.info("Updating view with expanded model");
-                updateView(view, expansionJson);
+                modelManipulation.updateView(view, expansionJson);
                 log.info("Applying Dagre layout");
                 layoutDagre(view);
                 log.info("Model expansion and layout complete");
