@@ -1,0 +1,50 @@
+/**
+ * @name LLM Wrapper Test
+ * @version 1.3
+ * @description Test script to demonstrate the usage of the LLM wrapper library (corrected)
+ */
+
+console.clear();
+console.show();
+
+const { LLMClient, LLMMessage, LLMGenerateOptions, ROLES } = require('./lib/llm');
+
+// Initialize logger
+const jarchiLogger = require('./lib/jarchiLogger');
+const log = jarchiLogger.createLogger('LLMWrapperTest');
+
+async function runTest(provider, model) {
+    log.info(`Testing ${provider} provider with model: ${model}`);
+
+    const client = new LLMClient(provider);
+
+    const message = new LLMMessage(ROLES.USER, "You are a helpful assistant specializing in ArchiMate modeling. Explain the concept of a Business Service in ArchiMate.");
+
+    const options = new LLMGenerateOptions({
+        model: model,
+        maxTokens: 300,
+        temperature: 0.7
+    });
+
+    try {
+        const response = await client.generateChatCompletion(message, options);
+        log.info(`${provider} Response:`, { content: response.content });
+        log.info(`${provider} Usage:`, response.usage);
+    } catch (error) {
+        log.error(`Error testing ${provider}:`, { error: error.toString() });
+    }
+}
+
+async function main() {
+    log.info("Starting LLM Wrapper Test");
+
+    // Test Anthropic
+    await runTest('anthropic', 'claude-3-sonnet-20240229');
+
+    // Test Ollama
+    await runTest('ollama', 'llama3.1');
+
+    log.info("LLM Wrapper Test completed");
+}
+
+main().catch(error => log.error("Error in main execution:", { error: error.toString() }));
