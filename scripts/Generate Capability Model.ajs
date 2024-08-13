@@ -131,53 +131,16 @@ function integrateUpdates(fullModel, updates) {
     return fullModel;
 }
 
-// Main execution
-(async function() {
-    try {
-        const userDescription = getUserInput("Describe the organization for which you want to create a capability model:");
-        if (userDescription) {
-            log.info('Generating capability model');
-            let view = $(selection).filter("archimate-diagram-model").first();
-            if (!view) {
-                view = model.createArchimateView("Generated Capability Model");
-            }
-
-            let fullModel = null;
-
-            for (let i = 1; i <= ITERATIONS; i++) {
-                log.info(`Iteration ${i} of ${ITERATIONS}`);
-                const modelUpdates = await generateCapabilityModel(userDescription, fullModel, i);
-                
-                // Integrate updates into the full model
-                fullModel = integrateUpdates(fullModel, modelUpdates);
-                
-                // Update the model in Archi
-                const updates = modelManipulation.updateModel(fullModel);
-                log.info(`Model updated (iteration ${i})`);
-                log.debug('Model updates', updates);
-            }
-
-            // Apply custom layout
-            customCapabilityLayout(view);
-
-            log.info('Capability model generation and layout complete');
-        } else {
-            log.warn('User cancelled or provided no description');
-        }
-    } catch (error) {
-        log.error('Error in main execution', { error: error.toString() });
-    }
-})();
-
+const ONLY_LAYOUT = false; // Set this to false to generate a new model
 // Layout constants
-const PADDING = 20;                 // Padding inside each capability box
+const PADDING = 10;                 // Padding inside each capability box
 const HORIZONTAL_SPACING = 30;      // Spacing between top-level capabilities
 const VERTICAL_SPACING = 10;        // Vertical spacing between child capabilities
-const MIN_WIDTH = 200;              // Minimum width for any capability box
+const MIN_WIDTH = 300;              // Minimum width for any capability box
 const LEAF_NODE_HEIGHT = 30;        // Height for leaf nodes (capabilities without children)
 const CHARACTER_WIDTH = 10;         // Estimated width per character for calculating box widths
 const ROOT_PADDING = 20;            // Extra padding for the root container
-const PARENT_CHILD_TOP_PADDING = 40; // Padding between a parent and its first child
+const PARENT_CHILD_TOP_PADDING = 20; // Padding between a parent and its first child
 
 // Color palette for different levels
 const COLOR_PALETTE = [
@@ -187,6 +150,55 @@ const COLOR_PALETTE = [
     "#F2E6FF", // Light Purple
     "#FFFFE6"  // Light Yellow
 ];
+
+// Main execution
+(async function() {
+    try {
+        if (ONLY_LAYOUT) {
+            let view = $(selection).filter("archimate-diagram-model").first();
+            if (!view) {
+                log.warn('No view selected. Please select a view and run the script again.');
+                return;
+            }
+            log.info('Applying custom layout to existing model');
+            customCapabilityLayout(view);
+            log.info('Layout complete');
+        } else {
+            const userDescription = getUserInput("Describe the organization for which you want to create a capability model:");
+            if (userDescription) {
+                log.info('Generating capability model');
+                let view = $(selection).filter("archimate-diagram-model").first();
+                if (!view) {
+                    view = model.createArchimateView("Generated Capability Model");
+                }
+
+                let fullModel = null;
+
+                for (let i = 1; i <= ITERATIONS; i++) {
+                    log.info(`Iteration ${i} of ${ITERATIONS}`);
+                    const modelUpdates = await generateCapabilityModel(userDescription, fullModel, i);
+                    
+                    // Integrate updates into the full model
+                    fullModel = integrateUpdates(fullModel, modelUpdates);
+                    
+                    // Update the model in Archi
+                    const updates = modelManipulation.updateModel(fullModel);
+                    log.info(`Model updated (iteration ${i})`);
+                    log.debug('Model updates', updates);
+                }
+
+                // Apply custom layout
+                customCapabilityLayout(view);
+
+                log.info('Capability model generation and layout complete');
+            } else {
+                log.warn('User cancelled or provided no description');
+            }
+        }
+    } catch (error) {
+        log.error('Error in main execution', { error: error.toString() });
+    }
+})();
 
 function customCapabilityLayout(view) {
     const rootCapabilities = $("element").filter(e => {
