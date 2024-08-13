@@ -22,7 +22,7 @@ const llmClient = new LLMClient('anthropic');
 // const llmClient = new LLMClient('ollama');
 
 // Constants
-const ITERATIONS = 3;
+const ITERATIONS = 6;
 const MODEL = 'claude-3-haiku-20240307';
 // const MODEL = 'llama3.1';
 
@@ -33,61 +33,56 @@ function getUserInput(prompt) {
 
 // Function to generate capability model using LLM
 async function generateCapabilityModel(userDescription, previousModel = null, iteration = 1) {
-    let prompt = `You are an AI assistant tasked with creating an ArchiMate capability model based on a user's description. Your goal is to analyze the description and generate a JSON object that represents the capability model using only ArchiMate Strategy Capability elements.
+    let prompt = `You are an AI assistant tasked with expanding an ArchiMate capability model. Your goal is to analyze the existing model and suggest new capabilities to add, ensuring a balanced and hierarchical structure.
 
-Here is the user's description of the organization:
-<user_description>
-${userDescription}
-</user_description>
-
-This is iteration ${iteration} of ${ITERATIONS}. `;
-
-    if (iteration === 1) {
-        prompt += "Create an initial high-level capability model.";
-    } else {
-        prompt += `Expand and refine the previous model. For each capability in the previous model, provide more detailed sub-capabilities.
-
-Previous model:
-<previous_model>
-${JSON.stringify(previousModel, null, 2)}
-</previous_model>`;
+    Here is the user's description of the organization:
+    <user_description>
+    ${userDescription}
+    </user_description>
+    
+    This is iteration ${iteration} of ${ITERATIONS}. 
+    
+    Previous model:
+    <previous_model>
+    ${JSON.stringify(previousModel, null, 2)}
+    </previous_model>
+    
+    For this iteration, follow these guidelines:
+    
+    1. Iteration 1: Create a broad set of top-level capabilities that cover the main areas of the organization. Each of these should have 2-3 immediate sub-capabilities.
+    
+    2. Iteration 2: Focus on expanding the breadth of the model. Add more sub-capabilities to each top-level capability, ensuring a balanced structure.
+    
+    3. Iteration 3 and beyond: Deepen the model by adding more specific sub-capabilities to the existing structure.
+    
+    IMPORTANT: Every new capability MUST have a parent from the existing model. Do not create orphaned capabilities.
+    
+    Please suggest new capabilities to add to this model. Your response should be a JSON object with the following structure:
+    
+    <json_structure>
+    {
+        "new_capabilities": [
+            {
+                "id": "<unique id>",
+                "type": "capability",
+                "name": "<name of capability>",
+                "description": "<description of capability>",
+                "parent": "<id of parent capability>"
+            },
+            ... more new capabilities ...
+        ]
     }
-
-    prompt += `
-
-Create a JSON object to represent the ArchiMate capability model. The structure should be:
-
-<json_structure>
-{
-    "nodes": [
-        {
-            "id": "<unique id>",
-            "type": "capability",
-            "name": "<name of capability>",
-            "description": "<description of capability>",
-        },
-        ... more capabilities ...
-    ],
-    "relationships": [
-        {
-            "source": "<id of source capability>",
-            "target": "<id of target capability>",
-            "type": "composition-relationship"
-        },
-        ... more relationships ...
-    ]
-}
-</json_structure>
-
-Guidelines:
-1. Use only "capability" as the type for all nodes.
-2. Create a hierarchical structure with high-level capabilities and sub-capabilities.
-3. Use only "composition-relationship" relationships to represent the hierarchy.
-4. Provide clear and concise names and descriptions for each capability.
-5. Ensure each capability has a unique ID (e.g., "cap1", "cap2", etc.).
-6. If refining a previous model, maintain the existing structure and add more detailed sub-capabilities.
-
-After analyzing the description and creating the model, format your response as a valid JSON object representing the capability model. Enclose the entire JSON object within <capability_model> tags.`;
+    </json_structure>
+    
+    Guidelines:
+    1. Only suggest new capabilities to add to the existing model.
+    2. EVERY new capability MUST have a parent from the existing model.
+    3. Provide clear and concise names and descriptions for each new capability.
+    4. Ensure each new capability has a unique ID (e.g., "cap1", "cap2", etc.).
+    5. Focus on creating a balanced hierarchy, with a good mix of breadth and depth.
+    6. Avoid creating duplicate capabilities or those with very similar names/functions.
+    
+    After analyzing the existing model and suggesting new capabilities, format your response as a valid JSON object. Enclose the entire JSON object within <capability_model_update> tags.`;
 
     const messages = [new LLMMessage(ROLES.USER, prompt)];
 
@@ -101,9 +96,9 @@ After analyzing the description and creating the model, format your response as 
         const response = await llmClient.generateChatCompletion(messages, options);
         const content = response.content;
         
-        log.markdown(content.replace(/<capability_model>[\s\S]*?<\/capability_model>/, ''));
+        log.markdown(content.replace(/<capability_model_update>[\s\S]*?<\/capability_model_update>/, ''));
 
-        const jsonMatch = content.match(/<capability_model>([\s\S]*?)<\/capability_model>/);
+        const jsonMatch = content.match(/<capability_model_update>([\s\S]*?)<\/capability_model_update>/);
         if (jsonMatch) {
             const jsonObject = JSON.parse(jsonMatch[1]);
             log.code(jsonObject);
@@ -117,6 +112,25 @@ After analyzing the description and creating the model, format your response as 
     }
 }
 
+function integrateUpdates(fullModel, updates) {
+    if (!fullModel) {
+        fullModel = { nodes: [], relationships: [] };
+    }
+
+    updates.new_capabilities.forEach(newCap => {
+        fullModel.nodes.push(newCap);
+        if (newCap.parent) {
+            fullModel.relationships.push({
+                source: newCap.parent,
+                target: newCap.id,
+                type: "composition-relationship"
+            });
+        }
+    });
+
+    return fullModel;
+}
+
 // Main execution
 (async function() {
     try {
@@ -128,19 +142,19 @@ After analyzing the description and creating the model, format your response as 
                 view = model.createArchimateView("Generated Capability Model");
             }
 
-            let previousModel = null;
+            let fullModel = null;
 
             for (let i = 1; i <= ITERATIONS; i++) {
                 log.info(`Iteration ${i} of ${ITERATIONS}`);
-                const modelJson = await generateCapabilityModel(userDescription, previousModel, i);
+                const modelUpdates = await generateCapabilityModel(userDescription, fullModel, i);
                 
-                // Use updateModel for all iterations
-                const updates = modelManipulation.updateModel(modelJson);
+                // Integrate updates into the full model
+                fullModel = integrateUpdates(fullModel, modelUpdates);
+                
+                // Update the model in Archi
+                const updates = modelManipulation.updateModel(fullModel);
                 log.info(`Model updated (iteration ${i})`);
                 log.debug('Model updates', updates);
-                
-                // Update previousModel for the next iteration
-                previousModel = modelManipulation.createModelJson();
             }
 
             // Apply custom layout
