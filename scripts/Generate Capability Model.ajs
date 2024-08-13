@@ -215,14 +215,14 @@ function layoutTopLevelCapabilities(view, capabilities, startX, startY, horizont
         capabilityInView.showIcon = 2;
         capabilityInView.fillColor = colorPalette[0];
 
-        let childY = startY + 40;
-        layoutChildren(view, capabilityInView, children, x + 10, childY, width - 20, 1, colorPalette, levelWidths);
+        // Call layoutChildren with capabilityInView as the parent
+        layoutChildren(capabilityInView, children, 10, 40, width - 20, 1, colorPalette, levelWidths);
 
         x += width + horizontalSpacing;
     });
 }
 
-function layoutChildren(view, parentInView, children, startX, startY, maxWidth, level, colorPalette, levelWidths) {
+function layoutChildren(parentInView, children, startX, startY, maxWidth, level, colorPalette, levelWidths) {
     let y = startY;
     const bottomPadding = 20;
     let hasNonLeafChildren = false;
@@ -232,7 +232,8 @@ function layoutChildren(view, parentInView, children, startX, startY, maxWidth, 
         const [_, height] = calculateCapabilitySize(child, grandchildren);
         const width = levelWidths.get(level);
 
-        const childInView = view.add(child, startX, y, width, height);
+        // Add child to parent visual reference object instead of the view
+        const childInView = parentInView.add(child, startX, y, width, height);
         childInView.textPosition = 1;
         childInView.showIcon = 2;
 
@@ -242,7 +243,8 @@ function layoutChildren(view, parentInView, children, startX, startY, maxWidth, 
             hasNonLeafChildren = true;
             childInView.textPosition = 0;
             childInView.fillColor = colorPalette[level % colorPalette.length];
-            layoutChildren(view, childInView, grandchildren, startX + 10, y + 30, width - 20, level + 1, colorPalette, levelWidths);
+            // Pass childInView as the parent for the next level of recursion
+            layoutChildren(childInView, grandchildren, 10, 30, width - 20, level + 1, colorPalette, levelWidths);
         }
 
         y += height + 10;
