@@ -5,6 +5,16 @@ All notable changes to the JArchi Scripts Collection will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2024-08-14
+
+### Added
+- New "Generate Capability Model" script for AI-assisted creation of ArchiMate capability models.
+- Custom layout function for capability models to improve visual hierarchy and readability.
+- Iterative refinement process in capability model generation for more detailed and accurate models.
+
+### Changed
+- Updated menuItems.js to include the new Generate Capability Model script in the AI-Assisted Modeling category.
+
 ## [1.4.0] - 2024-08-13
 
 ### Added
@@ -91,6 +101,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Various bug fixes and improvements across all scripts.
 
+[1.5.0]: https://github.com/yourusername/jarchi-scripts/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/yourusername/jarchi-scripts/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/yourusername/jarchi-scripts/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/yourusername/jarchi-scripts/compare/v1.1.0...v1.2.0
