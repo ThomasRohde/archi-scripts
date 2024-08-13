@@ -32,28 +32,29 @@ function getUserInput(prompt) {
 }
 
 // Function to generate capability model using LLM
-async function generateCapabilityModel(userDescription, previousModel = null, iteration = 1) {
-    let prompt = `You are an AI assistant tasked with expanding an ArchiMate capability model. Your goal is to analyze the existing model and suggest new capabilities to add, ensuring a balanced and hierarchical structure.
+async function generateCapabilityModel(userDescription, previousModel = null, iteration = 1, restartMode = false) {
+    let prompt = `You are an AI assistant tasked with ${restartMode ? 'refining' : 'expanding'} an ArchiMate capability model. Your goal is to analyze the existing model and suggest new capabilities to add, ensuring a balanced and hierarchical structure.
 
-    Here is the user's description of the organization:
+    ${restartMode ? '' : `Here is the user's description of the organization:
     <user_description>
     ${userDescription}
-    </user_description>
+    </user_description>`}
     
-    This is iteration ${iteration} of ${ITERATIONS}. 
+    This is ${restartMode ? 'a refinement iteration' : `iteration ${iteration} of ${ITERATIONS}`}. 
     
     Previous model:
     <previous_model>
     ${JSON.stringify(previousModel, null, 2)}
     </previous_model>
     
-    For this iteration, follow these guidelines:
+    ${restartMode ? 'For this refinement iteration, focus on improving the existing model by adding missing capabilities, refining descriptions, and ensuring a balanced structure.' :
+    `For this iteration, follow these guidelines:
     
     1. Iteration 1: Create a broad set of top-level capabilities that cover the main areas of the organization. Each of these should have 2-3 immediate sub-capabilities.
     
     2. Iteration 2: Focus on expanding the breadth of the model. Add more sub-capabilities to each top-level capability, ensuring a balanced structure.
     
-    3. Iteration 3 and beyond: Deepen the model by adding more specific sub-capabilities to the existing structure.
+    3. Iteration 3 and beyond: Deepen the model by adding more specific sub-capabilities to the existing structure.`}
     
     IMPORTANT: Every new capability MUST have a parent from the existing model. Do not create orphaned capabilities.
     
@@ -131,7 +132,7 @@ function integrateUpdates(fullModel, updates) {
     return fullModel;
 }
 
-const ONLY_LAYOUT = true; // Set this to false to generate a new model
+const ONLY_LAYOUT = false; // Set this to false to generate a new model
 // Layout constants
 const PADDING = 10;                 // Padding inside each capability box
 const HORIZONTAL_SPACING = 30;      // Spacing between top-level capabilities
@@ -151,6 +152,10 @@ const COLOR_PALETTE = [
     "#FFFFE6"  // Light Yellow
 ];
 
+function isRestartMode() {
+    return $("element").filter(e => e.type === "capability").size() > 0;
+}
+
 // Main execution
 (async function() {
     try {
@@ -164,39 +169,54 @@ const COLOR_PALETTE = [
             customCapabilityLayout(view);
             log.info('Layout complete');
         } else {
-            const userDescription = getUserInput("Describe the organization for which you want to create a capability model:");
-            if (userDescription) {
-                log.info('Generating capability model');
-                let view = $(selection).filter("archimate-diagram-model").first();
-                if (!view) {
-                    view = model.createArchimateView("Generated Capability Model");
+            const restartMode = isRestartMode();
+            let userDescription = "";
+            if (!restartMode) {
+                userDescription = getUserInput("Describe the organization for which you want to create a capability model:");
+                if (!userDescription) {
+                    log.warn('User cancelled or provided no description');
+                    return;
                 }
-
-                let fullModel = null;
-
-                for (let i = 1; i <= ITERATIONS; i++) {
-                    log.info(`Iteration ${i} of ${ITERATIONS}`);
-                    const modelUpdates = await generateCapabilityModel(userDescription, fullModel, i);
-                    
-                    // Integrate updates into the full model
-                    fullModel = integrateUpdates(fullModel, modelUpdates);
-                    
-                    // Update the model in Archi
-                    const updates = modelManipulation.updateModel(fullModel);
-                    log.info(`Model updated (iteration ${i})`);
-                    log.debug('Model updates', updates);
-                }
-
-                // Apply custom layout
-                customCapabilityLayout(view);
-
-                log.info('Capability model generation and layout complete');
-            } else {
-                log.warn('User cancelled or provided no description');
             }
+            
+            log.info(restartMode ? 'Restarting capability model generation' : 'Generating new capability model');
+            let view = $(selection).filter("archimate-diagram-model").first();
+            if (!view) {
+                view = model.createArchimateView("Generated Capability Model");
+            }
+
+            let fullModel = restartMode ? modelManipulation.createModelJson() : null;
+            const iterationsToRun = restartMode ? 1 : ITERATIONS;
+
+            for (let i = 1; i <= iterationsToRun; i++) {
+                log.info(`Iteration ${i} of ${iterationsToRun}`);
+                const modelUpdates = await generateCapabilityModel(userDescription, fullModel, i, restartMode);
+                
+                if (modelUpdates === null) {
+                    log.warn('Model generation interrupted. You can restart the script to continue.');
+                    break;
+                }
+                
+                // Integrate updates into the full model
+                fullModel = integrateUpdates(fullModel, modelUpdates);
+                
+                // Update the model in Archi
+                const updates = modelManipulation.updateModel(fullModel);
+                log.info(`Model updated (iteration ${i})`);
+                log.debug('Model updates', updates);
+            }
+
+            // Apply custom layout
+            customCapabilityLayout(view);
+
+            log.info('Capability model generation and layout complete');
         }
     } catch (error) {
-        log.error('Error in main execution', { error: error.toString() });
+        if (error.response.status === 529) {
+            log.warn('Anthropic API is temporarily overloaded. Please try again later.');
+            return null;
+        }
+        throw error;
     }
 })();
 
