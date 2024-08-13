@@ -177,6 +177,7 @@ const MIN_WIDTH = 200;              // Minimum width for any capability box
 const LEAF_NODE_HEIGHT = 30;        // Height for leaf nodes (capabilities without children)
 const CHARACTER_WIDTH = 10;         // Estimated width per character for calculating box widths
 const ROOT_PADDING = 20;            // Extra padding for the root container
+const PARENT_CHILD_TOP_PADDING = 40; // Padding between a parent and its first child
 
 // Color palette for different levels
 const COLOR_PALETTE = [
@@ -234,6 +235,10 @@ function layoutCapability(view, capability, x, y, maxWidth, level) {
     } else {
         capabilityInView.fillColor = COLOR_PALETTE[level % COLOR_PALETTE.length];
         capabilityInView.textPosition = 0;
+
+        // Add the new PARENT_CHILD_TOP_PADDING here
+        currentY += PARENT_CHILD_TOP_PADDING;
+        totalHeight += PARENT_CHILD_TOP_PADDING;
 
         children.each(child => {
             const [childWidth, childHeight] = layoutCapability(view, child, x + PADDING, currentY, maxWidth - 2*PADDING, level + 1);
