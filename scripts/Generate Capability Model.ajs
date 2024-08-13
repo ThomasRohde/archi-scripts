@@ -131,13 +131,13 @@ function integrateUpdates(fullModel, updates) {
     return fullModel;
 }
 
-const ONLY_LAYOUT = false; // Set this to false to generate a new model
+const ONLY_LAYOUT = true; // Set this to false to generate a new model
 // Layout constants
 const PADDING = 10;                 // Padding inside each capability box
 const HORIZONTAL_SPACING = 30;      // Spacing between top-level capabilities
 const VERTICAL_SPACING = 10;        // Vertical spacing between child capabilities
-const MIN_WIDTH = 300;              // Minimum width for any capability box
-const LEAF_NODE_HEIGHT = 30;        // Height for leaf nodes (capabilities without children)
+const MIN_WIDTH = 280;              // Minimum width for any capability box
+const LEAF_NODE_HEIGHT = 20;        // Height for leaf nodes (capabilities without children)
 const CHARACTER_WIDTH = 10;         // Estimated width per character for calculating box widths
 const ROOT_PADDING = 20;            // Extra padding for the root container
 const PARENT_CHILD_TOP_PADDING = 20; // Padding between a parent and its first child
