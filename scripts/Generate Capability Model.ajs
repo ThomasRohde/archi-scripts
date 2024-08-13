@@ -174,21 +174,41 @@ function customCapabilityLayout(view) {
         "#FFFFE6"  // Light Yellow
     ];
 
+    // Calculate max widths for each level
+    const levelWidths = calculateLevelWidths(rootCapabilities);
+
     // If there's only one root capability, use its children as the top-level capabilities
     if (rootCapabilities.size() === 1) {
         const singleRoot = rootCapabilities.first();
         const topLevelCapabilities = getCapabilityChildren(singleRoot);
-        layoutTopLevelCapabilities(view, topLevelCapabilities, x, 10, horizontalSpacing, colorPalette);
+        layoutTopLevelCapabilities(view, topLevelCapabilities, x, 10, horizontalSpacing, colorPalette, levelWidths);
     } else {
-        layoutTopLevelCapabilities(view, rootCapabilities, x, 10, horizontalSpacing, colorPalette);
+        layoutTopLevelCapabilities(view, rootCapabilities, x, 10, horizontalSpacing, colorPalette, levelWidths);
     }
 }
 
-function layoutTopLevelCapabilities(view, capabilities, startX, startY, horizontalSpacing, colorPalette) {
+function calculateLevelWidths(rootCapabilities) {
+    const levelWidths = new Map();
+
+    function traverse(capability, level = 0) {
+        const children = getCapabilityChildren(capability);
+        const [width, _] = calculateCapabilitySize(capability, children);
+        
+        levelWidths.set(level, Math.max(levelWidths.get(level) || 0, width));
+
+        children.each(child => traverse(child, level + 1));
+    }
+
+    rootCapabilities.each(root => traverse(root));
+    return levelWidths;
+}
+
+function layoutTopLevelCapabilities(view, capabilities, startX, startY, horizontalSpacing, colorPalette, levelWidths) {
     let x = startX;
     capabilities.each((capability, index) => {
         const children = getCapabilityChildren(capability);
-        const [width, height] = calculateCapabilitySize(capability, children);
+        const [_, height] = calculateCapabilitySize(capability, children);
+        const width = levelWidths.get(0);
 
         const capabilityInView = view.add(capability, x, startY, width, height);
         capabilityInView.textPosition = 0;
@@ -196,53 +216,21 @@ function layoutTopLevelCapabilities(view, capabilities, startX, startY, horizont
         capabilityInView.fillColor = colorPalette[0];
 
         let childY = startY + 40;
-        layoutChildren(view, capabilityInView, children, x + 10, childY, width - 20, 1, colorPalette);
+        layoutChildren(view, capabilityInView, children, x + 10, childY, width - 20, 1, colorPalette, levelWidths);
 
         x += width + horizontalSpacing;
     });
 }
 
-function getCapabilityChildren(capability) {
-    return $("element").filter(e => {
-        if (e.type !== "capability") return false;
-        const incomingCompositions = $(e).inRels().filter(r => r.type === "composition-relationship" && r.source.id === capability.id);
-        return incomingCompositions.size() > 0;
-    });
-}
-
-function calculateCapabilitySize(capability, children) {
-    const minWidth = 120;
-    const minHeight = 30;
-    const padding = 20;
-    const bottomPadding = 20; // New constant for bottom padding
-
-    if (children.size() === 0) {
-        return [Math.max(minWidth, capability.name.length * 8), minHeight];
-    }
-
-    let maxChildWidth = 0;
-    let totalChildHeight = 0;
-
-    children.each(child => {
-        const [childWidth, childHeight] = calculateCapabilitySize(child, getCapabilityChildren(child));
-        maxChildWidth = Math.max(maxChildWidth, childWidth);
-        totalChildHeight += childHeight + 10;
-    });
-
-    const width = Math.max(minWidth, maxChildWidth + padding, capability.name.length * 8);
-    const height = Math.max(minHeight, totalChildHeight + padding + bottomPadding); // Added bottomPadding
-
-    return [width, height];
-}
-
-function layoutChildren(view, parentInView, children, startX, startY, maxWidth, level, colorPalette) {
+function layoutChildren(view, parentInView, children, startX, startY, maxWidth, level, colorPalette, levelWidths) {
     let y = startY;
     const bottomPadding = 20;
     let hasNonLeafChildren = false;
 
     children.each(child => {
         const grandchildren = getCapabilityChildren(child);
-        const [width, height] = calculateCapabilitySize(child, grandchildren);
+        const [_, height] = calculateCapabilitySize(child, grandchildren);
+        const width = levelWidths.get(level);
 
         const childInView = view.add(child, startX, y, width, height);
         childInView.textPosition = 1;
@@ -254,7 +242,7 @@ function layoutChildren(view, parentInView, children, startX, startY, maxWidth, 
             hasNonLeafChildren = true;
             childInView.textPosition = 0;
             childInView.fillColor = colorPalette[level % colorPalette.length];
-            layoutChildren(view, childInView, grandchildren, startX + 10, y + 30, width - 20, level + 1, colorPalette);
+            layoutChildren(view, childInView, grandchildren, startX + 10, y + 30, width - 20, level + 1, colorPalette, levelWidths);
         }
 
         y += height + 10;
@@ -270,4 +258,37 @@ function layoutChildren(view, parentInView, children, startX, startY, maxWidth, 
             height: parentBounds.height + bottomPadding
         };
     }
+}
+
+function getCapabilityChildren(capability) {
+    return $("element").filter(e => {
+        if (e.type !== "capability") return false;
+        const incomingCompositions = $(e).inRels().filter(r => r.type === "composition-relationship" && r.source.id === capability.id);
+        return incomingCompositions.size() > 0;
+    });
+}
+
+function calculateCapabilitySize(capability, children) {
+    const minWidth = 120;
+    const minHeight = 30;
+    const padding = 20;
+    const bottomPadding = 20;
+
+    if (children.size() === 0) {
+        return [Math.max(minWidth, capability.name.length * 8), minHeight];
+    }
+
+    let maxChildWidth = 0;
+    let totalChildHeight = 0;
+
+    children.each(child => {
+        const [childWidth, childHeight] = calculateCapabilitySize(child, getCapabilityChildren(child));
+        maxChildWidth = Math.max(maxChildWidth, childWidth);
+        totalChildHeight += childHeight + 10;
+    });
+
+    const width = Math.max(minWidth, maxChildWidth + padding, capability.name.length * 8);
+    const height = Math.max(minHeight, totalChildHeight + padding + bottomPadding);
+
+    return [width, height];
 }
