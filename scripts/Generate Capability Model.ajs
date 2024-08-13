@@ -15,13 +15,13 @@ const jarchiLogger = require('./lib/jarchiLogger');
 const log = jarchiLogger.createLogger('GenerateCapabilityModel', __DIR__);
 
 // Initialize LLM client
-// const llmClient = new LLMClient('anthropic');
-const llmClient = new LLMClient('ollama');
+const llmClient = new LLMClient('anthropic');
+// const llmClient = new LLMClient('ollama');
 
 // Constants
 const ITERATIONS = 3;
-// const MODEL = 'claude-3-haiku-20240307';
-const MODEL = 'llama3.1';
+const MODEL = 'claude-3-haiku-20240307';
+// const MODEL = 'llama3.1';
 
 // Function to get user input
 function getUserInput(prompt) {
@@ -62,7 +62,6 @@ Create a JSON object to represent the ArchiMate capability model. The structure 
             "type": "capability",
             "name": "<name of capability>",
             "description": "<description of capability>",
-            "children": [ ... child capabilities ...]
         },
         ... more capabilities ...
     ],
@@ -80,7 +79,7 @@ Create a JSON object to represent the ArchiMate capability model. The structure 
 Guidelines:
 1. Use only "capability" as the type for all nodes.
 2. Create a hierarchical structure with high-level capabilities and sub-capabilities.
-3. Use "composition-relationship" to represent the hierarchy.
+3. Use only "composition-relationship" relationships to represent the hierarchy.
 4. Provide clear and concise names and descriptions for each capability.
 5. Ensure each capability has a unique ID (e.g., "cap1", "cap2", etc.).
 6. If refining a previous model, maintain the existing structure and add more detailed sub-capabilities.
@@ -132,23 +131,19 @@ After analyzing the description and creating the model, format your response as 
                 log.info(`Iteration ${i} of ${ITERATIONS}`);
                 const modelJson = await generateCapabilityModel(userDescription, previousModel, i);
                 
-                if (i < ITERATIONS) {
-                    // Use updateModel for all iterations except the last one
-                    const updates = modelManipulation.updateModel(modelJson);
-                    log.info(`Model updated (iteration ${i})`);
-                    log.debug('Model updates', updates);
-                } else {
-                    // For the last iteration, update the view and apply layout
-                    modelManipulation.updateView(view, modelJson);
-                    layoutDagre(view);
-                    log.info('Final model applied to view and layout updated');
-                }
+                // Use updateModel for all iterations
+                const updates = modelManipulation.updateModel(modelJson);
+                log.info(`Model updated (iteration ${i})`);
+                log.debug('Model updates', updates);
                 
                 // Update previousModel for the next iteration
                 previousModel = modelManipulation.createModelJson();
             }
 
-            log.info('Capability model generation complete');
+            // Apply custom layout
+            customCapabilityLayout(view);
+
+            log.info('Capability model generation and layout complete');
         } else {
             log.warn('User cancelled or provided no description');
         }
@@ -156,3 +151,83 @@ After analyzing the description and creating the model, format your response as 
         log.error('Error in main execution', { error: error.toString() });
     }
 })();
+
+function customCapabilityLayout(view) {
+    const rootCapabilities = $("element").filter(e => {
+        if (e.type !== "capability") return false;
+        const incomingCompositions = $(e).inRels().filter(r => r.type === "composition-relationship");
+        return incomingCompositions.size() === 0;
+    });
+
+    const horizontalSpacing = 50;
+    const verticalSpacing = 30;
+    let x = 20;
+
+    rootCapabilities.each((rootCap, index) => {
+        const children = getCapabilityChildren(rootCap);
+        const [width, height] = calculateCapabilitySize(rootCap, children);
+
+        const rootCapInView = view.add(rootCap, x, 20, width, height);
+        rootCapInView.textPosition = 0; // Set text position to top
+        rootCapInView.showIcon = 2;
+
+        let childY = 60; // Start children below the parent's name
+        layoutChildren(view, rootCapInView, children, x + 20, childY, width - 40);
+
+        x += width + horizontalSpacing;
+    });
+}
+
+function getCapabilityChildren(capability) {
+    return $("element").filter(e => {
+        if (e.type !== "capability") return false;
+        const incomingCompositions = $(e).inRels().filter(r => r.type === "composition-relationship" && r.source.id === capability.id);
+        return incomingCompositions.size() > 0;
+    });
+}
+
+function calculateCapabilitySize(capability, children) {
+    const minWidth = 150;
+    const minHeight = 60;
+    const padding = 40;
+
+    if (children.size() === 0) {
+        return [Math.max(minWidth, capability.name.length * 10), minHeight];
+    }
+
+    let maxChildWidth = 0;
+    let totalChildHeight = 0;
+
+    children.each(child => {
+        const [childWidth, childHeight] = calculateCapabilitySize(child, getCapabilityChildren(child));
+        maxChildWidth = Math.max(maxChildWidth, childWidth);
+        totalChildHeight += childHeight + 20; // 20px vertical spacing
+    });
+
+    const width = Math.max(minWidth, maxChildWidth + padding, capability.name.length * 10);
+    const height = Math.max(minHeight, totalChildHeight + padding);
+
+    return [width, height];
+}
+
+function layoutChildren(view, parentInView, children, startX, startY, maxWidth) {
+    let y = startY;
+
+    children.each(child => {
+        const grandchildren = getCapabilityChildren(child);
+        const [width, height] = calculateCapabilitySize(child, grandchildren);
+
+        const childInView = view.add(child, startX, y, width, height);
+        childInView.textPosition = 1; // Set text position to center
+        childInView.showIcon = 2;
+
+        if (grandchildren.size() === 0) {
+            childInView.fillColor = "#F0F0F0"; // Light grey for leaf nodes
+        } else {
+            childInView.textPosition = 0; // Set text position to top
+            layoutChildren(view, childInView, grandchildren, startX + 20, y + 40, width - 40);
+        }
+
+        y += height + 20; // 20px vertical spacing
+    });
+}
