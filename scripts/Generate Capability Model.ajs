@@ -1,6 +1,9 @@
 /**
  * @name Generate Capability Model
  * @description This script generates an ArchiMate capability model using the Anthropic API, iteratively refining the model.
+ * @version 1.1
+ * @author Claude AI Assistant
+ * @lastModifiedDate 2024-08-13
  */
 
 console.clear();
@@ -90,7 +93,7 @@ After analyzing the description and creating the model, format your response as 
 
     const options = new LLMGenerateOptions({
         model: MODEL,
-        maxTokens: 4000,
+        maxTokens: 4096,
         temperature: 0.7
     });
 
@@ -159,20 +162,41 @@ function customCapabilityLayout(view) {
         return incomingCompositions.size() === 0;
     });
 
-    const horizontalSpacing = 50;
-    const verticalSpacing = 30;
-    let x = 20;
+    const horizontalSpacing = 30;
+    const verticalSpacing = 20;
+    let x = 10;
 
-    rootCapabilities.each((rootCap, index) => {
-        const children = getCapabilityChildren(rootCap);
-        const [width, height] = calculateCapabilitySize(rootCap, children);
+    const colorPalette = [
+        "#E6F3FF", // Light Blue
+        "#FFF0E6", // Light Peach
+        "#E6FFE6", // Light Green
+        "#F2E6FF", // Light Purple
+        "#FFFFE6"  // Light Yellow
+    ];
 
-        const rootCapInView = view.add(rootCap, x, 20, width, height);
-        rootCapInView.textPosition = 0; // Set text position to top
-        rootCapInView.showIcon = 2;
+    // If there's only one root capability, use its children as the top-level capabilities
+    if (rootCapabilities.size() === 1) {
+        const singleRoot = rootCapabilities.first();
+        const topLevelCapabilities = getCapabilityChildren(singleRoot);
+        layoutTopLevelCapabilities(view, topLevelCapabilities, x, 10, horizontalSpacing, colorPalette);
+    } else {
+        layoutTopLevelCapabilities(view, rootCapabilities, x, 10, horizontalSpacing, colorPalette);
+    }
+}
 
-        let childY = 60; // Start children below the parent's name
-        layoutChildren(view, rootCapInView, children, x + 20, childY, width - 40);
+function layoutTopLevelCapabilities(view, capabilities, startX, startY, horizontalSpacing, colorPalette) {
+    let x = startX;
+    capabilities.each((capability, index) => {
+        const children = getCapabilityChildren(capability);
+        const [width, height] = calculateCapabilitySize(capability, children);
+
+        const capabilityInView = view.add(capability, x, startY, width, height);
+        capabilityInView.textPosition = 0;
+        capabilityInView.showIcon = 2;
+        capabilityInView.fillColor = colorPalette[0];
+
+        let childY = startY + 40;
+        layoutChildren(view, capabilityInView, children, x + 10, childY, width - 20, 1, colorPalette);
 
         x += width + horizontalSpacing;
     });
@@ -187,12 +211,13 @@ function getCapabilityChildren(capability) {
 }
 
 function calculateCapabilitySize(capability, children) {
-    const minWidth = 150;
-    const minHeight = 40;
-    const padding = 40;
+    const minWidth = 120;
+    const minHeight = 30;
+    const padding = 20;
+    const bottomPadding = 20; // New constant for bottom padding
 
     if (children.size() === 0) {
-        return [Math.max(minWidth, capability.name.length * 10), minHeight];
+        return [Math.max(minWidth, capability.name.length * 8), minHeight];
     }
 
     let maxChildWidth = 0;
@@ -201,33 +226,48 @@ function calculateCapabilitySize(capability, children) {
     children.each(child => {
         const [childWidth, childHeight] = calculateCapabilitySize(child, getCapabilityChildren(child));
         maxChildWidth = Math.max(maxChildWidth, childWidth);
-        totalChildHeight += childHeight + 20; // 20px vertical spacing
+        totalChildHeight += childHeight + 10;
     });
 
-    const width = Math.max(minWidth, maxChildWidth + padding, capability.name.length * 10);
-    const height = Math.max(minHeight, totalChildHeight + padding);
+    const width = Math.max(minWidth, maxChildWidth + padding, capability.name.length * 8);
+    const height = Math.max(minHeight, totalChildHeight + padding + bottomPadding); // Added bottomPadding
 
     return [width, height];
 }
 
-function layoutChildren(view, parentInView, children, startX, startY, maxWidth) {
+function layoutChildren(view, parentInView, children, startX, startY, maxWidth, level, colorPalette) {
     let y = startY;
+    const bottomPadding = 20;
+    let hasNonLeafChildren = false;
 
     children.each(child => {
         const grandchildren = getCapabilityChildren(child);
         const [width, height] = calculateCapabilitySize(child, grandchildren);
 
         const childInView = view.add(child, startX, y, width, height);
-        childInView.textPosition = 1; // Set text position to center
+        childInView.textPosition = 1;
         childInView.showIcon = 2;
 
         if (grandchildren.size() === 0) {
             childInView.fillColor = "#F0F0F0"; // Light grey for leaf nodes
         } else {
-            childInView.textPosition = 0; // Set text position to top
-            layoutChildren(view, childInView, grandchildren, startX + 20, y + 40, width - 40);
+            hasNonLeafChildren = true;
+            childInView.textPosition = 0;
+            childInView.fillColor = colorPalette[level % colorPalette.length];
+            layoutChildren(view, childInView, grandchildren, startX + 10, y + 30, width - 20, level + 1, colorPalette);
         }
 
-        y += height + 20; // 20px vertical spacing
+        y += height + 10;
     });
+
+    // Adjust parent height to include bottom padding only if it has non-leaf children
+    if (hasNonLeafChildren) {
+        const parentBounds = parentInView.bounds;
+        parentInView.bounds = {
+            x: parentBounds.x,
+            y: parentBounds.y,
+            width: parentBounds.width,
+            height: parentBounds.height + bottomPadding
+        };
+    }
 }
