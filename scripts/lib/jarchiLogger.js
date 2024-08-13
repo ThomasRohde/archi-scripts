@@ -51,18 +51,36 @@ const jarchiLogger = {
         return LOG_LEVELS[levelString] || LOG_LEVELS.INFO;
     },
 
-    log: function(level, message, script, additionalData = {}) {
+    getStackInfo: function() {
+        const stack = new Error().stack;
+        const stackLines = stack.split('\n');
+        const callerLine = stackLines[4]; // Index 4 should be the caller of the log function
+        const match = callerLine.match(/at .+ \((.+):(\d+)\)/);
+        if (match) {
+            return {
+                fileName: match[1],
+                lineNo: parseInt(match[2]),
+            };
+        }
+        return null;
+    },
+
+    log: function(level, message, script, additionalData = {}, basePath = '') {
         const logLevel = LOG_LEVELS[level] || this.defaultLogLevel;
         
         if (logLevel < this.defaultLogLevel) {
             return;
         }
 
+        const stackInfo = this.getStackInfo();
         const logData = {
             level: level,
             script: script,
             message: message,
             timestamp: new Date().toISOString(),
+            fileName: stackInfo ? (basePath + stackInfo.fileName) : 'unknown',
+            lineNo: stackInfo ? stackInfo.lineNo : 0,
+            columnNo: stackInfo ? stackInfo.columnNo : 0,
             ...additionalData
         };
 
@@ -76,7 +94,7 @@ const jarchiLogger = {
     },
 
     logToConsole: function(logData) {
-        const logMessage = `[${logData.timestamp}] ${logData.level} - ${logData.script} - ${logData.message}`;
+        const logMessage = `[${logData.timestamp}] ${logData.level} - ${logData.script} - ${logData.message} (${logData.fileName}:${logData.lineNo}:${logData.columnNo})`;
         const color = LOG_COLORS[logData.level] || [0, 0, 0];
         
         console.setTextColor(color[0], color[1], color[2]);
@@ -88,6 +106,9 @@ const jarchiLogger = {
         delete additionalData.level;
         delete additionalData.script;
         delete additionalData.message;
+        delete additionalData.fileName;
+        delete additionalData.lineNo;
+        delete additionalData.columnNo;
     
         if (Object.keys(additionalData).length > 0) {
             console.log('Additional data:', JSON.stringify(additionalData, null, 2));
@@ -142,12 +163,12 @@ const jarchiLogger = {
         this.sendMarkdownToConsole(`${scriptName} - Code Output:\n${markdown}`);
     },
 
-    createLogger: function(scriptName) {
+    createLogger: function(scriptName, basePath = '') {
         return {
-            debug: (message, additionalData) => this.log('DEBUG', message, scriptName, additionalData),
-            info: (message, additionalData) => this.log('INFO', message, scriptName, additionalData),
-            warn: (message, additionalData) => this.log('WARN', message, scriptName, additionalData),
-            error: (message, additionalData) => this.log('ERROR', message, scriptName, additionalData),
+            debug: (message, additionalData) => this.log('DEBUG', message, scriptName, additionalData, basePath),
+            info: (message, additionalData) => this.log('INFO', message, scriptName, additionalData, basePath),
+            warn: (message, additionalData) => this.log('WARN', message, scriptName, additionalData, basePath),
+            error: (message, additionalData) => this.log('ERROR', message, scriptName, additionalData, basePath),
             markdown: (content) => this.sendMarkdownToConsole(content),
             code: (obj) => this.sendCodeToConsole(obj, scriptName)
         };

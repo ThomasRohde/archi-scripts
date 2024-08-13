@@ -8,7 +8,7 @@ console.clear();
 console.show();
 
 const jarchiLogger = require('./lib/jarchiLogger');
-const log = jarchiLogger.createLogger('TestJArchiLogger');
+const log = jarchiLogger.createLogger('TestJArchiLogger', __DIR__);
 
 // Import Java's Thread class
 const Thread = Java.type('java.lang.Thread');

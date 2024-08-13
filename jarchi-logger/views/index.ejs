@@ -253,6 +253,10 @@
             row.className = 'log-row';
             const formattedTimestamp = log.timestamp ? formatTimestamp(log.timestamp) : 'N/A';
 
+            const scriptLink = log.fileName && log.lineNo 
+                ? `vscode://file/${log.fileName}:${log.lineNo}:0`
+                : '#';
+
             row.innerHTML = `
         <td class="px-4 py-2 text-gray-500" data-timestamp="${log.timestamp || ''}">${formattedTimestamp}</td>
         <td class="px-4 py-2">
@@ -260,7 +264,7 @@
                 ${log.level || 'UNKNOWN'}
             </span>
         </td>
-        <td class="px-4 py-2">${log.script || 'N/A'}</td>
+        <td class="px-4 py-2"><a href="${scriptLink}" target="_blank" class="text-blue-500 hover:underline">${log.script || 'N/A'}</a></td>
         <td>
             <div class="log-summary flex items-center ${log.additionalData ? 'cursor-pointer' : ''}">
                 ${log.additionalData ? '<svg class="expand-icon w-4 h-4 mr-2 text-gray-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>' : ''}

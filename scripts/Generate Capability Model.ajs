@@ -12,7 +12,7 @@ const modelManipulation = require('./lib/modelManipulation');
 
 // Initialize logger
 const jarchiLogger = require('./lib/jarchiLogger');
-const log = jarchiLogger.createLogger('GenerateCapabilityModel');
+const log = jarchiLogger.createLogger('GenerateCapabilityModel', __DIR__);
 
 // Initialize LLM client
 // const llmClient = new LLMClient('anthropic');

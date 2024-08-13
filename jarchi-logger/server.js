@@ -5,7 +5,7 @@
  * The application uses Express for HTTP routing, Socket.IO for real-time communication,
  * and EJS for server-side rendering.
  * 
- * @author Claude AI Assitant, and Thomas Klok Rohde
+ * @author Claude AI Assistant, and Thomas Klok Rohde
  * @copyright 2024
  * @license MIT
  * @version 1.0.0
@@ -53,16 +53,20 @@ let consoleContent = [];
  * @param {string} logData.script - The script or module that generated the log.
  * @param {string} logData.message - The log message.
  * @param {string} logData.timestamp - The timestamp of the log entry.
+ * @param {string} logData.fileName - The name of the file where the log was generated.
+ * @param {number} logData.lineNo - The line number where the log was generated.
  * @returns {Object} The processed log entry.
  */
 function processLogEntry(logData) {
-    const { level, script, message, timestamp, ...additionalData } = logData;
+    const { level, script, message, timestamp, fileName, lineNo, ...additionalData } = logData;
     
     const logEntry = { 
         level, 
         script, 
         message, 
-        timestamp, 
+        timestamp,
+        fileName,
+        lineNo,
         additionalData: Object.keys(additionalData).length > 0 ? additionalData : null 
     };
 

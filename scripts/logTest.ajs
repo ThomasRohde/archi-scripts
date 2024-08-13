@@ -1,0 +1,39 @@
+function logCallerInfo() {
+    // Create a new Error object to capture the stack trace
+    const error = new Error();
+    
+    // Extract the stack trace from the error object
+    const stack = error.stack.split('\n');
+    
+    // The caller information is typically found in the second line of the stack trace
+    if (stack.length > 2) {
+        const callerInfo = stack[2].trim();
+        
+        // Example output: "    at functionName (fileName.js:line:column)"
+        console.log(`Caller Info: ${callerInfo}`);
+        
+        // You can further parse the callerInfo if needed
+        const regex = /at (.+) \((.+):(\d+):(\d+)\)/;
+        const match = callerInfo.match(regex);
+        
+        if (match) {
+            const functionName = match[1];
+            const fileName = match[2];
+            const lineNumber = match[3];
+            const columnNumber = match[4];
+            
+            console.log(`Function Name: ${functionName}`);
+            console.log(`File Name: ${fileName}`);
+            console.log(`Line Number: ${lineNumber}`);
+            console.log(`Column Number: ${columnNumber}`);
+        }
+    }
+}
+
+// Example function to demonstrate logging
+function exampleFunction() {
+    logCallerInfo();
+}
+
+// Call the example function
+exampleFunction();
