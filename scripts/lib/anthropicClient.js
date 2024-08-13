@@ -10,7 +10,7 @@ const apiClient = require("./apiClient");
 
 // Initialize logger
 const jarchiLogger = require("./jarchiLogger");
-const log = jarchiLogger.createLogger("AnthropicClient");
+const log = jarchiLogger.createLogger("AnthropicClient", __DIR__);
 
 // Load settings from preference store
 const preferenceStore = workbench.getPreferenceStore();

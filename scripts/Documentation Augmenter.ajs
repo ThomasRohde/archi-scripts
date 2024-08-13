@@ -17,7 +17,7 @@ const Thread = Java.type('java.lang.Thread');
 
 // Initialize logger
 const jarchiLogger = require('./lib/jarchiLogger');
-const log = jarchiLogger.createLogger('DocumentationAugmenter');
+const log = jarchiLogger.createLogger('DocumentationAugmenter', __DIR__);
 
 // Load settings from preference store
 const preferenceStore = workbench.getPreferenceStore();

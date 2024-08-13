@@ -11,7 +11,7 @@ const { LLMClient, LLMMessage, LLMGenerateOptions, ROLES } = require('./lib/llm'
 
 // Initialize logger
 const jarchiLogger = require('./lib/jarchiLogger');
-const log = jarchiLogger.createLogger('LLMWrapperTest');
+const log = jarchiLogger.createLogger('LLMWrapperTest', __DIR__);
 
 async function runTest(provider, model) {
     log.info(`Testing ${provider} provider with model: ${model}`);

@@ -8,7 +8,7 @@
 
 const apiClient = require("./apiClient");
 const jarchiLogger = require("./jarchiLogger");
-const log = jarchiLogger.createLogger("confluenceIntegration");
+const log = jarchiLogger.createLogger("confluenceIntegration", __DIR__);
 
 function readConfluenceSettings() {
     const preferenceStore = workbench.getPreferenceStore();

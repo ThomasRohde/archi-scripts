@@ -13,7 +13,7 @@ const { OllamaClient, Message, ROLES, GenerateOptions } = require('./lib/ollamaC
 const modelTraversal = require('./lib/modelTraversal');
 const jarchiLogger = require('./lib/jarchiLogger');
 
-const log = jarchiLogger.createLogger('IntelligentModelAnalyzer');
+const log = jarchiLogger.createLogger('IntelligentModelAnalyzer', __DIR__);
 
 // Function to read Ollama settings from the preference store
 function readOllamaSettings() {

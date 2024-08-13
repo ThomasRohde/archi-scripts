@@ -27,7 +27,7 @@ const IDialogConstants = Java.type("org.eclipse.jface.dialogs.IDialogConstants")
 
 // Initialize logger
 const jarchiLogger = require('./lib/jarchiLogger');
-const log = jarchiLogger.createLogger('Model Health Check');
+const log = jarchiLogger.createLogger('Model Health Check', __DIR__);
 
 // Import the chartjsUtility module
 const chartjsUtility = require("./lib/chartjsUtility");

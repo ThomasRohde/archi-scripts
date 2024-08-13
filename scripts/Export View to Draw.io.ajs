@@ -27,7 +27,7 @@ const { mapArchiMateTypeToDrawIo, mapArchiMateRelationshipToDrawIo } = require("
 
 // Set up logging
 const jarchiLogger = require('./lib/jarchiLogger');
-const log = jarchiLogger.createLogger('ExportViewToDrawIo');
+const log = jarchiLogger.createLogger('ExportViewToDrawIo', __DIR__);
 
 // Constants
 const FONT_SIZE_SCALE_FACTOR = 1.5;

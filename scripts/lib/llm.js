@@ -11,7 +11,7 @@ const { OllamaClient, Message: OllamaMessage, GenerateOptions: OllamaGenerateOpt
 
 // Initialize logger
 const jarchiLogger = require('./jarchiLogger');
-const log = jarchiLogger.createLogger('LLM');
+const log = jarchiLogger.createLogger('LLM', __DIR__);
 
 class LLMMessage {
     constructor(role, content) {

@@ -35,7 +35,7 @@
 
     // Initialize logger
     const jarchiLogger = require('./lib/jarchiLogger');
-    const log = jarchiLogger.createLogger('Menu');
+    const log = jarchiLogger.createLogger('Menu', __DIR__);
 
     /**
      * Main dialog object for the JArchi Script Menu.
@@ -345,7 +345,7 @@
         if (menuDialog.open()) {
             log.info('Dialog closed normally');
             if (menuDialog.dialogResult) {
-                log.info('Executing script', { script: menuDialog.dialogResult });
+                log.info('Executing script', { execute_script: menuDialog.dialogResult });
                 load(menuDialog.dialogResult);
             }
         } else {

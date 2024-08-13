@@ -7,6 +7,9 @@
  */
 
 const apiClient = require('./apiClient');
+// Initialize logger
+const jarchiLogger = require('./jarchiLogger');
+const log = jarchiLogger.createLogger('OllamaClient', __DIR__);
 
 // Constants
 const ROLES = Object.freeze({

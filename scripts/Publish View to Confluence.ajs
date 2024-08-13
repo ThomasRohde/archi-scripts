@@ -12,7 +12,7 @@ console.show();
 const confluenceIntegration = require("./lib/confluenceIntegration");
 const marked = require('./node_modules/marked/marked.min');
 const jarchiLogger = require('./lib/jarchiLogger');
-const log = jarchiLogger.createLogger('PublishViewToConfluence');
+const log = jarchiLogger.createLogger('PublishViewToConfluence', __DIR__);
 
 function preprocessMarkdown(content) {
     return content.replace(/(?<!\n)\n(?!\n)/g, "  \n");

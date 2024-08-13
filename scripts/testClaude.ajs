@@ -1,6 +1,6 @@
 const { AnthropicClient, GenerateOptions, Message, ROLES, MODELS } = require('./lib/anthropicClient');
 const jarchiLogger = require('./lib/jarchiLogger');
-const log = jarchiLogger.createLogger('AnthropicTest');
+const log = jarchiLogger.createLogger('AnthropicTest', __DIR__);
 
 async function main() {
     const client = new AnthropicClient();

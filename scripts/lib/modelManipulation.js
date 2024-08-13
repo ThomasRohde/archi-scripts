@@ -7,7 +7,7 @@
  */
 
 const jarchiLogger = require("./jarchiLogger");
-const log = jarchiLogger.createLogger("ModelManipulation");
+const log = jarchiLogger.createLogger("ModelManipulation", __DIR__);
 const modelTraversal = require("./modelTraversal");
 
 const modelManipulation = {

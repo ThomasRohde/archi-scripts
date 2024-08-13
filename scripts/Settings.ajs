@@ -34,7 +34,7 @@ const { MODELS: ANTHROPIC_MODELS } = require("./lib/anthropicClient");
 
 // Initialize logger
 const jarchiLogger = require('./lib/jarchiLogger');
-const log = jarchiLogger.createLogger('Settings');
+const log = jarchiLogger.createLogger('Settings', __DIR__);
 
 // Then use it as before:
 log.info('Entering settings');

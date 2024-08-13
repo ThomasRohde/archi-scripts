@@ -18,7 +18,7 @@ const ByteArrayOutputStream = Java.type("java.io.ByteArrayOutputStream");
 const DataOutputStream = Java.type("java.io.DataOutputStream");
 
 const jarchiLogger = require('./jarchiLogger');
-const log = jarchiLogger.createLogger('API Client');
+const log = jarchiLogger.createLogger('API Client', __DIR__);
 
 const apiClient = {
     create: function(defaultConfig = {}) {

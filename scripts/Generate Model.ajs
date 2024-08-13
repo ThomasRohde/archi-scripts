@@ -21,7 +21,7 @@ const InputDialog = Java.type('org.eclipse.jface.dialogs.InputDialog');
 
 // Initialize logger
 const jarchiLogger = require('./lib/jarchiLogger');
-const log = jarchiLogger.createLogger('GenerateArchiMateModel');
+const log = jarchiLogger.createLogger('GenerateArchiMateModel', __DIR__);
 
 // Initialize Anthropic client
 const anthropicClient = new AnthropicClient();
