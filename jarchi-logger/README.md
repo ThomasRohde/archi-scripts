@@ -12,6 +12,7 @@ JArchi Logger is a real-time logging application designed to capture, display, a
 - Clear logs functionality
 - Console view for displaying formatted markdown content
 - Responsive design using Tailwind CSS
+- Optional base path for more accurate file location reporting in logs
 
 ## Technology Stack
 
@@ -79,6 +80,35 @@ JArchi Logger is a real-time logging application designed to capture, display, a
    }
    ```
 
+## JArchi Logger Client Script
+
+The `jarchiLogger.js` script provides a client-side logging interface for JArchi scripts. It includes the following features:
+
+- Log level support (DEBUG, INFO, WARN, ERROR)
+- Console and server logging
+- Markdown and code output to console
+- Stack trace information in logs
+
+### Usage
+
+1. Import the `jarchiLogger.js` script in your JArchi environment.
+
+2. Create a logger instance:
+   ```javascript
+   const logger = jarchiLogger.createLogger('MyScript', '/optional/base/path/');
+   ```
+   The second parameter is optional and specifies a base path to be prepended to file names in log entries.
+
+3. Use the logger methods:
+   ```javascript
+   logger.debug('This is a debug message');
+   logger.info('This is an info message');
+   logger.warn('This is a warning message');
+   logger.error('This is an error message');
+   logger.markdown('# Markdown Heading\nSome **formatted** text');
+   logger.code({ key: 'value' });
+   ```
+
 ## Configuration
 
 You can configure the server ports using command-line arguments:
@@ -96,6 +126,7 @@ node server.js --api-port 5000 --web-port 5001
 - `public/output.css`: Generated Tailwind CSS file
 - `package.json`: Project dependencies and scripts
 - `tailwind.config.js`: Tailwind CSS configuration
+- `jarchiLogger.js`: Client-side logging script for JArchi
 
 ## Contributing
 
