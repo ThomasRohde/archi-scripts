@@ -402,5 +402,30 @@ const menuItems = [
         script: "Expand Model.ajs",
         category: "AI-Assisted Modeling",
         tutorial: "Expand Model"
+    },
+    {
+        name: "Generate Capability Model",
+        description: `
+            <h2>Generate Capability Model</h2>
+            <p>This script generates an ArchiMate capability model using AI, iteratively refining the model.</p>
+            <h3>Features:</h3>
+            <ul>
+                <li>Creates a hierarchical capability model based on a user-provided description</li>
+                <li>Uses AI to generate and refine the model over multiple iterations</li>
+                <li>Applies a custom layout optimized for capability models</li>
+                <li>Supports integration with different AI providers (Anthropic and Ollama)</li>
+            </ul>
+            <h3>Usage:</h3>
+            <ol>
+                <li>Run the "Generate Capability Model" script</li>
+                <li>Enter a description of the organization when prompted</li>
+                <li>Wait for the script to generate and refine the capability model</li>
+                <li>Review the generated model in the selected or newly created view</li>
+            </ol>
+            <p>This script is particularly useful for quickly creating comprehensive capability models, which can serve as a foundation for further enterprise architecture analysis and planning.</p>
+        `,
+        script: "Generate Capability Model.ajs",
+        category: "AI-Assisted Modeling",
+        tutorial: "Generate Capability Model"
     }
 ];

@@ -188,7 +188,7 @@ function getCapabilityChildren(capability) {
 
 function calculateCapabilitySize(capability, children) {
     const minWidth = 150;
-    const minHeight = 60;
+    const minHeight = 40;
     const padding = 40;
 
     if (children.size() === 0) {

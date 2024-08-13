@@ -1,0 +1,135 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Tutorial: Generate Capability Model</title>
+            
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.3;
+        color: #333;
+        margin: 0;
+        padding: 10px;
+    }
+    h1 {
+        color: #2c3e50;
+        font-size: 20px;
+        margin: 10px 0 5px 0;
+    }
+    h2 {
+        color: #3498db;
+        font-size: 16px;
+        margin: 8px 0 4px 0;
+    }
+    p {
+        margin: 0 0 5px 0;
+    }
+    ul,
+    ol {
+        margin: 0 0 5px 0;
+        padding-left: 20px;
+    }
+    li {
+        margin-bottom: 2px;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 5px 0;
+    }
+    table,
+    th,
+    td {
+        border: 1px solid black;
+        font-size: 12px;
+        padding: 2px;
+    }
+</style>
+
+        </head>
+        <body>
+            <h1>Tutorial: Generate Capability Model</h1>
+            <p>The Generate Capability Model script is an advanced tool that leverages AI to create comprehensive ArchiMate capability models. This tutorial will guide you through using the script effectively.</p>
+<h2>Prerequisites</h2>
+<ul>
+<li>Archi with the jArchi plugin installed</li>
+<li>Anthropic API key configured (for Claude integration) or Ollama installed locally</li>
+<li>Basic understanding of ArchiMate and capability modeling</li>
+</ul>
+<h2>Step-by-Step Guide</h2>
+<h3>1. Prepare Your Environment</h3>
+<p>Ensure your Archi environment is set up correctly:</p>
+<ul>
+<li>Verify that jArchi is installed and activated</li>
+<li>Check that the necessary API keys are configured in the Settings script</li>
+</ul>
+<h3>2. Run the Script</h3>
+<ol>
+<li>In Archi, navigate to the Scripts window</li>
+<li>Locate &quot;Generate Capability Model&quot; under the &quot;AI-Assisted Modeling&quot; category</li>
+<li>Double-click to run the script</li>
+</ol>
+<h3>3. Provide Organization Description</h3>
+<p>When prompted, enter a detailed description of the organization for which you want to create a capability model. Be as specific as possible, including:</p>
+<ul>
+<li>Core business areas</li>
+<li>Key functions and processes</li>
+<li>Strategic objectives</li>
+<li>Industry-specific capabilities</li>
+</ul>
+<p>Example:</p>
+<pre><code>Our company is a global e-commerce platform specializing in electronics and tech gadgets. We handle everything from product sourcing and inventory management to customer service and delivery logistics. Key areas include web platform development, mobile app services, data analytics for personalized recommendations, secure payment processing, and an efficient returns system.
+</code></pre>
+<h3>4. Wait for Model Generation</h3>
+<p>The script will go through multiple iterations (default is 3) to generate and refine the capability model:</p>
+<ol>
+<li>Initial high-level capabilities are created</li>
+<li>Each capability is expanded with more detailed sub-capabilities</li>
+<li>Further refinement and detailing of the model</li>
+</ol>
+<p>This process may take a few minutes depending on the complexity of your description and the AI service being used.</p>
+<h3>5. Review the Generated Model</h3>
+<p>Once the script completes:</p>
+<ol>
+<li>A new view titled &quot;Generated Capability Model&quot; will be created (or an existing selected view will be used)</li>
+<li>The view will contain a hierarchical representation of capabilities</li>
+<li>Root capabilities will be arranged horizontally</li>
+<li>Sub-capabilities will be nested within their parent capabilities</li>
+</ol>
+<h3>6. Customize the Model</h3>
+<p>After generation, you can further customize the model:</p>
+<ul>
+<li>Rename capabilities for clarity</li>
+<li>Add or remove capabilities as needed</li>
+<li>Adjust the layout manually if desired</li>
+<li>Add documentation to capabilities for additional context</li>
+</ul>
+<h2>Understanding the Output</h2>
+<ul>
+<li>Root Capabilities: Top-level capabilities representing major business areas</li>
+<li>Sub-Capabilities: Nested capabilities that break down root capabilities into more specific functions</li>
+<li>Relationships: All connections between capabilities are composition relationships, representing the hierarchical structure</li>
+</ul>
+<h2>Tips for Best Results</h2>
+<ol>
+<li>Provide detailed and specific descriptions of your organization</li>
+<li>Include information about different business units, core processes, and strategic goals</li>
+<li>Mention any industry-specific capabilities or functions</li>
+<li>Review and iterate on the model, using it as a starting point for further refinement</li>
+</ol>
+<h2>Troubleshooting</h2>
+<ul>
+<li>If the model seems incomplete, try running the script again with a more detailed description</li>
+<li>Ensure your API keys are correctly configured if using Claude</li>
+<li>For Ollama users, verify that the Ollama service is running and the required model is installed</li>
+</ul>
+<h2>Conclusion</h2>
+<p>The Generate Capability Model script provides a powerful starting point for creating comprehensive capability models. Use it as a foundation for your enterprise architecture work, and don&#39;t hesitate to manually refine and expand upon the AI-generated model to perfectly fit your organization&#39;s needs.</p>
+
+        </body>
+        </html>
+    
