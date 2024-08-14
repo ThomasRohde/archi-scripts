@@ -194,11 +194,23 @@ const modelManipulation = {
                     if (sourceInView && targetInView) {
                         const relationshipKey = `${sourceId}-${targetId}`;
                         if (!addedRelationships.has(relationshipKey)) {
-                            view.add(relationship, sourceInView, targetInView);
-                            addedRelationships.add(relationshipKey);
-                            log.debug(`Added relationship to view: ${source.name} -> ${target.name}`);
+                            // Check if the relationship already exists in the view
+                            const existingRelInView = $(view)
+                                .find("relationship")
+                                .filter(function(r) {
+                                    return r.source.concept.id === sourceId && r.target.concept.id === targetId;
+                                })
+                                .first();
+    
+                            if (!existingRelInView) {
+                                view.add(relationship, sourceInView, targetInView);
+                                addedRelationships.add(relationshipKey);
+                                log.debug(`Added relationship to view: ${source.name} -> ${target.name}`);
+                            } else {
+                                log.debug(`Relationship already exists in view: ${source.name} -> ${target.name}`);
+                            }
                         } else {
-                            log.debug(`Relationship already exists in view: ${source.name} -> ${target.name}`);
+                            log.debug(`Relationship already processed: ${source.name} -> ${target.name}`);
                         }
                     } else {
                         log.debug(`Source or target not found in view for relationship: ${source.name} -> ${target.name}`);

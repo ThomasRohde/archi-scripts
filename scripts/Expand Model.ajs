@@ -46,15 +46,15 @@ function getSelectedElement() {
 
 // Function to generate expanded model using Anthropic API
 async function expandArchiMateModel(selectedElement, modelJson, userDescription) {
-    const prompt = `You are an AI assistant tasked with expanding an Archimate model based on a selected element. Your goal is to analyze the current model and suggest new elements and relationships based on the users description and the selected element.
+    const prompt = `You are an AI assistant tasked with expanding an Archimate model based on a selected element. Your goal is to analyze the current model and suggest new elements and relationships to add based on the user's description and the selected element.
 
 <user_description>
 ${userDescription}
 </user_description>
 
-<current_ model_context>
+<current_model_context>
 ${JSON.stringify(modelJson, null, 2)}
-</current_ model_context>
+</current_model_context>
 
 <selected_element>
 ${JSON.stringify(
@@ -69,48 +69,39 @@ ${JSON.stringify(
 )}
 </selected_element>
 
-Please suggest new elements and relationships to expand the model around the selected element. Your response should be a JSON object enclosed in <archimate_model> tags with the following structure:
+Please suggest new elements and relationships to expand the model around the selected element. Your response should be a JSON object enclosed in <archimate_model_update> tags with the following structure:
 
-<archimate_model>
+<archimate_model_update>
 {
-    "nodes": [
+    "new_elements": [
         {
             "id": "<unique id>",
             "type": "<JArchi concept name>",
             "description": "<description of node>",
-            "name": "<name of concept>",
-            "children": [ ... full definition of child nodes ...]
+            "name": "<name of concept>"
         },
-        ... more nodes ...
+        ... more new elements ...
     ],
-    "relationships": [
+    "new_relationships": [
         {
             "name": "<optional name>",
             "source": "<id of source node>",
             "target": "<id of target node>",
             "type": "<JArchi relationship name>"
         },
-        ... more relationships ...
+        ... more new relationships ...
     ]
 }
-</archimate_model>
+</archimate_model_update>
 
-To create the Archimate model:
+When creating new elements and relationships:
+- Ensure each new element has a unique ID (e.g., "new1", "new2", etc.).
+- Use the correct JArchi concept name for the "type" field.
+- Provide clear and concise descriptions for each new element.
+- Create meaningful relationships between new and existing elements, using appropriate relationship types.
+- You can reference existing elements from the current model using their IDs.
 
-1. Carefully read and analyze the user description.
-2. Identify key elements that correspond to Archimate concepts (refer to the JArchi to ArchiMate Concept Mapping provided earlier).
-3. Create nodes for each identified element, assigning unique IDs, appropriate types, names, and descriptions.
-4. Reuse the ID of existing nodes in the model
-5. Identify relationships between the nodes and create corresponding relationship objects.
-6. If applicable, create hierarchical structures using the "children" property of nodes.
-
-When creating nodes and relationships:
-- Ensure each new node has a unique ID (e.g., "node1", "node2", etc.).
-- Use the correct JArchi concept name for the "type" field. See the ArchiMate to JArchi mapping below.
-- Provide clear and concise descriptions for each node
-- Create meaningful relationships between nodes, using appropriate relationship types
-
-After analyzing the description and creating the model, format your response as a valid JSON object representing the Archimate model. Enclose the entire JSON object within <archimate_model> tags. ONLY enclose the JSON object in <archimate_model> tags!
+After analyzing the description and suggesting updates, format your response as a valid JSON object. Enclose the entire JSON object within <archimate_model_update> tags.
 
 Remember to think carefully about the structure and relationships within the model to accurately represent the described system or organization.
 
@@ -216,9 +207,9 @@ Remember to think carefully about the structure and relationships within the mod
     try {
         const response = await anthropicClient.generateChatCompletion(messages, [], options);
         const content = response.content[0].text;
-        const jsonMatch = content.match(/<archimate_model>([\s\S]*?)<\/archimate_model>/);
-        // Log the response as markdown, excluding the <archimate_model> content
-        const logContent = content.replace(/<archimate_model>[\s\S]*?<\/archimate_model>/, "");
+        const jsonMatch = content.match(/<archimate_model_update>([\s\S]*?)<\/archimate_model_update>/);
+        // Log the response as markdown, excluding the <archimate_model_update> content
+        const logContent = content.replace(/<archimate_model_update>[\s\S]*?<\/archimate_model_update>/, "");
         log.markdown(logContent);
         if (jsonMatch) {
             const jsonObject = JSON.parse(jsonMatch[1]);
@@ -231,6 +222,18 @@ Remember to think carefully about the structure and relationships within the mod
         log.error("Error expanding ArchiMate model", { error: error.toString() });
         throw error;
     }
+}
+
+function integrateUpdates(fullModel, updates) {
+    updates.new_elements.forEach(newElement => {
+        fullModel.nodes.push(newElement);
+    });
+
+    updates.new_relationships.forEach(newRelationship => {
+        fullModel.relationships.push(newRelationship);
+    });
+
+    return fullModel;
 }
 
 // Main execution
@@ -246,9 +249,13 @@ Remember to think carefully about the structure and relationships within the mod
                     elementType: selectedElement.type,
                 });
                 const modelJson = modelManipulation.createModelJson();
-                const expansionJson = await expandArchiMateModel(selectedElement, modelJson, userDescription);
+                const expansionUpdates = await expandArchiMateModel(selectedElement, modelJson, userDescription);
+                
+                // Integrate updates into the full model
+                const updatedModel = integrateUpdates(modelJson, expansionUpdates);
+                
                 log.info("Updating view with expanded model");
-                modelManipulation.updateView(view, expansionJson);
+                modelManipulation.updateView(view, updatedModel);
                 log.info("Applying Dagre layout");
                 layoutDagre(view);
                 log.info("Model expansion and layout complete");
