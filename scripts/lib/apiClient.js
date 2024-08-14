@@ -70,6 +70,7 @@ const apiClient = {
                     .uri(URI.create(fullUrl))
                     .method(config.method.toUpperCase(), requestBody);
 
+
                 this.setRequestProperties(requestBuilder, config);
                 requestBuilder.header("Content-Type", contentType);
 
@@ -81,7 +82,7 @@ const apiClient = {
                     log.debug('API Request', {
                         url: fullUrl,
                         method: config.method.toUpperCase(),
-                        headers: requestBuilder.build().headers().map()
+                        headers: this.parseHeaders(requestBuilder.build().headers()),
                     });
                 }
 
@@ -176,12 +177,11 @@ const apiClient = {
     },
 
     setRequestProperties: function(requestBuilder, config) {
-        for (const [key, value] of Object.entries(this.defaults.headers)) {
+/*         for (const [key, value] of Object.entries(this.defaults.headers)) {
             if (key.toLowerCase() !== 'content-type') {
                 requestBuilder.header(key, value);
             }
-        }
-
+        } */
         if (config.headers) {
             for (const [key, value] of Object.entries(config.headers)) {
                 if (key.toLowerCase() !== 'content-type') {
@@ -189,7 +189,6 @@ const apiClient = {
                 }
             }
         }
-
         if (config.auth) {
             if (config.auth.username && config.auth.password) {
                 const authString = `${config.auth.username}:${config.auth.password}`;

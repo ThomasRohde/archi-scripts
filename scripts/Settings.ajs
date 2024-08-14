@@ -32,12 +32,15 @@ const { OllamaClient } = require("./lib/ollamaClient");
 // Import Anthropic client
 const { MODELS: ANTHROPIC_MODELS } = require("./lib/anthropicClient");
 
+// Import OpenAI client
+const { ROLES: OPENAI_ROLES } = require("./lib/openaiClient");
+
 // Initialize logger
-const jarchiLogger = require('./lib/jarchiLogger');
-const log = jarchiLogger.createLogger('Settings', __DIR__);
+const jarchiLogger = require("./lib/jarchiLogger");
+const log = jarchiLogger.createLogger("Settings", __DIR__);
 
 // Then use it as before:
-log.info('Entering settings');
+log.info("Entering settings");
 
 // Global constants
 const DEFAULT_MODELS = ["llama3.1"];
@@ -96,6 +99,13 @@ const integrationSettingsDialog = {
         topP: "0.9",
         topK: "40",
     },
+    openAISettings: {
+        apiKey: "",
+        model: "gpt-4o-mini",
+        maxTokens: "4096",
+        temperature: "0.7",
+        topP: "1",
+    },
 
     open: function () {
         this.loadSettings();
@@ -131,7 +141,7 @@ const integrationSettingsDialog = {
         this.loggerSettings.consoleLogging = preferenceStore.getBoolean("loggerConsoleLogging") || false;
         this.loggerSettings.markdownLogging = preferenceStore.getBoolean("loggerMarkdownLogging") || false;
         this.loggerSettings.logLevel = preferenceStore.getString("loggerLogLevel") || "INFO";
-        this.loggerSettings.webPort = preferenceStore.getString('loggerWebPort') || "4001";
+        this.loggerSettings.webPort = preferenceStore.getString("loggerWebPort") || "4001";
         // Load Anthropic settings
         this.anthropicSettings.apiKey = preferenceStore.getString("anthropicApiKey") || "";
         this.anthropicSettings.model = preferenceStore.getString("anthropicModel") || "claude-3-sonnet-20240229";
@@ -139,6 +149,12 @@ const integrationSettingsDialog = {
         this.anthropicSettings.temperature = preferenceStore.getString("anthropicTemperature") || "0.7";
         this.anthropicSettings.topP = preferenceStore.getString("anthropicTopP") || "0.9";
         this.anthropicSettings.topK = preferenceStore.getString("anthropicTopK") || "40";
+        // Load OpenAI settings
+        this.openAISettings.apiKey = preferenceStore.getString("openaiApiKey") || "";
+        this.openAISettings.model = preferenceStore.getString("openaiModel") || "gpt-4o-mini";
+        this.openAISettings.maxTokens = preferenceStore.getString("openaiMaxTokens") || "1024";
+        this.openAISettings.temperature = preferenceStore.getString("openaiTemperature") || "0.7";
+        this.openAISettings.topP = preferenceStore.getString("openaiTopP") || "1";
     },
 
     saveSettings: function () {
@@ -169,6 +185,12 @@ const integrationSettingsDialog = {
         preferenceStore.setValue("anthropicTemperature", this.anthropicSettings.temperature);
         preferenceStore.setValue("anthropicTopP", this.anthropicSettings.topP);
         preferenceStore.setValue("anthropicTopK", this.anthropicSettings.topK);
+        // Save OpenAI settings
+        preferenceStore.setValue("openaiApiKey", this.openAISettings.apiKey);
+        preferenceStore.setValue("openaiModel", this.openAISettings.model);
+        preferenceStore.setValue("openaiMaxTokens", this.openAISettings.maxTokens);
+        preferenceStore.setValue("openaiTemperature", this.openAISettings.temperature);
+        preferenceStore.setValue("openaiTopP", this.openAISettings.topP);
     },
 
     dialog: new Dialog(shell, {
@@ -190,6 +212,7 @@ const integrationSettingsDialog = {
             this.createOllamaTab(tabFolder);
             this.createLoggerTab(tabFolder);
             this.createAnthropicTab(tabFolder);
+            this.createOpenAITab(tabFolder);  // Add t
 
             return container;
         },
@@ -254,12 +277,9 @@ const integrationSettingsDialog = {
 
             this.populateModelCombo();
 
-            integrationSettingsDialog.modelCombo.setText(
-                integrationSettingsDialog.ollama.model
-            );
+            integrationSettingsDialog.modelCombo.setText(integrationSettingsDialog.ollama.model);
             integrationSettingsDialog.modelCombo.addModifyListener((e) => {
-                integrationSettingsDialog.ollama.model =
-                    integrationSettingsDialog.modelCombo.getText();
+                integrationSettingsDialog.ollama.model = integrationSettingsDialog.modelCombo.getText();
             });
 
             // Temperature
@@ -268,8 +288,7 @@ const integrationSettingsDialog = {
             temperatureText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
             temperatureText.setText(integrationSettingsDialog.ollama.temperature);
             temperatureText.addModifyListener(
-                (e) =>
-                    (integrationSettingsDialog.ollama.temperature = temperatureText.getText())
+                (e) => (integrationSettingsDialog.ollama.temperature = temperatureText.getText())
             );
 
             // Top K
@@ -277,28 +296,24 @@ const integrationSettingsDialog = {
             const topKText = new Text(composite, SWT.BORDER);
             topKText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
             topKText.setText(integrationSettingsDialog.ollama.topK);
-            topKText.addModifyListener(
-                (e) => (integrationSettingsDialog.ollama.topK = topKText.getText())
-            );
+            topKText.addModifyListener((e) => (integrationSettingsDialog.ollama.topK = topKText.getText()));
 
             // Top P
             new Label(composite, SWT.NONE).setText("Top P:");
             const topPText = new Text(composite, SWT.BORDER);
             topPText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
             topPText.setText(integrationSettingsDialog.ollama.topP);
-            topPText.addModifyListener(
-                (e) => (integrationSettingsDialog.ollama.topP = topPText.getText())
-            );
+            topPText.addModifyListener((e) => (integrationSettingsDialog.ollama.topP = topPText.getText()));
         },
 
         createLoggerTab: function (tabFolder) {
             const loggerTab = new TabItem(tabFolder, SWT.NONE);
             loggerTab.setText("Logger");
-        
+
             const composite = new Composite(tabFolder, SWT.NONE);
             composite.setLayout(new GridLayout(2, false));
             loggerTab.setControl(composite);
-        
+
             // Enable Logging
             const enableLoggingButton = new Button(composite, SWT.CHECK);
             enableLoggingButton.setText("Enable Remote Logging");
@@ -309,7 +324,7 @@ const integrationSettingsDialog = {
                     integrationSettingsDialog.loggerSettings.enabled = enableLoggingButton.getSelection();
                 },
             });
-        
+
             // Logger API URL
             new Label(composite, SWT.NONE).setText("Logger API URL:");
             const apiUrlText = new Text(composite, SWT.BORDER);
@@ -318,7 +333,7 @@ const integrationSettingsDialog = {
             apiUrlText.addModifyListener(
                 (e) => (integrationSettingsDialog.loggerSettings.apiUrl = apiUrlText.getText())
             );
-        
+
             // Web Server Port
             new Label(composite, SWT.NONE).setText("Web Server Port:");
             const webPortText = new Text(composite, SWT.BORDER);
@@ -328,7 +343,7 @@ const integrationSettingsDialog = {
             webPortText.addModifyListener(
                 (e) => (integrationSettingsDialog.loggerSettings.webPort = webPortText.getText())
             );
-        
+
             // Start Logger Button
             const startLoggerButton = new Button(composite, SWT.PUSH);
             startLoggerButton.setText("Start Logger");
@@ -337,29 +352,29 @@ const integrationSettingsDialog = {
             startLoggerButton.addSelectionListener({
                 widgetSelected: function (e) {
                     startLoggerExecutable();
-                }
+                },
             });
-        
+
             // Log Retention Period
             new Label(composite, SWT.NONE).setText("Log Retention Period:");
             const retentionComposite = new Composite(composite, SWT.NONE);
             retentionComposite.setLayout(new GridLayout(2, false));
             retentionComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        
+
             const retentionText = new Text(retentionComposite, SWT.BORDER);
             retentionText.setLayoutData(new GridData(50, SWT.DEFAULT));
             retentionText.setText(integrationSettingsDialog.loggerSettings.logRetentionPeriod);
             retentionText.addModifyListener(
                 (e) => (integrationSettingsDialog.loggerSettings.logRetentionPeriod = retentionText.getText())
             );
-        
+
             const retentionUnitCombo = new Combo(retentionComposite, SWT.READ_ONLY);
             retentionUnitCombo.setItems(["days", "hours", "minutes"]);
             retentionUnitCombo.setText(integrationSettingsDialog.loggerSettings.logRetentionUnit);
             retentionUnitCombo.addModifyListener(
                 (e) => (integrationSettingsDialog.loggerSettings.logRetentionUnit = retentionUnitCombo.getText())
             );
-        
+
             // Console Logging
             const consoleLoggingButton = new Button(composite, SWT.CHECK);
             consoleLoggingButton.setText("Enable Console Logging");
@@ -370,7 +385,7 @@ const integrationSettingsDialog = {
                     integrationSettingsDialog.loggerSettings.consoleLogging = consoleLoggingButton.getSelection();
                 },
             });
-        
+
             // Markdown Logging
             const markdownLoggingButton = new Button(composite, SWT.CHECK);
             markdownLoggingButton.setText("Enable Markdown Logging");
@@ -381,7 +396,7 @@ const integrationSettingsDialog = {
                     integrationSettingsDialog.loggerSettings.markdownLogging = markdownLoggingButton.getSelection();
                 },
             });
-        
+
             // Log level
             new Label(composite, SWT.NONE).setText("Log Level:");
             const logLevelCombo = new Combo(composite, SWT.READ_ONLY);
@@ -391,36 +406,38 @@ const integrationSettingsDialog = {
             logLevelCombo.addModifyListener(
                 (e) => (integrationSettingsDialog.loggerSettings.logLevel = logLevelCombo.getText())
             );
-        
+
             function updateWebPortAndButtonState() {
-                const isLocalhost = apiUrlText.getText().includes("localhost") || apiUrlText.getText().includes("127.0.0.1");
+                const isLocalhost =
+                    apiUrlText.getText().includes("localhost") || apiUrlText.getText().includes("127.0.0.1");
                 webPortText.setEnabled(isLocalhost);
                 startLoggerButton.setEnabled(isLocalhost);
             }
-            
+
             // Call this function when the API URL changes
-            apiUrlText.addModifyListener(
-                (e) => {
-                    integrationSettingsDialog.loggerSettings.apiUrl = apiUrlText.getText();
-                    updateWebPortAndButtonState();
-                }
-            );
-            
+            apiUrlText.addModifyListener((e) => {
+                integrationSettingsDialog.loggerSettings.apiUrl = apiUrlText.getText();
+                updateWebPortAndButtonState();
+            });
+
             // Call this function initially to set the correct state
             updateWebPortAndButtonState();
-        
+
             function startLoggerExecutable() {
                 const apiPort = apiUrlText.getText().split(":")[2] || "4000";
                 const webPort = webPortText.getText() || "4001";
                 const isWindows = java.lang.System.getProperty("os.name").toLowerCase().includes("win");
                 const executableName = isWindows ? "jarchi-logger-win.exe" : "jarchi-logger-macos";
-                
+
                 // Construct the path to the jarchi-logger executable
-                const executableFile = new File(new File(__DIR__).getParentFile(), "jarchi-logger" + File.separator + executableName);
+                const executableFile = new File(
+                    new File(__DIR__).getParentFile(),
+                    "jarchi-logger" + File.separator + executableName
+                );
                 const executablePath = executableFile.getAbsolutePath();
                 log.info(executablePath);
                 const command = `"${executablePath}" --api-port ${apiPort} --web-port ${webPort}`;
-                
+
                 const runtime = java.lang.Runtime.getRuntime();
                 try {
                     runtime.exec(command);
@@ -482,17 +499,67 @@ const integrationSettingsDialog = {
             const topPText = new Text(composite, SWT.BORDER);
             topPText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
             topPText.setText(integrationSettingsDialog.anthropicSettings.topP);
-            topPText.addModifyListener(
-                (e) => (integrationSettingsDialog.anthropicSettings.topP = topPText.getText())
-            );
+            topPText.addModifyListener((e) => (integrationSettingsDialog.anthropicSettings.topP = topPText.getText()));
 
             // Top K
             new Label(composite, SWT.NONE).setText("Top K:");
             const topKText = new Text(composite, SWT.BORDER);
             topKText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
             topKText.setText(integrationSettingsDialog.anthropicSettings.topK);
-            topKText.addModifyListener(
-                (e) => (integrationSettingsDialog.anthropicSettings.topK = topKText.getText())
+            topKText.addModifyListener((e) => (integrationSettingsDialog.anthropicSettings.topK = topKText.getText()));
+        },
+
+        createOpenAITab: function (tabFolder) {
+            const openAITab = new TabItem(tabFolder, SWT.NONE);
+            openAITab.setText("OpenAI");
+        
+            const composite = new Composite(tabFolder, SWT.NONE);
+            composite.setLayout(new GridLayout(2, false));
+            openAITab.setControl(composite);
+        
+            // API Key
+            new Label(composite, SWT.NONE).setText("API Key:");
+            const apiKeyText = new Text(composite, SWT.BORDER | SWT.PASSWORD);
+            apiKeyText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            apiKeyText.setText(integrationSettingsDialog.openAISettings.apiKey);
+            apiKeyText.addModifyListener(
+                (e) => (integrationSettingsDialog.openAISettings.apiKey = apiKeyText.getText())
+            );
+        
+            // Model
+            new Label(composite, SWT.NONE).setText("Model:");
+            const modelText = new Text(composite, SWT.BORDER);
+            modelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            modelText.setText(integrationSettingsDialog.openAISettings.model);
+            modelText.addModifyListener(
+                (e) => (integrationSettingsDialog.openAISettings.model = modelText.getText())
+            );
+        
+            // Max Tokens
+            new Label(composite, SWT.NONE).setText("Max Tokens:");
+            const maxTokensText = new Text(composite, SWT.BORDER);
+            maxTokensText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            maxTokensText.setText(integrationSettingsDialog.openAISettings.maxTokens);
+            maxTokensText.addModifyListener(
+                (e) => (integrationSettingsDialog.openAISettings.maxTokens = maxTokensText.getText())
+            );
+        
+            // Temperature
+            new Label(composite, SWT.NONE).setText("Temperature:");
+            const temperatureText = new Text(composite, SWT.BORDER);
+            temperatureText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            temperatureText.setText(integrationSettingsDialog.openAISettings.temperature);
+            temperatureText.addModifyListener(
+                (e) => (integrationSettingsDialog.openAISettings.temperature = temperatureText.getText())
+            );
+        
+            // Top P
+            new Label(composite, SWT.NONE).setText("Top P:");
+            const topPText = new Text(composite, SWT.BORDER);
+            topPText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            topPText.setText(integrationSettingsDialog.openAISettings.topP);
+            topPText.addModifyListener(
+                (e) => (integrationSettingsDialog.openAISettings.topP = topPText.getText())
             );
         },
 

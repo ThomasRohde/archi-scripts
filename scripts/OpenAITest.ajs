@@ -1,0 +1,148 @@
+/**
+ * OpenAIClient API Test
+ * This script tests the core functionality of the OpenAIClient,
+ * including chat completions, tool usage, structured output, and listing models.
+ */
+
+console.clear();
+console.show();
+
+const { OpenAIClient, Message, Tool, GenerateOptions, ROLES } = require("./lib/openaiClient");
+const jarchiLogger = require("./lib/jarchiLogger");
+const log = jarchiLogger.createLogger("OpenAIClientTest", __DIR__);
+
+async function runTests() {
+    log.info("Starting OpenAIClient API Test");
+
+    const client = new OpenAIClient();
+
+    // Test 0: List Available Models
+    log.info("Test 0: List Available Models");
+    try {
+        const models = await client.listModels();
+        log.info("Available Models:", { models: models.map((model) => model.id).join(", ") });
+    } catch (error) {
+        log.error("Error in Test 0:", { error: error.toString() });
+    }
+
+    // Test 1: Basic Chat Completion
+    log.info("Test 1: Basic Chat Completion");
+    try {
+        const response = await client.generateChatCompletion([
+            new Message(ROLES.USER, "What is the capital of France?"),
+        ]);
+        log.info("Response:", response);
+    } catch (error) {
+        log.error("Error in Test 1:", { error: error.toString() });
+    }
+
+    // Test 2: Chat Completion with Tool
+    log.info("Test 2: Chat Completion with Tool");
+    try {
+        const weatherTool = new Tool("function", {
+            name: "get_weather",
+            description: "Get the current weather in a location",
+            parameters: {
+                type: "object",
+                properties: {
+                    location: { type: "string", description: "The city and state, e.g. San Francisco, CA" },
+                    unit: { type: "string", enum: ["celsius", "fahrenheit"] },
+                },
+                required: ["location"],
+            },
+        });
+
+        const response = await client.generateChatCompletion(
+            [new Message(ROLES.USER, "What's the weather like in Paris today?")],
+            [weatherTool],
+            { temperature: 0 }
+        );
+
+        log.info("Response:", response);
+    } catch (error) {
+        log.error("Error in Test 2:", { error: error.toString() });
+    }
+
+    // Test 3: Structured Output
+    log.info("Test 3: Structured Output");
+    try {
+        const schema = {
+            description: "A profile of a person",
+            name: "profile",
+            strict: false,
+            schema: {
+                type: "object",
+                properties: {
+                    profile: {
+                        type: "object",
+                        properties: {
+                            name: { type: "string" },
+                            age: { type: "number" },
+                            isStudent: { type: "boolean" },
+                            hobbies: {
+                                type: "array",
+                                items: { type: "string" },
+                            },
+                            address: {
+                                type: "object",
+                                properties: {
+                                    street: { type: "string" },
+                                    city: { type: "string" },
+                                    country: { type: "string" },
+                                },
+                                required: ["street", "city", "country"],
+                                additionalProperties: false,
+                            },
+                            favoriteColor: {
+                                type: "string",
+                                enum: ["red", "green", "blue", "yellow"],
+                            },
+                            education: {
+                                anyOf: [
+                                    {
+                                        type: "object",
+                                        properties: {
+                                            level: { type: "string", enum: ["highschool", "college"] },
+                                            schoolName: { type: "string" },
+                                        },
+                                        required: ["level", "schoolName"],
+                                        additionalProperties: false,
+                                    },
+                                    {
+                                        type: "string",
+                                        enum: ["none"],
+                                    },
+                                ],
+                            },
+                        },
+                        required: ["name", "age", "isStudent", "hobbies", "address", "favoriteColor", "education"],
+                        additionalProperties: false,
+                    },
+                },
+                required: ["profile"],
+                additionalProperties: false,
+            },
+        };
+
+        const response = await client.generateChatCompletion(
+            [
+                new Message(ROLES.SYSTEM, "You are a helpful assistant that generates user profiles."),
+                new Message(ROLES.USER, "Generate a profile for a random person."),
+            ],
+            [],
+            {
+                response_format: { type: "json_schema", json_schema: schema },
+            }
+        );
+
+        log.info("Structured Output:", JSON.stringify(response.parsed, null, 2));
+    } catch (error) {
+        log.error("Error in Test 3:", { error: error.toString() });
+    }
+
+    log.info("OpenAIClient API Test Completed");
+}
+
+runTests().catch((error) => {
+    log.error("Unexpected error during test execution:", error.toString());
+});
