@@ -58,14 +58,7 @@ const apiClient = {
                     requestBody = this.createRequestBody(config);
                     contentType = config.headers['Content-Type'] || 'application/json';
                 }
-    
-                // Log the payload here
-                if (config.debug) {
-                    log.debug('API Request Payload', {
-                        payload: config.data
-                    });
-                }
-    
+       
                 let requestBuilder = HttpRequest.newBuilder()
                     .uri(URI.create(fullUrl))
                     .method(config.method.toUpperCase(), requestBody);
@@ -83,6 +76,7 @@ const apiClient = {
                         url: fullUrl,
                         method: config.method.toUpperCase(),
                         headers: this.parseHeaders(requestBuilder.build().headers()),
+                        data: config.data
                     });
                 }
 
@@ -122,12 +116,7 @@ const apiClient = {
     createRequestBody: function(config) {
         if (config.data) {
             const payload = typeof config.data === 'string' ? config.data : JSON.stringify(config.data);
-            
-            // Log the payload here
-            if (config.debug) {
-                log.debug('Request Body', { payload: payload });
-            }
-            
+                       
             return BodyPublishers.ofString(payload);
         }
         return BodyPublishers.noBody();

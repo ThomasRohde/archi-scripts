@@ -132,21 +132,7 @@ class OpenAIClient {
         }
         return {
             content: choice.message.content,
-            parsed: choice.message.parsed,  // For structured outputs
             usage: response.usage
-        };
-    }
-
-    createStructuredOutputSchema(schema, name) {
-        return {
-            type: "json_schema",
-            json_schema: {
-                name: name,
-                type: "object",
-                properties: schema,
-                required: Object.keys(schema),
-                additionalProperties: false
-            }
         };
     }
 }
