@@ -26,8 +26,31 @@ const ROLES = Object.freeze({
     SYSTEM: 'system',
     USER: 'user',
     ASSISTANT: 'assistant',
-    FUNCTION: 'function'
+    TOOL: 'tool'
 });
+
+const PRICING = {
+    'gpt-4o': {
+        input: 5 / 1000000,  // $5 per million tokens
+        output: 15 / 1000000 // $15 per million tokens
+    },
+    'gpt-4o-2024-08-06': {
+        input: 2.5 / 1000000,  // $2.50 per million tokens
+        output: 10 / 1000000   // $10 per million tokens
+    },
+    'gpt-4o-2024-05-13': {
+        input: 5 / 1000000,  // $5 per million tokens
+        output: 15 / 1000000 // $15 per million tokens
+    },
+    'gpt-4o-mini': {
+        input: 0.15 / 1000000,  // $0.15 per million tokens
+        output: 0.6 / 1000000   // $0.60 per million tokens
+    },
+    'gpt-4o-mini-2024-07-18': {
+        input: 0.15 / 1000000,  // $0.15 per million tokens
+        output: 0.6 / 1000000   // $0.60 per million tokens
+    }
+};
 
 class Message {
     constructor(role, content) {
@@ -102,13 +125,32 @@ class OpenAIClient {
     
             const response = await this.api.post('/chat/completions', requestBody);
             log.debug('Chat completion generated successfully');
-            return this.normalizeResponse(response.data);
+    
+            // Calculate and log the cost
+            if (response.data.usage && PRICING[generateOptions.model]) {
+                const inputTokens = response.data.usage.prompt_tokens;
+                const outputTokens = response.data.usage.completion_tokens;
+                const pricing = PRICING[generateOptions.model];
+                const cost = inputTokens * pricing.input + outputTokens * pricing.output;
+                log.info('API call cost', {
+                    model: generateOptions.model,
+                    inputTokens,
+                    outputTokens,
+                    costUSD: cost.toFixed(4)
+                });
+            } else {
+                log.info('Cost calculation not available for this model', {
+                    model: generateOptions.model
+                });
+            }
+    
+            return response.data;
         } catch (error) {
             log.error('Error generating chat completion', { error: error.toString() });
             throw error;
         }
     }
-
+    
     async listModels() {
         try {
             log.info('Fetching available models');
@@ -119,21 +161,6 @@ class OpenAIClient {
             log.error('Error fetching models', { error: error.toString() });
             throw error;
         }
-    }
-
-    normalizeResponse(response) {
-        const choice = response.choices[0];
-        if (choice.message.refusal) {
-            return {
-                content: null,
-                refusal: choice.message.refusal,
-                usage: response.usage
-            };
-        }
-        return {
-            content: choice.message.content,
-            usage: response.usage
-        };
     }
 }
 

@@ -134,7 +134,7 @@ async function runTests() {
                 response_format: { type: "json_schema", json_schema: schema },
             }
         );
-        log.info("Structured Output:", JSON.parse(response.content));
+        log.info("Structured Output:", JSON.parse(response.choices[0].message.content));
     } catch (error) {
         log.error("Error in Test 3:", { error: error.toString() });
     }

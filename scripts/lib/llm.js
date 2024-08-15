@@ -8,6 +8,7 @@
 
 const { AnthropicClient, Message: AnthropicMessage, GenerateOptions: AnthropicGenerateOptions, ROLES } = require('./anthropicClient');
 const { OllamaClient, Message: OllamaMessage, GenerateOptions: OllamaGenerateOptions } = require('./ollamaClient');
+const { OpenAIClient, Message: OpenAIMessage, GenerateOptions: OpenAIGenerateOptions } = require('./openaiClient');
 
 // Initialize logger
 const jarchiLogger = require('./jarchiLogger');
@@ -40,6 +41,8 @@ class LLMClient {
             this.client = new AnthropicClient();
         } else if (provider === 'ollama') {
             this.client = new OllamaClient();
+        } else if (provider === 'openai') {
+            this.client = new OpenAIClient();
         } else {
             throw new Error(`Unsupported LLM provider: ${provider}`);
         }
@@ -94,7 +97,27 @@ class LLMClient {
                 log.error(`Error generating chat completion with Ollama`, { error: error.toString() });
                 throw error;
             }
+        } else if (this.provider === 'openai') {
+            providerMessages = messageArray.map(msg => new OpenAIMessage(msg.role, msg.content));
+            providerOptions = new OpenAIGenerateOptions({
+                maxTokens: generateOptions.maxTokens,
+                temperature: generateOptions.temperature,
+                topP: generateOptions.topP,
+                stop: generateOptions.stop,
+                stream: generateOptions.stream
+            });
+    
+            try {
+                log.info(`Generating chat completion using OpenAI`, { model: generateOptions.model, messagesCount: messageArray.length });
+                const response = await this.client.generateChatCompletion(providerMessages, [], providerOptions);
+                log.debug("OpenAI chat completion generated successfully");
+                return this.normalizeResponse(response);
+            } catch (error) {
+                log.error(`Error generating chat completion with OpenAI`, { error: error.toString() });
+                throw error;
+            }
         }
+        
     }
 
     normalizeResponse(response) {
@@ -111,6 +134,11 @@ class LLMClient {
                     completion_tokens: response.eval_count,
                     total_tokens: response.prompt_eval_count + response.eval_count
                 }
+            };
+        } else if (this.provider === 'openai') {
+            return {
+                content: response.choices[0].message.content,
+                usage: response.usage
             };
         }
     }

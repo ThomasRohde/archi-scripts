@@ -1,0 +1,61 @@
+/**
+ * LLM Providers Test
+ * This script tests the functionality of the LLMClient with Anthropic, Ollama, and OpenAI providers.
+ */
+
+console.clear();
+console.show();
+
+const { LLMClient, LLMMessage, LLMGenerateOptions, ROLES } = require("./lib/llm");
+const jarchiLogger = require("./lib/jarchiLogger");
+const log = jarchiLogger.createLogger("LLMProvidersTest", __DIR__);
+
+async function runTests() {
+    log.info("Starting LLM Providers Test");
+
+    const providers = ['anthropic', 'ollama', 'openai'];
+    const testPrompt = "What is the capital of France?";
+
+    for (const provider of providers) {
+        log.info(`Testing ${provider} provider`);
+        const client = new LLMClient(provider);
+
+        try {
+            const options = new LLMGenerateOptions({
+                model: getModelForProvider(provider),
+                maxTokens: 100,
+                temperature: 0.7
+            });
+
+            const messages = [new LLMMessage(ROLES.USER, testPrompt)];
+
+            const response = await client.generateChatCompletion(messages, options);
+
+            log.info(`${provider} Response:`, {
+                content: response.content,
+                usage: response.usage
+            });
+        } catch (error) {
+            log.error(`Error in ${provider} test:`, { error: error.toString() });
+        }
+    }
+
+    log.info("LLM Providers Test Completed");
+}
+
+function getModelForProvider(provider) {
+    switch (provider) {
+        case 'anthropic':
+            return 'claude-3-haiku-20240307';
+        case 'ollama':
+            return 'llama3.1';
+        case 'openai':
+            return 'gpt-4o-mini';
+        default:
+            return 'default';
+    }
+}
+
+runTests().catch((error) => {
+    log.error("Unexpected error during test execution:", { error: error.toString() });
+});
