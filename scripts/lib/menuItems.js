@@ -427,5 +427,32 @@ const menuItems = [
         script: "Generate Capability Model.ajs",
         category: "AI-Assisted Modeling",
         tutorial: "Generate Capability Model"
+    },
+    {
+        name: "Generate Strategy Model",
+        description: `
+            <h2>Generate Strategy Model</h2>
+            <p>This script generates an ArchiMate strategy model using the OpenAI API, focusing on Motivation and Strategy elements.</p>
+            <h3>Features:</h3>
+            <ul>
+                <li>Creates a new strategy model from scratch or evolves an existing one</li>
+                <li>Uses AI to interpret user requirements and generate appropriate elements and relationships</li>
+                <li>Focuses on Motivation and Strategy layer elements</li>
+                <li>Automatically creates a new view or updates an existing one with the generated model</li>
+                <li>Applies an automatic layout to the generated view for better readability</li>
+            </ul>
+            <h3>Usage:</h3>
+            <ol>
+                <li>Select an existing view, element, or nothing for a new model</li>
+                <li>Run the "Generate Strategy Model" script</li>
+                <li>Enter a description or premise for the strategy</li>
+                <li>Wait for the AI to generate or evolve the model</li>
+                <li>Review and refine the generated model as needed</li>
+            </ol>
+            <p>This script requires a configured OpenAI API key and an active internet connection to function.</p>
+        `,
+        script: "Generate Strategy Model.ajs",
+        category: "AI-Assisted Modeling",
+        tutorial: "Generate Strategy Model"
     }
 ];
