@@ -179,6 +179,36 @@
             align-items: center;
             justify-content: center;
         }
+
+        .stack-trace-item {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            background-color: #ef4444;
+            color: white;
+            font-size: 0.6rem;
+            font-weight: bold;
+            margin-left: 0.25rem;
+            cursor: help;
+        }
+
+        .stack-trace-popover {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            display: none;
+        }
+
+        .stack-trace-popover.show {
+            display: block;
+        }
     </style>
 </head>
 
@@ -225,55 +255,65 @@
         const logTableBody = document.getElementById('logTableBody');
         const filterInputs = document.querySelectorAll('input[id^="filter"]');
         const { DateTime } = luxon;
-
+    
         // Configuration
         const LOG_RETENTION_TIME = 60 * 60 * 1000; // 1 hour in milliseconds
         const CLEANUP_INTERVAL = 5 * 60 * 1000; // Run cleanup every 5 minutes
-
+    
         const LOG_LEVEL_COLORS = {
             DEBUG: 'bg-gray-500',
             INFO: 'bg-green-500',
             WARN: 'bg-yellow-500',
             ERROR: 'bg-red-500'
         };
-
+    
         function formatTimestamp(isoString) {
             if (!isoString) return 'Invalid Date';
             const date = DateTime.fromISO(isoString, { zone: 'UTC' });
             return date.isValid ? date.toLocal().toFormat('yyyy-MM-dd HH:mm:ss') : 'Invalid Date';
         }
-
+    
         function createLogRow(log) {
             if (!log || typeof log !== 'object') {
                 console.error('Invalid log entry:', log);
                 return document.createElement('tr');
             }
-
+    
             const row = document.createElement('tr');
             row.className = 'log-row';
             const formattedTimestamp = log.timestamp ? formatTimestamp(log.timestamp) : 'N/A';
-
-            const scriptLink = log.fileName && log.lineNo 
+    
+            const scriptLink = log.fileName && log.lineNo
                 ? `vscode://file/${log.fileName}:${log.lineNo}:0`
                 : '#';
-
+    
+            let stackTraceHtml = '';
+            if (log.stacktrace && Array.isArray(log.stacktrace)) {
+                stackTraceHtml = log.stacktrace.map((item, index) => `
+                    <span class="stack-trace-item" data-index="${index}">${index + 1}</span>
+                `).join('');
+            }
+    
             row.innerHTML = `
-        <td class="px-4 py-2 text-gray-500" data-timestamp="${log.timestamp || ''}">${formattedTimestamp}</td>
-        <td class="px-4 py-2">
-            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full text-white ${LOG_LEVEL_COLORS[log.level] || 'bg-gray-500'}">
-                ${log.level || 'UNKNOWN'}
-            </span>
-        </td>
-        <td class="px-4 py-2"><a href="${scriptLink}" target="_blank" class="text-blue-500 hover:underline">${log.script || 'N/A'}</a></td>
-        <td>
-            <div class="log-summary flex items-center ${log.additionalData ? 'cursor-pointer' : ''}">
-                ${log.additionalData ? '<svg class="expand-icon w-4 h-4 mr-2 text-gray-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>' : ''}
-                <span>${log.message || 'No message'}</span>
-            </div>
-            ${log.additionalData ? '<div class="log-details hidden"></div>' : ''}
-        </td>
-    `;
-
+                <td class="px-4 py-2 text-gray-500" data-timestamp="${log.timestamp || ''}">${formattedTimestamp}</td>
+                <td class="px-4 py-2">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full text-white ${LOG_LEVEL_COLORS[log.level] || 'bg-gray-500'}">
+                        ${log.level || 'UNKNOWN'}
+                    </span>
+                </td>
+                <td class="px-4 py-2">
+                    <a href="${scriptLink}" target="_blank" class="text-blue-500 hover:underline">${log.script || 'N/A'}</a>
+                    ${stackTraceHtml}
+                </td>
+                <td>
+                    <div class="log-summary flex items-center ${log.additionalData ? 'cursor-pointer' : ''}">
+                        ${log.additionalData ? '<svg class="expand-icon w-4 h-4 mr-2 text-gray-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>' : ''}
+                        <span>${log.message || 'No message'}</span>
+                    </div>
+                    ${log.additionalData ? '<div class="log-details hidden"></div>' : ''}
+                </td>
+            `;
+    
             if (log.additionalData) {
                 const formatter = new JSONFormatter(log.additionalData, 1, {
                     hoverPreviewEnabled: true,
@@ -283,14 +323,45 @@
                     animateOpen: true,
                     animateClose: true
                 });
-
+    
                 row.querySelector('.log-details').appendChild(formatter.render());
                 row.querySelector('.log-summary').addEventListener('click', () => toggleDetails(row));
             }
-
+    
+            if (log.stacktrace && Array.isArray(log.stacktrace)) {
+                const stackTraceItems = row.querySelectorAll('.stack-trace-item');
+                stackTraceItems.forEach((item, index) => {
+                    const stackInfo = log.stacktrace[index];
+                    item.addEventListener('mouseover', (e) => showStackTracePopover(e, stackInfo));
+                    item.addEventListener('mouseout', hideStackTracePopover);
+                });
+            }
+    
             return row;
         }
-
+    
+        function showStackTracePopover(event, stackInfo) {
+            const popover = document.createElement('div');
+            popover.className = 'stack-trace-popover show';
+            popover.innerHTML = `
+                <div class="font-bold">${stackInfo.function || 'Anonymous Function'}</div>
+                <div>${stackInfo.fileName}:${stackInfo.lineNo}</div>
+            `;
+    
+            const rect = event.target.getBoundingClientRect();
+            popover.style.left = `${rect.left}px`;
+            popover.style.top = `${rect.bottom + 5}px`;
+    
+            document.body.appendChild(popover);
+        }
+    
+        function hideStackTracePopover() {
+            const popover = document.querySelector('.stack-trace-popover');
+            if (popover) {
+                popover.remove();
+            }
+        }
+    
         function toggleDetails(row) {
             const details = row.querySelector('.log-details');
             const expandIcon = row.querySelector('.expand-icon');
@@ -303,11 +374,11 @@
                 }
             }
         }
-
+    
         filterInputs.forEach(input => {
             input.addEventListener('input', applyFilters);
         });
-
+    
         function addLogEntry(log, prepend = true) {
             if (log && typeof log === 'object') {
                 const newRow = createLogRow(log);
@@ -320,7 +391,7 @@
                 console.error('Received invalid log entry:', log);
             }
         }
-
+    
         function sortLogs() {
             const rows = Array.from(logTableBody.querySelectorAll('tr'));
             rows.sort((a, b) => {
@@ -330,7 +401,7 @@
             });
             rows.forEach(row => logTableBody.appendChild(row));
         }
-
+    
         function applyFilters() {
             const filters = {
                 timestamp: document.getElementById('filterTimestamp').value.toLowerCase(),
@@ -338,7 +409,7 @@
                 script: document.getElementById('filterScript').value.toLowerCase(),
                 message: document.getElementById('filterMessage').value.toLowerCase()
             };
-
+    
             const rows = logTableBody.querySelectorAll('tr');
             rows.forEach(row => {
                 const cells = row.querySelectorAll('td');
@@ -351,7 +422,7 @@
                 row.style.display = shouldShow ? '' : 'none';
             });
         }
-
+    
         function cleanupOldLogs() {
             const currentTime = new Date().getTime();
             const rows = logTableBody.querySelectorAll('tr');
@@ -365,22 +436,22 @@
                 }
             });
         }
-
+    
         // Run cleanup periodically
         setInterval(cleanupOldLogs, CLEANUP_INTERVAL);
-
+    
         socket.on('connect', () => {
             console.log('Connected to server');
         });
-
+    
         socket.on('disconnect', () => {
             console.log('Disconnected from server');
         });
-
+    
         socket.on('connect_error', (error) => {
             console.error('Connection error:', error);
         });
-
+    
         document.getElementById('clearLogsBtn').addEventListener('click', function () {
             if (confirm('Are you sure you want to clear all logs?')) {
                 fetch('/clear-logs', {
@@ -401,7 +472,7 @@
                     .catch(error => console.error('Error:', error));
             }
         });
-
+    
         function clearLogDisplay() {
             logTableBody.innerHTML = '';
             filterInputs.forEach(input => {
@@ -410,24 +481,24 @@
             applyFilters();
             console.log('Log display cleared');
         }
-
+    
         socket.on('logsCleared', function () {
             clearLogDisplay();
             console.log('Received logsCleared event');
         });
-
+    
         socket.on('initialLogs', function (initialLogs) {
             logTableBody.innerHTML = '';
             initialLogs.forEach(log => addLogEntry(log, false));
             sortLogs();
             applyFilters();
         });
-
+    
         socket.on('newLog', (logEntry) => {
             addLogEntry(logEntry);
             applyFilters();
         });
-
+    
     </script>
 </body>
 

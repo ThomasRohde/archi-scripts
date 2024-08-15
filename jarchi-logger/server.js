@@ -55,10 +55,11 @@ let consoleContent = [];
  * @param {string} logData.timestamp - The timestamp of the log entry.
  * @param {string} logData.fileName - The name of the file where the log was generated.
  * @param {number} logData.lineNo - The line number where the log was generated.
+ * @param {Array<Object>} logData.stacktrace - The stacktrace of the log entry.
  * @returns {Object} The processed log entry.
  */
 function processLogEntry(logData) {
-    const { level, script, message, timestamp, fileName, lineNo, ...additionalData } = logData;
+    const { level, script, message, timestamp, fileName, lineNo, stacktrace, ...additionalData } = logData;
     
     const logEntry = { 
         level, 
@@ -67,6 +68,7 @@ function processLogEntry(logData) {
         timestamp,
         fileName,
         lineNo,
+        stacktrace,
         additionalData: Object.keys(additionalData).length > 0 ? additionalData : null 
     };
 

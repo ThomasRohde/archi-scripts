@@ -51,18 +51,21 @@ const jarchiLogger = {
         return LOG_LEVELS[levelString] || LOG_LEVELS.INFO;
     },
 
-    getStackInfo: function() {
-        const stack = new Error().stack;
-        const stackLines = stack.split('\n');
-        const callerLine = stackLines[4]; // Index 4 should be the caller of the log function
-        const match = callerLine.match(/at .+ \((.+):(\d+)\)/);
-        if (match) {
-            return {
-                fileName: match[1],
-                lineNo: parseInt(match[2]),
-            };
-        }
-        return null;
+    getStackTrace: function() {
+        const stackTrace = new Error().stack;
+        const stackLines = stackTrace.split('\n').slice(4); // Skip the first 2 lines (Error and getStackTrace)
+        return stackLines.map(line => {
+            const match = line.match(/\s*at\s+(?:(\S+)\s+)?(?:\()?(\S+):(\d+)(?::(\d+))?\)?/);
+            if (match) {
+                return {
+                    function: match[1] || '<anonymous>',
+                    fileName: match[2],
+                    lineNo: parseInt(match[3]),
+                    columnNo: match[4] ? parseInt(match[4]) : 0
+                };
+            }
+            return null;
+        }).filter(item => item !== null && item.fileName !== "<eval>" && item.function !== "<program>");
     },
 
     log: function(level, message, script, additionalData = {}, basePath = '') {
@@ -72,15 +75,18 @@ const jarchiLogger = {
             return;
         }
 
-        const stackInfo = this.getStackInfo();
+        const stackTrace = this.getStackTrace();
+
         const logData = {
             level: level,
             script: script,
             message: message,
             timestamp: new Date().toISOString(),
-            fileName: stackInfo ? (basePath + stackInfo.fileName) : 'unknown',
-            lineNo: stackInfo ? stackInfo.lineNo : 0,
-            columnNo: stackInfo ? stackInfo.columnNo : 0,
+            fileName: stackTrace[0] ? (basePath + stackTrace[0].fileName) : 'unknown',
+            lineNo: stackTrace[0] ? stackTrace[0].lineNo : 0,
+            columnNo: stackTrace[0] ? stackTrace[0].columnNo : 0,
+            function: stackTrace[0] ? stackTrace[0].function : 'unknown',
+            stacktrace: stackTrace,
             ...additionalData
         };
 
@@ -94,7 +100,7 @@ const jarchiLogger = {
     },
 
     logToConsole: function(logData) {
-        const logMessage = `[${logData.timestamp}] ${logData.level} - ${logData.script} - ${logData.message} (${logData.fileName}:${logData.lineNo}:${logData.columnNo})`;
+        const logMessage = `[${logData.timestamp}] ${logData.level} - ${logData.script} - ${logData.message} (${logData.function} in ${logData.fileName}:${logData.lineNo})`;
         const color = LOG_COLORS[logData.level] || [0, 0, 0];
         
         console.setTextColor(color[0], color[1], color[2]);
@@ -109,10 +115,17 @@ const jarchiLogger = {
         delete additionalData.fileName;
         delete additionalData.lineNo;
         delete additionalData.columnNo;
+        delete additionalData.function;
+        delete additionalData.stacktrace;
     
         if (Object.keys(additionalData).length > 0) {
             console.log('Additional data:', JSON.stringify(additionalData, null, 2));
         }
+
+        console.log('Stack trace:');
+        logData.stacktrace.forEach((item, index) => {
+            console.log(`  ${index + 1}. ${item.function} (${item.fileName}:${item.lineNo})`);
+        });
     },
 
     sendLogToServer: function(logData) {

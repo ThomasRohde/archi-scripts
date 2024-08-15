@@ -69,7 +69,7 @@ async function runTests() {
         const schema = {
             description: "A profile of a person",
             name: "profile",
-            strict: false,
+            strict: true,
             schema: {
                 type: "object",
                 properties: {
