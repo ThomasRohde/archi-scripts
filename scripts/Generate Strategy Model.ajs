@@ -1,0 +1,194 @@
+/**
+ * @name Generate Strategy Model
+ * @description This script generates an ArchiMate strategy model using the OpenAI API, focusing on Motivation and Strategy elements.
+ * @version 1.1
+ * @author [Your Name]
+ * @lastModifiedDate [Current Date]
+ */
+
+console.clear();
+console.show();
+
+const { OpenAIClient, Message, GenerateOptions, ROLES } = require("./lib/openaiClient");
+const layoutDagre = require("./lib/layoutDagre");
+const modelManipulation = require("./lib/modelManipulation");
+
+// Initialize logger
+const jarchiLogger = require("./lib/jarchiLogger");
+const log = jarchiLogger.createLogger("GenerateStrategyModel", __DIR__);
+
+// Initialize OpenAI client
+const openaiClient = new OpenAIClient();
+
+// Constants
+const ALLOWED_ELEMENT_TYPES = [
+    "stakeholder",
+    "driver",
+    "assessment",
+    "goal",
+    "outcome",
+    "principle",
+    "requirement",
+    "constraint",
+    "meaning",
+    "value",
+    "resource",
+    "capability",
+    "course-of-action",
+    "value-stream",
+];
+
+const ALLOWED_RELATIONSHIP_TYPES = [
+    "composition-relationship",
+    "aggregation-relationship",
+    "assignment-relationship",
+    "realization-relationship",
+    "serving-relationship",
+    "access-relationship",
+    "influence-relationship",
+    "triggering-relationship",
+    "flow-relationship",
+    "specialization-relationship",
+    "association-relationship",
+];
+
+const MODEL = "gpt-4o-mini";
+const MAX_TOKENS = 4000;
+const TEMPERATURE = 0.7;
+
+// JSON Schema for structured output
+const strategyModelSchema = {
+    description: "A data structure for an ArchiMate model",
+    name: "model",
+    strict: true,
+    schema: {
+        type: "object",
+        properties: {
+            nodes: {
+                type: "array",
+                items: {
+                    type: "object",
+                    properties: {
+                        id: { type: "string" },
+                        type: { type: "string", enum: ALLOWED_ELEMENT_TYPES },
+                        name: { type: "string" },
+                        description: { type: "string" },
+                    },
+                    required: ["id", "type", "name", "description"],
+                    additionalProperties: false,
+                },
+            },
+            relationships: {
+                type: "array",
+                items: {
+                    type: "object",
+                    properties: {
+                        id: { type: "string" },
+                        type: { type: "string", enum: ALLOWED_RELATIONSHIP_TYPES },
+                        name: { type: "string" },
+                        source: { type: "string" },
+                        target: { type: "string" },
+                    },
+                    required: ["id", "type", "name", "source", "target"],
+                    additionalProperties: false,
+                },
+            },
+        },
+        required: ["nodes", "relationships"],
+        additionalProperties: false
+    },
+};
+
+// Helper functions
+function getUserInput(prompt) {
+    return window.prompt(prompt);
+}
+
+function getSelectedElement() {
+    const selectedElements = $(selection);
+    if (selectedElements.size() === 1) {
+        return selectedElements.first();
+    }
+    return null;
+}
+
+async function generateStrategyModel(userInput, existingElement = null, existingModel = null) {
+    const prompt = `Generate an ArchiMate strategy model based on the following input:
+
+    ${
+        existingElement
+            ? `Evolve the strategy from the perspective of: ${existingElement.name} (${existingElement.type})
+               IMPORTANT: At least one new element must have a relationship with ${existingElement.name} to ensure the model stays connected.
+    
+               Current model:
+               ${JSON.stringify(existingModel, null, 2)}
+    
+               Evolve this model by adding new elements and relationships. Ensure you include all existing elements and relationships in your response, along with any new ones.`
+            : "Create a new strategy model for:"
+    }
+    
+    User input: ${userInput}
+    
+    Use only the following ArchiMate element types:
+    ${ALLOWED_ELEMENT_TYPES.join(", ")}
+    
+    And the following relationship types:
+    ${ALLOWED_RELATIONSHIP_TYPES.join(", ")}
+    
+    Provide the model as a JSON structure with 'nodes' and 'relationships' arrays, following the specified schema.
+    Ensure that all relationships use valid source and target IDs from the nodes array.
+    When evolving the model, make sure to create at least one relationship between a new element and the selected element.`;
+
+    const messages = [new Message(ROLES.USER, prompt)];
+
+    const options = new GenerateOptions({
+        model: MODEL,
+        max_tokens: MAX_TOKENS,
+        temperature: TEMPERATURE,
+        response_format: { type: "json_schema", json_schema: strategyModelSchema },
+    });
+
+    try {
+        const response = await openaiClient.generateChatCompletion(messages, [], options);
+        return JSON.parse(response.choices[0].message.content);
+    } catch (error) {
+        log.error("Error generating strategy model", { error: error.toString() });
+        throw error;
+    }
+}
+
+// Main execution
+(async function () {
+    try {
+        const selectedElement = getSelectedElement();
+        let view, userInput, existingModel;
+
+        if (selectedElement && selectedElement.type === "archimate-diagram-model") {
+            view = selectedElement;
+            userInput = getUserInput("Enter a premise to generate a strategy for:");
+            existingModel = modelManipulation.createModelJson();
+        } else if (selectedElement) {
+            view = selectedElement.view;
+            userInput = getUserInput(`How should the strategy evolve from the perspective of ${selectedElement.name}?`);
+            existingModel = modelManipulation.createModelJson();
+        } else {
+            view = model.createArchimateView("Generated Strategy Model");
+            userInput = getUserInput("Enter a strategy premise to generate:");
+            existingModel = null;
+        }
+
+        if (userInput) {
+            log.info("Generating strategy model");
+            const modelJson = await generateStrategyModel(userInput, selectedElement, existingModel);
+            log.info("Updating ArchiMate model");
+            modelManipulation.updateView(view, modelJson);
+            log.info("Applying Dagre layout");
+            layoutDagre(view);
+            log.info("Strategy model generation and layout complete");
+        } else {
+            log.warn("User cancelled or provided no input");
+        }
+    } catch (error) {
+        log.error("Error in main execution", { error: error.toString() });
+    }
+})();
