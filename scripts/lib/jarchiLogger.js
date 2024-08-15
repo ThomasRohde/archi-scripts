@@ -51,6 +51,20 @@ const jarchiLogger = {
         return LOG_LEVELS[levelString] || LOG_LEVELS.INFO;
     },
 
+    getStackInfo: function() {
+        const stack = new Error().stack;
+        const stackLines = stack.split('\n');
+        const callerLine = stackLines[4]; // Index 4 should be the caller of the log function
+        const match = callerLine.match(/at .+ \((.+):(\d+)\)/);
+        if (match) {
+            return {
+                fileName: match[1],
+                lineNo: parseInt(match[2]),
+            };
+        }
+        return null;
+    },
+
     getStackTrace: function() {
         const stackTrace = new Error().stack;
         const stackLines = stackTrace.split('\n').slice(4); // Skip the first 2 lines (Error and getStackTrace)
@@ -76,16 +90,15 @@ const jarchiLogger = {
         }
 
         const stackTrace = this.getStackTrace();
-
+        const stackInfo = this.getStackInfo();
         const logData = {
             level: level,
             script: script,
             message: message,
             timestamp: new Date().toISOString(),
-            fileName: stackTrace[0] ? (basePath + stackTrace[0].fileName) : 'unknown',
-            lineNo: stackTrace[0] ? stackTrace[0].lineNo : 0,
-            columnNo: stackTrace[0] ? stackTrace[0].columnNo : 0,
-            function: stackTrace[0] ? stackTrace[0].function : 'unknown',
+            fileName: stackInfo ? (basePath + stackInfo.fileName) : 'unknown',
+            lineNo: stackInfo ? stackInfo.lineNo : 0,
+            columnNo: stackInfo ? stackInfo.columnNo : 0,
             stacktrace: stackTrace,
             ...additionalData
         };
