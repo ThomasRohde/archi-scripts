@@ -12,6 +12,7 @@ console.show();
 const { OpenAIClient, Message, GenerateOptions, ROLES } = require("./lib/openaiClient");
 const layoutDagre = require("./lib/layoutDagre");
 const modelManipulation = require("./lib/modelManipulation");
+const getUserPrompt = require('./lib/getUserPrompt');
 
 // Initialize logger
 const jarchiLogger = require("./lib/jarchiLogger");
@@ -137,7 +138,70 @@ async function generateStrategyModel(userInput, existingElement = null, existing
     
     Provide the model as a JSON structure with 'nodes' and 'relationships' arrays, following the specified schema.
     Ensure that all relationships use valid source and target IDs from the nodes array.
-    When evolving the model, make sure to create at least one relationship between a new element and the selected element.`;
+    When evolving the model, make sure to create at least one relationship between a new element and the selected element.
+    
+    <strategy_modeling_guide>
+    ### Comprehensive Reference Guide for Strategy Modeling with ArchiMate
+
+    #### ArchiMate Strategy Elements
+
+    1. **Stakeholder**: Represents individuals, teams, or organizations with a vested interest in the architecture's outcomes. Use this element to identify key actors who influence or are impacted by the strategy.
+    
+    2. **Driver**: Denotes internal or external conditions that motivate the organization to set its strategic goals. Use this element to capture the high-level forces driving the strategy.
+
+    3. **Assessment**: Represents the outcome of an analysis regarding the organization's state in relation to specific drivers. Use this element to articulate the organization’s understanding of its strategic environment.
+
+    4. **Goal**: Defines the desired end state the stakeholder aims to achieve. Use this element to articulate the strategic objectives.
+
+    5. **Outcome**: Represents the end result achieved through the strategy. Use this element to capture the tangible results of the strategy.
+
+    6. **Principle**: A qualitative statement that guides the architecture's development. Use this element to set forth the key tenets or guiding principles underlying the strategy.
+
+    7. **Requirement**: Describes a necessary condition that the architecture must fulfill. Use this element to specify what the strategy must accomplish.
+
+    8. **Constraint**: Identifies limitations or boundaries within which the strategy must operate. Use this element to define the restrictions affecting the strategy.
+
+    9. **Meaning**: Encapsulates the knowledge, expertise, or interpretation assigned to a concept within a specific context. Use this element to elaborate on the rationale behind strategic decisions.
+
+    10. **Value**: Represents the relative importance or benefit associated with an element. Use this element to describe the business benefits the strategy aims to realize.
+
+    #### ArchiMate Strategy Relationships
+
+    1. **Influence Relationship**: Models the effect one element has on the implementation or achievement of another. Use this to demonstrate how drivers, goals, requirements, and other strategic elements influence one another.
+
+    2. **Realization Relationship**: Models the role of an entity in creating, achieving, sustaining, or operating a more abstract entity. Use this relationship to link courses of action and capabilities to the goals and outcomes they support.
+
+    3. **Aggregation Relationship**: Indicates that an element comprises one or more other concepts. Use this to show how some motivational elements, such as goals, are composed of others.
+
+    4. **Specialization Relationship**: Indicates that an element is a specific kind or subtype of another element. Use this relationship to define categories or types of drivers, goals, etc.
+
+    5. **Association Relationship**: Represents a connection between elements that is not captured by other relationship types. Use this for general associations between motivation elements.
+
+    #### ArchiMate Capability Elements
+
+    1. **Resource**: An asset that is owned or controlled by an individual or organization. Use this element to identify key assets necessary for executing the strategy.
+
+    2. **Capability**: The ability that an organizational entity, such as a person, system, or organization, possesses. Use this element to define the core abilities required to achieve strategic goals.
+
+    3. **Course of Action**: A strategic approach or plan for configuring the organization's capabilities and resources to achieve a goal. Use this element to map out strategic initiatives and action plans.
+
+    4. **Value Stream**: A sequence of activities that delivers a valuable result to a customer, stakeholder, or end user. Use this element to define the end-to-end processes that the strategy enables.
+
+    #### Strategy Modeling Best Practices
+
+    1. **Begin with Key Drivers and Stakeholders**: Start by identifying the external and internal factors motivating the strategy, along with the stakeholders involved. Capture the reasons behind the strategy's evolution.
+
+    2. **Set Clear and Measurable Goals**: Define specific, measurable goals and desired outcomes. Use the goal and outcome elements to make the strategy's objectives explicit and quantifiable.
+
+    3. **Identify Required Capabilities and Resources**: Determine the capabilities and resources essential to achieving the goals. Use resource and capability elements to specify the necessary organizational abilities and assets.
+
+    4. **Map Strategic Initiatives**: Outline the courses of action needed to develop the required capabilities. Use course-of-action elements to detail the strategic initiatives, investments, and projects necessary for execution.
+
+    5. **Illustrate Strategy Logic with Relationships**: Use influence, realization, and other relationships to capture the interdependencies between strategic elements. This creates a coherent strategy map from drivers to outcomes.
+
+    6. **Maintain a High-Level Focus**: Keep the strategy model focused on motivation and overarching strategic elements. Avoid delving into detailed process, application, or technology aspects, preserving a strategic perspective.
+ </strategy_modeling_guide>
+    `;
 
     const messages = [new Message(ROLES.USER, prompt)];
 
@@ -165,22 +229,22 @@ async function generateStrategyModel(userInput, existingElement = null, existing
 
         if (selectedElement && selectedElement.type === "archimate-diagram-model") {
             view = selectedElement;
-            userInput = getUserInput("Enter a premise to generate a strategy for:");
+            userInput = getUserPrompt("Strategy prompt", "Enter a premise to generate a strategy for");
             existingModel = modelManipulation.createModelJson();
         } else if (selectedElement) {
             view = selectedElement.view;
-            userInput = getUserInput(`How should the strategy evolve from the perspective of ${selectedElement.name}?`);
+            userInput = getUserPrompt("Strategy evolution", `How should the strategy evolve from the perspective of ${selectedElement.name}?`);
             existingModel = modelManipulation.createModelJson();
         } else {
             view = model.createArchimateView("Generated Strategy Model");
-            userInput = getUserInput("Enter a strategy premise to generate:");
+            userInput = getUserPrompt("Strategy prompt", "Enter a premise to generate a strategy for");
             existingModel = null;
         }
 
         if (userInput) {
             log.info("Generating strategy model");
             const modelJson = await generateStrategyModel(userInput, selectedElement, existingModel);
-            log.info("Updating ArchiMate model");
+            log.info("Updating ArchiMate model", modelJson);
             modelManipulation.updateView(view, modelJson);
             log.info("Applying Dagre layout");
             layoutDagre(view);
