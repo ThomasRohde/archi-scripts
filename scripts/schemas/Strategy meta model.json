@@ -1,6 +1,4 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ArchiMate Model Schema",
   "type": "object",
   "properties": {
     "elements": {
@@ -8,31 +6,37 @@
       "items": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "string"
+          },
           "type": {
-            "type": "string",
             "enum": [
-              "Stakeholder",
-              "Driver",
-              "Assessment",
-              "Goal",
-              "Outcome",
-              "Principle",
-              "Requirement",
-              "Constraint",
-              "Course of Action",
-              "Capability",
-              "Resource",
-              "Value Stream",
-              "Value"
+              "stakeholder",
+              "driver",
+              "assessment",
+              "goal",
+              "outcome",
+              "principle",
+              "requirement",
+              "constraint",
+              "course-of-action",
+              "capability",
+              "resource",
+              "value",
+              "value-stream"
             ]
           },
-          "label": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
             "type": "string"
           }
         },
         "required": [
           "type",
-          "label"
+          "name",
+          "description"
         ]
       }
     },
@@ -41,56 +45,106 @@
       "items": {
         "type": "object",
         "properties": {
+          "type": {
+            "type": "string"
+          },
           "source": {
-            "type": "string",
-            "enum": [
-              "Stakeholder",
-              "Driver",
-              "Assessment",
-              "Goal",
-              "Outcome",
-              "Principle",
-              "Requirement",
-              "Constraint",
-              "Course of Action",
-              "Capability",
-              "Resource",
-              "Value Stream",
-              "Value"
-            ]
+            "type": "string"
           },
           "target": {
-            "type": "string",
-            "enum": [
-              "Stakeholder",
-              "Driver",
-              "Assessment",
-              "Goal",
-              "Outcome",
-              "Principle",
-              "Requirement",
-              "Constraint",
-              "Course of Action",
-              "Capability",
-              "Resource",
-              "Value Stream",
-              "Value"
-            ]
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "realization",
-              "association",
-              "assignment",
-              "serving"
-            ]
+            "type": "string"
           }
         },
         "required": [
+          "type",
           "source",
-          "target",
-          "type"
+          "target"
+        ],
+        "anyOf": [
+          {
+            "properties": {
+              "type": {
+                "const": "realization-relationship"
+              },
+              "source": {
+                "enum": [
+                  "goal",
+                  "outcome",
+                  "course-of-action",
+                  "principle",
+                  "requirement",
+                  "constraint"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "goal",
+                  "outcome",
+                  "course-of-action",
+                  "principle",
+                  "requirement",
+                  "constraint"
+                ]
+              }
+            }
+          },
+          {
+            "properties": {
+              "type": {
+                "const": "association-relationship"
+              },
+              "source": {
+                "enum": [
+                  "outcome",
+                  "value",
+                  "goal",
+                  "course-of-action"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "value",
+                  "goal",
+                  "outcome",
+                  "course-of-action"
+                ]
+              }
+            }
+          },
+          {
+            "properties": {
+              "type": {
+                "const": "assignment-relationship"
+              },
+              "source": {
+                "enum": [
+                  "capability"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "resource"
+                ]
+              }
+            }
+          },
+          {
+            "properties": {
+              "type": {
+                "const": "serving-relationship"
+              },
+              "source": {
+                "enum": [
+                  "capability"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "value-stream"
+                ]
+              }
+            }
+          }
         ]
       }
     }
@@ -98,103 +152,5 @@
   "required": [
     "elements",
     "relationships"
-  ],
-  "example": {
-    "elements": [
-      {
-        "type": "Stakeholder",
-        "label": "Stakeholder"
-      },
-      {
-        "type": "Driver",
-        "label": "Driver"
-      },
-      {
-        "type": "Assessment",
-        "label": "Assessment"
-      },
-      {
-        "type": "Goal",
-        "label": "Goal"
-      },
-      {
-        "type": "Outcome",
-        "label": "Outcome"
-      },
-      {
-        "type": "Principle",
-        "label": "Principle"
-      },
-      {
-        "type": "Requirement",
-        "label": "Requirement"
-      },
-      {
-        "type": "Constraint",
-        "label": "Constraint"
-      },
-      {
-        "type": "Course of Action",
-        "label": "Course of Action"
-      },
-      {
-        "type": "Capability",
-        "label": "Capability"
-      },
-      {
-        "type": "Resource",
-        "label": "Resource"
-      },
-      {
-        "type": "Value Stream",
-        "label": "Value Stream"
-      },
-      {
-        "type": "Value",
-        "label": "Value"
-      }
-    ],
-    "relationships": [
-      {
-        "source": "Stakeholder",
-        "target": "Goal",
-        "type": "realization"
-      },
-      {
-        "source": "Driver",
-        "target": "Assessment",
-        "type": "association"
-      },
-      {
-        "source": "Goal",
-        "target": "Outcome",
-        "type": "realization"
-      },
-      {
-        "source": "Outcome",
-        "target": "Value",
-        "type": "association"
-      },
-      {
-        "source": "Value",
-        "target": "Value Stream",
-        "type": "association"
-      },
-      {
-        "source": "Course of Action",
-        "target": "Capability",
-        "type": "realization"
-      },
-      {
-        "source": "Capability",
-        "target": "Resource",
-        "type": "assignment"
-      },
-      {
-        "source": "Course of Action",
-        "target": "Value Stream",
-        "type": "realization"
-      }
-    ]
-  }
+  ]
 }

@@ -47,7 +47,168 @@ function generateMetaModel(base64Image) {
     return new Promise((resolve, reject) => {
         log.debug("Generating meta model from base64 image");
         const prompt = `Analyze this ArchiMate model image and provide a structured output of the allowed elements and relationships. Format the response as a JSON schema that can be used for validating ArchiMate models. 
-        The schema must precisely encode which source and target types are allowed for each allowed relationship type. If the label of an element does not match a valid ArchiMate, use the visual shape and the icon to make a judgement as to which element it is.`;
+        The schema must precisely encode which source and target types are allowed for each allowed relationship type. If the label of an element does not match a valid ArchiMate, use the visual shape and the icon to make a judgement as to which element it is.
+        
+        Remember that in ArchiMate names SPACE is replaced with UNDERSCORE, and are always in small caps. Names of relationships always end with "-relationship".
+        
+        This is an expample JSON Schema meta model:
+
+        {
+        "type": "object",
+        "properties": {
+            "elements": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "type": {
+                    "enum": [
+                    "stakeholder",
+                    "driver",
+                    "assessment",
+                    "goal",
+                    "outcome",
+                    "principle",
+                    "requirement",
+                    "constraint",
+                    "course-of-action",
+                    "capability",
+                    "resource",
+                    "value",
+                    "value-stream"
+                    ]
+                },
+                "name": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                }
+                },
+                "required": [
+                "type",
+                "name",
+                "description"
+                ]
+            }
+            },
+            "relationships": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                "type": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "target": {
+                    "type": "string"
+                }
+                },
+                "required": [
+                "type",
+                "source",
+                "target"
+                ],
+                "anyOf": [
+                {
+                    "properties": {
+                    "type": {
+                        "const": "realization-relationship"
+                    },
+                    "source": {
+                        "enum": [
+                        "goal",
+                        "outcome",
+                        "course-of-action",
+                        "principle",
+                        "requirement",
+                        "constraint"
+                        ]
+                    },
+                    "target": {
+                        "enum": [
+                        "goal",
+                        "outcome",
+                        "course-of-action",
+                        "principle",
+                        "requirement",
+                        "constraint"
+                        ]
+                    }
+                    }
+                },
+                {
+                    "properties": {
+                    "type": {
+                        "const": "association-relationship"
+                    },
+                    "source": {
+                        "enum": [
+                        "outcome",
+                        "value",
+                        "goal",
+                        "course-of-action"
+                        ]
+                    },
+                    "target": {
+                        "enum": [
+                        "value",
+                        "goal",
+                        "outcome",
+                        "course-of-action"
+                        ]
+                    }
+                    }
+                },
+                {
+                    "properties": {
+                    "type": {
+                        "const": "assignment-relationship"
+                    },
+                    "source": {
+                        "enum": [
+                        "capability"
+                        ]
+                    },
+                    "target": {
+                        "enum": [
+                        "resource"
+                        ]
+                    }
+                    }
+                },
+                {
+                    "properties": {
+                    "type": {
+                        "const": "serving-relationship"
+                    },
+                    "source": {
+                        "enum": [
+                        "capability"
+                        ]
+                    },
+                    "target": {
+                        "enum": [
+                        "value-stream"
+                        ]
+                    }
+                    }
+                }
+                ]
+            }
+            }
+        },
+        "required": [
+            "elements",
+            "relationships"
+        ]
+        }`;
 
         const messages = [
             new Message(ROLES.SYSTEM, "You are an AI assistant that analyzes ArchiMate model images and generates meta models."),
