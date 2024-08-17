@@ -1,7 +1,7 @@
 {
   "type": "object",
   "properties": {
-    "elements": {
+    "nodes": {
       "type": "array",
       "items": {
         "type": "object",
@@ -34,10 +34,12 @@
           }
         },
         "required": [
+          "id",
           "type",
           "name",
           "description"
-        ]
+        ],
+        "additionalProperties": false
       }
     },
     "relationships": {
@@ -60,11 +62,13 @@
           "source",
           "target"
         ],
+        "additionalProperties": false,
         "anyOf": [
-          {
+          { "type" : "object",
             "properties": {
               "type": {
-                "const": "realization-relationship"
+                "type" : "string",
+                "enum": ["realization-relationship"]
               },
               "source": {
                 "enum": [
@@ -86,12 +90,16 @@
                   "constraint"
                 ]
               }
-            }
+            },
+            "required": ["type", "source", "target"],
+            "additionalProperties": false
           },
           {
+            "type" : "object",
             "properties": {
               "type": {
-                "const": "association-relationship"
+                "type" : "string",
+                "enum": ["association-relationship"]
               },
               "source": {
                 "enum": [
@@ -109,12 +117,16 @@
                   "course-of-action"
                 ]
               }
-            }
+            },
+            "required": ["type", "source", "target"],
+            "additionalProperties": false
           },
           {
+            "type" : "object",
             "properties": {
               "type": {
-                "const": "assignment-relationship"
+                "type" : "string",
+                "enum": ["assignment-relationship"]
               },
               "source": {
                 "enum": [
@@ -126,12 +138,16 @@
                   "resource"
                 ]
               }
-            }
+            },
+            "required": ["type", "source", "target"],
+            "additionalProperties": false
           },
           {
+            "type" : "object",
             "properties": {
               "type": {
-                "const": "serving-relationship"
+                "type" : "string",
+                "enum": ["serving-relationship"]
               },
               "source": {
                 "enum": [
@@ -143,14 +159,17 @@
                   "value-stream"
                 ]
               }
-            }
+            },
+            "required": ["type", "source", "target"],
+            "additionalProperties": false
           }
         ]
       }
     }
   },
   "required": [
-    "elements",
+    "nodes",
     "relationships"
-  ]
+  ],
+  "additionalProperties": false
 }

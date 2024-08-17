@@ -1,0 +1,224 @@
+/**
+ * @name Generate Model from Meta Model
+ * @description This script generates an ArchiMate model based on a selected meta model JSON file using the OpenAI API.
+ * @version 1.0
+ * @author Claude AI Assistant
+ * @lastModifiedDate 2024-08-18
+ */
+
+console.clear();
+console.show();
+
+const { OpenAIClient, Message, GenerateOptions, ROLES } = require("./lib/openaiClient");
+const layoutDagre = require("./lib/layoutDagre");
+const modelManipulation = require("./lib/modelManipulation");
+const getUserPrompt = require('./lib/getUserPrompt');
+
+// Initialize logger
+const jarchiLogger = require("./lib/jarchiLogger");
+const log = jarchiLogger.createLogger("GenerateModelFromMetaModel", __DIR__);
+
+// Initialize OpenAI client
+const openaiClient = new OpenAIClient();
+
+// Import necessary Java types
+const SWT = Java.type("org.eclipse.swt.SWT");
+const Shell = Java.type("org.eclipse.swt.widgets.Shell");
+const Display = Java.type("org.eclipse.swt.widgets.Display");
+const FileDialog = Java.type("org.eclipse.swt.widgets.FileDialog");
+const File = Java.type("java.io.File");
+const FileReader = Java.type("java.io.FileReader");
+const BufferedReader = Java.type("java.io.BufferedReader");
+const Combo = Java.type("org.eclipse.swt.widgets.Combo");
+const Label = Java.type("org.eclipse.swt.widgets.Label");
+const Text = Java.type("org.eclipse.swt.widgets.Text");
+const Button = Java.type("org.eclipse.swt.widgets.Button");
+const GridData = Java.type("org.eclipse.swt.layout.GridData");
+const GridLayout = Java.type("org.eclipse.swt.layout.GridLayout");
+const MessageDialog = Java.type("org.eclipse.jface.dialogs.MessageDialog");
+
+// Constants
+const MODEL = "gpt-4o-mini";
+const MAX_TOKENS = 4000;
+const TEMPERATURE = 0.7;
+
+// Function to load JSON schema files from the schemas directory
+function loadSchemaFiles() {
+    const schemasDir = new File(__DIR__, "schemas");
+    const allFiles = schemasDir.listFiles();
+    return allFiles
+        .filter(file => file.isFile() && file.getName().toLowerCase().endsWith('.json'))
+        .map(file => file.getName());
+}
+
+// Function to read JSON schema file
+function readSchemaFile(fileName) {
+    const file = new File(new File(__DIR__, "schemas"), fileName);
+    const reader = new BufferedReader(new FileReader(file));
+    let line;
+    let content = "";
+    while ((line = reader.readLine()) !== null) {
+        content += line;
+    }
+    reader.close();
+    return JSON.parse(content);
+}
+
+// JSON Schema for model generation
+let modelSchema = {
+    description: "A data structure for an ArchiMate model",
+    name: "schema",
+    strict: true,
+    schema: {} // This will be populated with the selected schema
+};
+
+// Function to get user input with schema selection
+const getUserInputWithSchemaSelection = (function() {
+    const Dialog = Java.extend(Java.type('org.eclipse.jface.dialogs.Dialog'));
+    const Shell = Java.type('org.eclipse.swt.widgets.Shell');
+    const Text = Java.type('org.eclipse.swt.widgets.Text');
+    const Label = Java.type('org.eclipse.swt.widgets.Label');
+    const Combo = Java.type('org.eclipse.swt.widgets.Combo');
+    const GridData = Java.type('org.eclipse.swt.layout.GridData');
+    const GridLayout = Java.type('org.eclipse.swt.layout.GridLayout');
+    const SWT = Java.type('org.eclipse.swt.SWT');
+    const Point = Java.type('org.eclipse.swt.graphics.Point');
+    const IDialogConstants = Java.type('org.eclipse.jface.dialogs.IDialogConstants');
+
+    function getUserInputWithSchemaSelection() {
+        let result = null;
+        let schemaCombo = null;
+        let inputText = null;
+
+        const dialog = new Dialog(shell, {
+            createDialogArea: function(parent) {
+                const container = Java.super(dialog).createDialogArea(parent);
+                const layout = new GridLayout(2, false);
+                container.setLayout(layout);
+
+                new Label(container, SWT.NONE).setText("Select Meta Model Schema:");
+                schemaCombo = new Combo(container, SWT.READ_ONLY);
+                schemaCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+                const schemaFiles = loadSchemaFiles();
+                schemaCombo.setItems(schemaFiles);
+                schemaCombo.select(0);
+
+                new Label(container, SWT.NONE).setText("Model Description:");
+                inputText = new Text(container, SWT.MULTI | SWT.BORDER | SWT.WRAP | SWT.V_SCROLL);
+                const gd = new GridData(GridData.FILL_BOTH);
+                gd.horizontalSpan = 2;
+                gd.heightHint = 200;
+                gd.widthHint = 400;
+                inputText.setLayoutData(gd);
+
+                return container;
+            },
+
+            createButtonsForButtonBar: function(parent) {
+                Java.super(dialog).createButton(parent, IDialogConstants.OK_ID, "Generate", true);
+                Java.super(dialog).createButton(parent, IDialogConstants.CANCEL_ID, IDialogConstants.CANCEL_LABEL, false);
+            },
+
+            buttonPressed: function(buttonId) {
+                if (buttonId === IDialogConstants.OK_ID) {
+                    const selectedSchema = schemaCombo.getText();
+                    const userInput = inputText.getText().trim();
+                    if (selectedSchema && userInput) {
+                        modelSchema.schema = readSchemaFile(selectedSchema);
+                        result = { schema: selectedSchema, input: userInput };
+                    } else {
+                        window.alert("Please select a schema and enter a description.");
+                        return;
+                    }
+                }
+                Java.super(dialog).buttonPressed(buttonId);
+            },
+
+            configureShell: function(newShell) {
+                Java.super(dialog).configureShell(newShell);
+                newShell.setText("Generate Model from Meta Model");
+            },
+
+            getInitialSize: function() {
+                const size = Java.super(dialog).getInitialSize();
+                return new Point(Math.max(size.x, 450), Math.max(size.y, 350));
+            }
+        });
+
+        dialog.setBlockOnOpen(true);
+        dialog.open();
+
+        return result;
+    }
+
+    return getUserInputWithSchemaSelection;
+})();
+
+async function generateModelFromMetaModel(userInput, schema) {
+    const prompt = `Generate an ArchiMate model based on the following input and meta model schema:
+
+    User input: ${userInput}
+
+    Meta Model Schema:
+    ${JSON.stringify(schema, null, 2)}
+
+    Provide the model as a JSON structure with 'nodes' and 'relationships' arrays, following the specified schema.
+    Ensure that all relationships use valid source and target IDs from the nodes array.
+    IMPORTANT! Do not make relationships between nodes that are not defined in the nodes array!
+
+    Guidelines:
+    1. Create a comprehensive model that covers various aspects described in the user input.
+    2. Use a variety of element types and relationships as allowed by the schema.
+    3. Ensure logical connections between elements.
+    4. Provide clear and descriptive names for all elements and relationships.
+    5. Include brief descriptions for each element to explain its role in the model.
+    `;
+
+    const messages = [new Message(ROLES.USER, prompt)];
+
+    const options = new GenerateOptions({
+        model: MODEL,
+        max_tokens: MAX_TOKENS,
+        temperature: TEMPERATURE,
+        response_format: { type: "json_schema", json_schema: modelSchema },
+    });
+
+    try {
+        const response = await openaiClient.generateChatCompletion(messages, [], options);
+        modelJson =  JSON.parse(response.choices[0].message.content);
+        return modelJson;
+    } catch (error) {
+        log.error("Error generating model from meta model", { error: error.toString() });
+        throw error;
+    }
+}
+
+// Main execution
+(async function () {
+    try {
+        const selectedView = $(selection).filter("archimate-diagram-model").first();
+        if (!selectedView) {
+            window.alert("Please select a view before running this script.");
+            return;
+        }
+
+        const result = getUserInputWithSchemaSelection();
+        if (result && result.input) {
+            log.info("Generating model from meta model", { schema: result.schema });
+            const modelJson = await generateModelFromMetaModel(result.input, modelSchema.schema);
+
+            log.info("Model generated successfully", modelJson);
+
+            log.info("Updating ArchiMate model");
+            modelManipulation.updateView(selectedView, modelJson);
+            log.info("Applying Dagre layout");
+            layoutDagre(selectedView);
+            log.info("Model generation and layout complete");
+        } else {
+            log.warn("User cancelled or provided no input");
+        }
+    } catch (error) {
+        log.error("Error in main execution", { error: error.toString() });
+        window.alert("An error occurred: " + error.toString());
+    }
+})();
