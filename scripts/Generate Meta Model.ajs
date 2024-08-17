@@ -1,9 +1,9 @@
 /**
  * @name Generate Meta Model
- * @description This script generates an ArchiMate meta model based on an uploaded image using the OpenAI API. The meta model is copied to the clipboard
- * @version 1.0
+ * @description This script generates an ArchiMate meta model based on an uploaded image using the OpenAI API, and allows editing and saving of the result.
+ * @version 3.3
  * @author Claude AI Assistant
- * @lastModifiedDate 17-08-2024
+ * @lastModifiedDate 2024-08-18
  */
 
 console.clear();
@@ -16,166 +16,186 @@ const log = jarchiLogger.createLogger("GenerateMetaModel", __DIR__);
 // Initialize OpenAI client
 const openaiClient = new OpenAIClient();
 
+// Import necessary Java types
+const SWT = Java.type("org.eclipse.swt.SWT");
+const Shell = Java.type("org.eclipse.swt.widgets.Shell");
+const Display = Java.type("org.eclipse.swt.widgets.Display");
+const FileDialog = Java.type("org.eclipse.swt.widgets.FileDialog");
+const File = Java.type("java.io.File");
+const FileWriter = Java.type("java.io.FileWriter");
+const MessageDialog = Java.type("org.eclipse.jface.dialogs.MessageDialog");
+const Dialog = Java.type("org.eclipse.jface.dialogs.Dialog");
+const Text = Java.type("org.eclipse.swt.widgets.Text");
+const Button = Java.type("org.eclipse.swt.widgets.Button");
+const GridData = Java.type("org.eclipse.swt.layout.GridData");
+const GridLayout = Java.type("org.eclipse.swt.layout.GridLayout");
+const IDialogConstants = Java.type("org.eclipse.jface.dialogs.IDialogConstants");
+
+// Global variable to store the generated meta model
+let generatedMetaModel = null;
+
 // Function to get base64 encoded image data
-function getBase64Image() {
-    const fileChooser = new org.eclipse.swt.widgets.FileDialog(shell, org.eclipse.swt.SWT.OPEN);
-    fileChooser.setFilterExtensions(["*.jpg", "*.png", "*.jpeg"]);
-    fileChooser.setText("Select an ArchiMate model image");
-    const filePath = fileChooser.open();
-    
-    if (filePath) {
-        const imageFile = new java.io.File(filePath);
-        const imageBytes = java.nio.file.Files.readAllBytes(imageFile.toPath());
-        return java.util.Base64.getEncoder().encodeToString(imageBytes);
-    }
-    return null;
+function getBase64Image(filePath) {
+    log.debug("Getting base64 image for file: " + filePath);
+    const imageFile = new File(filePath);
+    const imageBytes = java.nio.file.Files.readAllBytes(imageFile.toPath());
+    return java.util.Base64.getEncoder().encodeToString(imageBytes);
 }
 
 // Function to generate meta model using OpenAI API
-async function generateMetaModel(base64Image) {
-    const prompt = `Analyze this ArchiMate model image and provide a structured output of the allowed elements and relationships. Format the response as a JSON schema that can be used for validating ArchiMate models. 
-    The schema must precisely encode which source and target types are allowed for each allowed relationship type. If the label of an element does not match a valid ArchiMate, use the visual shape and the icon to make a judgement as to which element it is.
-    
-    This is an expample JSON Schema meta model:
+function generateMetaModel(base64Image) {
+    return new Promise((resolve, reject) => {
+        log.debug("Generating meta model from base64 image");
+        const prompt = `Analyze this ArchiMate model image and provide a structured output of the allowed elements and relationships. Format the response as a JSON schema that can be used for validating ArchiMate models. 
+        The schema must precisely encode which source and target types are allowed for each allowed relationship type. If the label of an element does not match a valid ArchiMate, use the visual shape and the icon to make a judgement as to which element it is.`;
 
-    {
-        "type": "object",
-        "properties": {
-        "elements": {
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "id": { "type": "string" },
-                "type": {
-                    "enum": ["driver", "assessment", "goal", "outcome"]
-                },
-                "name": { "type": "string" },
-                "description": { "type": "string" },
-            },
-            "required": ["type", "name", "description"]
-        }
-        },
-        "relationships": {
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-            "type": { "type": "string" },
-            "source": { "type": "string" },
-            "target": { "type": "string" }
-            },
-            "required": ["type", "source", "target"],
-            "anyOf": [
-            {
-                "properties": {
-                "type": { "const": "influence-relationship" },
-                "source": { "enum": ["driver"] },
-                "target": { "enum": ["assessment"] }
-                }
-            },
-            {
-                "properties": {
-                "type": { "const": "influence-relationship" },
-                "source": { "enum": ["assessment"] },
-                "target": { "enum": ["goal"] }
-                }
-            },
-            {
-                "properties": {
-                "type": { "const": "influence-relationship" },
-                "source": { "enum": ["goal"] },
-                "target": { "enum": ["goal"] }
-                }
-            },
-            {
-                "properties": {
-                "type": { "const": "composition-relationship" },
-                "source": { "enum": ["goal"] },
-                "target": { "enum": ["goal"] }
-                }
-            },
-            {
-                "properties": {
-                "type": { "const": "realization-relationship" },
-                "source": { "enum": ["outcome"] },
-                "target": { "enum": ["goal"] }
-                }
-            }
-            ]
-        }
-        }
-    },
-    "required": ["elements", "relationships"]
-    }
-    
-    `;
+        const messages = [
+            new Message(ROLES.SYSTEM, "You are an AI assistant that analyzes ArchiMate model images and generates meta models."),
+            new Message(ROLES.USER, [
+                { type: "text", text: prompt },
+                { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
+            ])
+        ];
+        
+        const options = new GenerateOptions({
+            model: "gpt-4o-mini",
+            max_tokens: 2000,
+            temperature: 0.3,
+            response_format: { type: "json_object" }
+        });
 
-    const messages = [
-        new Message(ROLES.SYSTEM, "You are an AI assistant that analyzes ArchiMate model images and generates meta models."),
-        new Message(ROLES.USER, [
-            { type: "text", text: prompt },
-            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
-        ])
-    ];
-    
-    log.debug("Messages", messages)
-    const options = new GenerateOptions({
-        model: "gpt-4o-mini", // Make sure to use a model that supports image analysis
-        max_tokens: 2000,
-        temperature: 0.3,
-        response_format: { type: "json_object" }
+        log.debug("Sending request to OpenAI API");
+        openaiClient.generateChatCompletion(messages, [], options)
+            .then(response => {
+                log.debug("Received response from OpenAI API");
+                resolve(JSON.parse(response.choices[0].message.content));
+            })
+            .catch(error => {
+                log.error("Error generating meta model", { error: error.toString() });
+                reject(error);
+            });
     });
-
-    try {
-        const response = await openaiClient.generateChatCompletion(messages, [], options);
-        return JSON.parse(response.choices[0].message.content);
-    } catch (error) {
-        log.error("Error generating meta model", { error: error.toString() });
-        throw error;
-    }
 }
 
 // Function to copy JSON to clipboard
 function copyToClipboard(jsonString) {
+    log.debug("Copying JSON to clipboard");
     const JArray = Java.type("java.lang.reflect.Array");
     const JString = Java.type("java.lang.String");
     const Clipboard = Java.type("org.eclipse.swt.dnd.Clipboard");
     const cb = new Clipboard(shell.getDisplay());
-    const textTransfer = Java.type(
-        "org.eclipse.swt.dnd.TextTransfer"
-    ).getInstance();
+    const textTransfer = Java.type("org.eclipse.swt.dnd.TextTransfer").getInstance();
     const text = new JString(jsonString);
 
-    let arrayOfTransfers = JArray.newInstance(
-        Java.type("org.eclipse.swt.dnd.TextTransfer"),
-        1
-    );
+    let arrayOfTransfers = JArray.newInstance(Java.type("org.eclipse.swt.dnd.TextTransfer"), 1);
     let arrayOfTexts = JArray.newInstance(JString, 1);
     arrayOfTransfers[0] = textTransfer;
     arrayOfTexts[0] = text;
 
     cb.setContents(arrayOfTexts, arrayOfTransfers);
+    log.debug("JSON copied to clipboard");
 }
 
+// Create the result dialog
+const ResultDialog = Java.extend(Dialog);
+const resultDialog = new ResultDialog(shell, {
+    createDialogArea: function(parent) {
+        const container = Java.super(resultDialog).createDialogArea(parent);
+        container.setLayout(new GridLayout(1, false));
+
+        this.textArea = new Text(container, SWT.MULTI | SWT.BORDER | SWT.WRAP | SWT.V_SCROLL);
+        const gridData = new GridData(GridData.FILL_BOTH);
+        gridData.heightHint = 400;
+        gridData.widthHint = 600;
+        this.textArea.setLayoutData(gridData);
+        
+        if (generatedMetaModel) {
+            this.textArea.setText(JSON.stringify(generatedMetaModel, null, 2));
+        }
+        
+        return container;
+    },
+
+    createButtonsForButtonBar: function(parent) {
+        Java.super(resultDialog).createButton(parent, IDialogConstants.OK_ID, "Close", true);
+        const saveButton = Java.super(resultDialog).createButton(parent, IDialogConstants.CLIENT_ID, "Save", false);
+
+        saveButton.addListener(SWT.Selection, (event) => {
+            log.debug("Save button clicked");
+            const fileDialog = new FileDialog(resultDialog.getShell(), SWT.SAVE);
+            fileDialog.setFilterExtensions(["*.json"]);
+            const filePath = fileDialog.open();
+            if (filePath) {
+                try {
+                    const writer = new FileWriter(filePath);
+                    writer.write(this.textArea.getText());
+                    writer.close();
+                    log.info("Meta model saved successfully", { path: filePath });
+                    MessageDialog.openInformation(
+                        resultDialog.getShell(),
+                        "Success",
+                        "Meta model saved successfully."
+                    );
+                } catch (error) {
+                    log.error("Error saving meta model", { error: error.toString() });
+                    MessageDialog.openError(
+                        resultDialog.getShell(),
+                        "Error",
+                        "Failed to save meta model: " + error.toString()
+                    );
+                }
+            } else {
+                log.debug("File save cancelled");
+            }
+        });
+    },
+
+    configureShell: function(newShell) {
+        Java.super(resultDialog).configureShell(newShell);
+        newShell.setText("Generated Meta Model");
+        newShell.setSize(800, 600);
+    }
+});
+
 // Main execution
-(async function() {
+(function() {
     try {
-        const base64Image = getBase64Image();
-        if (base64Image) {
-            log.info("Generating meta model from uploaded image");
-            const metaModel = await generateMetaModel(base64Image);
-            console.log(JSON.stringify(metaModel, null, 3))
-                       
-            log.info("Copying meta model to clipboard");
-            copyToClipboard(JSON.stringify(metaModel, null, 2));
+        log.info("Starting meta model generation process");
+        
+        // Step 1: Prompt for image file
+        const fileDialog = new FileDialog(shell, SWT.OPEN);
+        fileDialog.setFilterExtensions(["*.jpg", "*.png", "*.jpeg"]);
+        fileDialog.setText("Select an ArchiMate model image");
+        const filePath = fileDialog.open();
+        
+        if (filePath) {
+            log.info("File selected: " + filePath);
             
-            log.info("Meta model generation complete");
-            console.log("Meta model has been generated, visualized in an Archi view, and copied to the clipboard.");
+            // Step 2: Generate meta model
+            const base64Image = getBase64Image(filePath);
+            log.debug("Image converted to base64");
+            
+            MessageDialog.openInformation(shell, "Processing", "Generating meta model. This may take a few moments. Click OK to proceed!");
+            
+            generateMetaModel(base64Image)
+                .then(metaModel => {
+                    log.debug("Meta model generated successfully");
+                    generatedMetaModel = metaModel;
+                    copyToClipboard(JSON.stringify(generatedMetaModel, null, 2));
+                    log.info("Meta model copied to clipboard");
+                    
+                    // Step 3: Show editable dialog
+                    resultDialog.open();
+                })
+                .catch(error => {
+                    log.error("Error generating meta model", { error: error.toString() });
+                    MessageDialog.openError(shell, "Error", "Failed to generate meta model: " + error.toString());
+                });
         } else {
-            log.warn("No image uploaded");
+            log.info("File selection cancelled");
         }
     } catch (error) {
         log.error("Error in main execution", { error: error.toString() });
+        MessageDialog.openError(shell, "Error", "An unexpected error occurred: " + error.toString());
     }
 })();
