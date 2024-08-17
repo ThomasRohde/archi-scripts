@@ -454,5 +454,60 @@ const menuItems = [
         script: "Generate Strategy Model.ajs",
         category: "AI-Assisted Modeling",
         tutorial: "Generate Strategy Model"
+    },
+    {
+        name: "Generate Model from Schema",
+        description: `
+            <h2>Generate Model from Schema</h2>
+            <p>This script generates an ArchiMate model based on a selected meta model schema using the OpenAI API.</p>
+            <h3>Features:</h3>
+            <ul>
+                <li>Select from available meta model schemas in the schemas directory</li>
+                <li>Enter a description for the model you want to generate</li>
+                <li>Uses OpenAI API to generate a model conforming to the selected schema</li>
+                <li>Automatically creates elements and relationships in the selected view</li>
+                <li>Applies Dagre layout for optimal arrangement of elements</li>
+            </ul>
+            <h3>Usage:</h3>
+            <ol>
+                <li>Select a view in your Archi model where you want the generated model to appear</li>
+                <li>Run the "Generate Model from Schema" script</li>
+                <li>Select a meta model schema from the dropdown</li>
+                <li>Enter a description for the model you want to generate</li>
+                <li>Click "Generate" to create the model</li>
+            </ol>
+            <p>This script is particularly useful for quickly creating complex, schema-compliant ArchiMate models based on textual descriptions.</p>
+        `,
+        script: "Generate Model from Schema.ajs",
+        category: "AI-Assisted Modeling",
+        tutorial: "Generate Model from Schema"
+    },
+    {
+        name: "Generate Meta Model",
+        description: `
+            <h2>Generate Meta Model</h2>
+            <p>This script generates an ArchiMate meta model based on an uploaded image using the OpenAI API.</p>
+            <h3>Features:</h3>
+            <ul>
+                <li>Upload an image of an ArchiMate model</li>
+                <li>Generate a JSON schema meta model using AI analysis</li>
+                <li>View and edit the generated meta model in a dialog</li>
+                <li>Save the meta model as a JSON file</li>
+                <li>Automatically copies the generated meta model to the clipboard</li>
+            </ul>
+            <h3>Usage:</h3>
+            <ol>
+                <li>Run the "Generate Meta Model" script</li>
+                <li>Select an image file of an ArchiMate model when prompted</li>
+                <li>Wait for the AI to analyze the image and generate the meta model</li>
+                <li>Review and edit the generated meta model in the dialog</li>
+                <li>Optionally save the meta model to a file</li>
+                <li>The meta model is also copied to your clipboard for easy pasting</li>
+            </ol>
+            <p>This script is particularly useful for quickly creating meta models from existing ArchiMate diagrams, which can then be used for model validation or as a starting point for further meta model development.</p>
+        `,
+        script: "Generate Meta Model.ajs",
+        category: "AI-Assisted Modeling",
+        tutorial: "Generate Meta Model"
     }
 ];

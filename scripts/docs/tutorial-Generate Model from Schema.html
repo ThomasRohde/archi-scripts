@@ -1,0 +1,105 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Tutorial: Generate Model from Schema</title>
+            
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.3;
+        color: #333;
+        margin: 0;
+        padding: 10px;
+    }
+    h1 {
+        color: #2c3e50;
+        font-size: 20px;
+        margin: 10px 0 5px 0;
+    }
+    h2 {
+        color: #3498db;
+        font-size: 16px;
+        margin: 8px 0 4px 0;
+    }
+    p {
+        margin: 0 0 5px 0;
+    }
+    ul,
+    ol {
+        margin: 0 0 5px 0;
+        padding-left: 20px;
+    }
+    li {
+        margin-bottom: 2px;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 5px 0;
+    }
+    table,
+    th,
+    td {
+        border: 1px solid black;
+        font-size: 12px;
+        padding: 2px;
+    }
+</style>
+
+        </head>
+        <body>
+            <h1>Tutorial: Generate Model from Schema</h1>
+            <p>The &quot;Generate Model from Schema&quot; script is a powerful tool that leverages AI to create ArchiMate models based on predefined schemas. This tutorial will guide you through the process of using this script effectively.</p>
+<h2>Prerequisites</h2>
+<ul>
+<li>Archi with the jArchi plugin installed</li>
+<li>OpenAI API key configured in your settings</li>
+<li>Meta model schema files in your <code>schemas</code> directory</li>
+</ul>
+<h2>Step-by-Step Guide</h2>
+<h3>1. Prepare Your Environment</h3>
+<p>Ensure you have at least one meta model schema JSON file in your <code>schemas</code> directory. These files define the structure and rules for the models you can generate.</p>
+<h3>2. Select a View</h3>
+<p>Before running the script, select the view in your Archi model where you want the generated model to appear. This can be an existing view or a new one.</p>
+<h3>3. Run the Script</h3>
+<p>Navigate to the jArchi scripts menu and select &quot;Generate Model from Schema&quot;.</p>
+<h3>4. Select a Schema</h3>
+<p>In the dialog that appears, you&#39;ll see a dropdown menu listing all available schema files from your <code>schemas</code> directory. Choose the schema that best fits the type of model you want to generate.</p>
+<h3>5. Enter a Description</h3>
+<p>In the text area provided, enter a description of the model you want to generate. Be as specific as possible, as this description will be used by the AI to create your model. For example:</p>
+<pre><code>Generate an ArchiMate model for a cloud-based e-commerce platform. Include elements for the web application, database, payment processing system, and customer support system. Show the relationships between these components and any relevant business processes.
+</code></pre>
+<h3>6. Generate the Model</h3>
+<p>Click the &quot;Generate&quot; button to start the model generation process. The script will use the OpenAI API to create a model based on your description and the selected schema.</p>
+<h3>7. Review and Refine</h3>
+<p>Once the generation is complete, the new elements and relationships will appear in your selected view. The script applies a Dagre layout algorithm to arrange the elements, but you may want to make further adjustments.</p>
+<p>Review the generated model and make any necessary refinements. You can:</p>
+<ul>
+<li>Rename elements for clarity</li>
+<li>Adjust relationships</li>
+<li>Add or remove elements as needed</li>
+<li>Modify element properties</li>
+</ul>
+<h2>Tips for Best Results</h2>
+<ul>
+<li>Be specific in your description. The more details you provide, the more accurate the generated model will be.</li>
+<li>Experiment with different schemas to see which ones produce the best results for your needs.</li>
+<li>Use this script as a starting point. It&#39;s a powerful tool for quickly creating a base model that you can then refine and expand upon.</li>
+<li>If the generated model isn&#39;t quite what you need, try running the script again with a more detailed or differently worded description.</li>
+</ul>
+<h2>Troubleshooting</h2>
+<ul>
+<li>If you receive an error about no view being selected, make sure you&#39;ve selected a view in Archi before running the script.</li>
+<li>If the script seems to hang, check your internet connection and ensure your OpenAI API key is correctly configured.</li>
+<li>If the generated model doesn&#39;t match your schema, double-check that you&#39;ve selected the correct schema file from the dropdown.</li>
+</ul>
+<h2>Conclusion</h2>
+<p>The &quot;Generate Model from Schema&quot; script is a powerful tool for rapidly creating complex ArchiMate models. By combining predefined schemas with AI-generated content, you can quickly produce models that adhere to specific structural rules while incorporating the unique details of your system or organization. Use this tool to jumpstart your modeling process and save time on initial setup and structure definition.</p>
+
+        </body>
+        </html>
+    

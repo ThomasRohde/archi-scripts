@@ -1,0 +1,119 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Tutorial: Generate Meta Model</title>
+            
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.3;
+        color: #333;
+        margin: 0;
+        padding: 10px;
+    }
+    h1 {
+        color: #2c3e50;
+        font-size: 20px;
+        margin: 10px 0 5px 0;
+    }
+    h2 {
+        color: #3498db;
+        font-size: 16px;
+        margin: 8px 0 4px 0;
+    }
+    p {
+        margin: 0 0 5px 0;
+    }
+    ul,
+    ol {
+        margin: 0 0 5px 0;
+        padding-left: 20px;
+    }
+    li {
+        margin-bottom: 2px;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 5px 0;
+    }
+    table,
+    th,
+    td {
+        border: 1px solid black;
+        font-size: 12px;
+        padding: 2px;
+    }
+</style>
+
+        </head>
+        <body>
+            <h1>Tutorial: Generate Meta Model</h1>
+            <p>The Generate Meta Model script is a powerful tool that uses AI to analyze an image of an ArchiMate model and generate a corresponding meta model in JSON schema format. This tutorial will guide you through using the script effectively.</p>
+<h2>Prerequisites</h2>
+<ul>
+<li>Archi with the jArchi plugin installed and configured</li>
+<li>An OpenAI API key configured in your jArchi settings</li>
+<li>An image file of an ArchiMate model (.jpg, .png, or .jpeg format)</li>
+</ul>
+<h2>Step-by-Step Guide</h2>
+<h3>1. Prepare Your ArchiMate Model Image</h3>
+<p>Ensure you have a clear, high-resolution image of your ArchiMate model. The image should be in .jpg, .png, or .jpeg format.</p>
+<blockquote>
+<p><strong>Tip:</strong> For best results, make sure the image is well-lit, in focus, and includes all elements and relationships clearly.</p>
+</blockquote>
+<h3>2. Run the Script</h3>
+<ol>
+<li>Open Archi and ensure the jArchi plugin is active.</li>
+<li>Navigate to the Scripts window in Archi.</li>
+<li>Find and double-click on &quot;Generate Meta Model&quot; to run the script.</li>
+</ol>
+<h3>3. Select Your Image File</h3>
+<p>When prompted, navigate to and select the image file of your ArchiMate model.</p>
+<h3>4. Wait for AI Analysis</h3>
+<p>The script will now upload your image to the OpenAI API for analysis. This may take a few moments depending on the complexity of your model and your internet connection speed.</p>
+<h3>5. Review and Edit the Generated Meta Model</h3>
+<p>Once the analysis is complete, a dialog will open showing the generated meta model in JSON format. You can review and edit this JSON directly in the dialog.</p>
+<blockquote>
+<p><strong>Tip:</strong> The generated meta model is automatically copied to your clipboard for easy pasting into other applications.</p>
+</blockquote>
+<h3>6. Save the Meta Model (Optional)</h3>
+<p>If you want to save the meta model to a file:</p>
+<ol>
+<li>Click the &quot;Save&quot; button in the dialog.</li>
+<li>Choose a location and filename for your JSON file.</li>
+<li>Click &quot;Save&quot; to store the file.</li>
+</ol>
+<h3>7. Close the Dialog</h3>
+<p>Once you&#39;re satisfied with the meta model, click &quot;Close&quot; to exit the dialog.</p>
+<h2>Understanding the Generated Meta Model</h2>
+<p>The generated meta model is a JSON schema that defines the structure of your ArchiMate model. It typically includes:</p>
+<ul>
+<li>A list of allowed element types</li>
+<li>Definitions for relationships between elements</li>
+<li>Any constraints or rules inferred from your model</li>
+</ul>
+<h2>Use Cases</h2>
+<p>The generated meta model can be used for various purposes, including:</p>
+<ul>
+<li>Model validation: Ensure new models conform to your organization&#39;s standards</li>
+<li>Documentation: Provide a clear reference for allowed model structures</li>
+<li>Tool configuration: Use the schema to configure modeling tools or validators</li>
+<li>Analysis: Understand the structure and constraints of existing models</li>
+</ul>
+<h2>Troubleshooting</h2>
+<ul>
+<li><strong>Error during image upload:</strong> Ensure your internet connection is stable and your image file is not corrupted.</li>
+<li><strong>Inaccurate meta model:</strong> Try using a clearer or higher resolution image of your ArchiMate model.</li>
+<li><strong>API errors:</strong> Check that your OpenAI API key is correctly configured in jArchi settings.</li>
+</ul>
+<h2>Conclusion</h2>
+<p>The Generate Meta Model script provides a powerful way to quickly create meta models from existing ArchiMate diagrams. By leveraging AI analysis, it can save significant time in the meta model creation process. Remember to always review and refine the generated meta model to ensure it accurately represents your intended model structure.</p>
+
+        </body>
+        </html>
+    
