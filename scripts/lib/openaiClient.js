@@ -1,9 +1,9 @@
 /**
  * @module openaiClient
- * @description A client library for the OpenAI API with support for structured outputs
- * @version 1.2
+ * @description A client library for the OpenAI API with support for structured outputs and image uploads
+ * @version 1.4
  * @author Claude AI Assistant
- * @lastModifiedDate 2024-08-15
+ * @lastModifiedDate 2024-08-16
  */
 
 const apiClient = require('./apiClient');
@@ -115,10 +115,49 @@ class OpenAIClient {
     
         try {
             const requestBody = {
-                messages: formattedMessages,
-                ...generateOptions
+                model: generateOptions.model,
+                messages: formattedMessages.map(msg => {
+                    if (typeof msg.content === 'string') {
+                        return {
+                            role: msg.role,
+                            content: msg.content
+                        };
+                    } else if (Array.isArray(msg.content)) {
+                        return {
+                            role: msg.role,
+                            content: msg.content.map(part => {
+                                if (part.type === 'text') {
+                                    return {
+                                        type: 'text',
+                                        text: part.text
+                                    };
+                                } else if (part.type === 'image_url') {
+                                    return {
+                                        type: 'image_url',
+                                        image_url: {
+                                            url: part.image_url.url,
+                                            detail: part.image_url.detail || 'auto'
+                                        }
+                                    };
+                                }
+                            })
+                        };
+                    }
+                })
             };
-    
+
+            // Only include non-null options
+            const optionsToInclude = [
+                'max_tokens', 'temperature', 'top_p', 'frequency_penalty', 'presence_penalty',
+                'stream', 'n', 'stop', 'logit_bias', 'user', 'response_format'
+            ];
+
+            optionsToInclude.forEach(option => {
+                if (generateOptions[option] != null) {
+                    requestBody[option] = generateOptions[option];
+                }
+            });
+
             if (tools.length > 0) {
                 requestBody.tools = tools;
             }

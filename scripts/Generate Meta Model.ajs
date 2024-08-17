@@ -1,0 +1,181 @@
+/**
+ * @name Generate Meta Model
+ * @description This script generates an ArchiMate meta model based on an uploaded image using the OpenAI API. The meta model is copied to the clipboard
+ * @version 1.0
+ * @author Claude AI Assistant
+ * @lastModifiedDate 17-08-2024
+ */
+
+console.clear();
+console.show();
+
+const { OpenAIClient, Message, GenerateOptions, ROLES } = require("./lib/openaiClient");
+const jarchiLogger = require("./lib/jarchiLogger");
+const log = jarchiLogger.createLogger("GenerateMetaModel", __DIR__);
+
+// Initialize OpenAI client
+const openaiClient = new OpenAIClient();
+
+// Function to get base64 encoded image data
+function getBase64Image() {
+    const fileChooser = new org.eclipse.swt.widgets.FileDialog(shell, org.eclipse.swt.SWT.OPEN);
+    fileChooser.setFilterExtensions(["*.jpg", "*.png", "*.jpeg"]);
+    fileChooser.setText("Select an ArchiMate model image");
+    const filePath = fileChooser.open();
+    
+    if (filePath) {
+        const imageFile = new java.io.File(filePath);
+        const imageBytes = java.nio.file.Files.readAllBytes(imageFile.toPath());
+        return java.util.Base64.getEncoder().encodeToString(imageBytes);
+    }
+    return null;
+}
+
+// Function to generate meta model using OpenAI API
+async function generateMetaModel(base64Image) {
+    const prompt = `Analyze this ArchiMate model image and provide a structured output of the allowed elements and relationships. Format the response as a JSON schema that can be used for validating ArchiMate models. 
+    The schema must precisely encode which source and target types are allowed for each allowed relationship type. If the label of an element does not match a valid ArchiMate, use the visual shape and the icon to make a judgement as to which element it is.
+    
+    This is an expample JSON Schema meta model:
+
+    {
+        "type": "object",
+        "properties": {
+        "elements": {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "id": { "type": "string" },
+                "type": {
+                    "enum": ["driver", "assessment", "goal", "outcome"]
+                },
+                "name": { "type": "string" },
+                "description": { "type": "string" },
+            },
+            "required": ["type", "name", "description"]
+        }
+        },
+        "relationships": {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+            "type": { "type": "string" },
+            "source": { "type": "string" },
+            "target": { "type": "string" }
+            },
+            "required": ["type", "source", "target"],
+            "anyOf": [
+            {
+                "properties": {
+                "type": { "const": "influence-relationship" },
+                "source": { "enum": ["driver"] },
+                "target": { "enum": ["assessment"] }
+                }
+            },
+            {
+                "properties": {
+                "type": { "const": "influence-relationship" },
+                "source": { "enum": ["assessment"] },
+                "target": { "enum": ["goal"] }
+                }
+            },
+            {
+                "properties": {
+                "type": { "const": "influence-relationship" },
+                "source": { "enum": ["goal"] },
+                "target": { "enum": ["goal"] }
+                }
+            },
+            {
+                "properties": {
+                "type": { "const": "composition-relationship" },
+                "source": { "enum": ["goal"] },
+                "target": { "enum": ["goal"] }
+                }
+            },
+            {
+                "properties": {
+                "type": { "const": "realization-relationship" },
+                "source": { "enum": ["outcome"] },
+                "target": { "enum": ["goal"] }
+                }
+            }
+            ]
+        }
+        }
+    },
+    "required": ["elements", "relationships"]
+    }
+    
+    `;
+
+    const messages = [
+        new Message(ROLES.SYSTEM, "You are an AI assistant that analyzes ArchiMate model images and generates meta models."),
+        new Message(ROLES.USER, [
+            { type: "text", text: prompt },
+            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
+        ])
+    ];
+    
+    log.debug("Messages", messages)
+    const options = new GenerateOptions({
+        model: "gpt-4o-mini", // Make sure to use a model that supports image analysis
+        max_tokens: 2000,
+        temperature: 0.3,
+        response_format: { type: "json_object" }
+    });
+
+    try {
+        const response = await openaiClient.generateChatCompletion(messages, [], options);
+        return JSON.parse(response.choices[0].message.content);
+    } catch (error) {
+        log.error("Error generating meta model", { error: error.toString() });
+        throw error;
+    }
+}
+
+// Function to copy JSON to clipboard
+function copyToClipboard(jsonString) {
+    const JArray = Java.type("java.lang.reflect.Array");
+    const JString = Java.type("java.lang.String");
+    const Clipboard = Java.type("org.eclipse.swt.dnd.Clipboard");
+    const cb = new Clipboard(shell.getDisplay());
+    const textTransfer = Java.type(
+        "org.eclipse.swt.dnd.TextTransfer"
+    ).getInstance();
+    const text = new JString(jsonString);
+
+    let arrayOfTransfers = JArray.newInstance(
+        Java.type("org.eclipse.swt.dnd.TextTransfer"),
+        1
+    );
+    let arrayOfTexts = JArray.newInstance(JString, 1);
+    arrayOfTransfers[0] = textTransfer;
+    arrayOfTexts[0] = text;
+
+    cb.setContents(arrayOfTexts, arrayOfTransfers);
+}
+
+// Main execution
+(async function() {
+    try {
+        const base64Image = getBase64Image();
+        if (base64Image) {
+            log.info("Generating meta model from uploaded image");
+            const metaModel = await generateMetaModel(base64Image);
+            console.log(JSON.stringify(metaModel, null, 3))
+                       
+            log.info("Copying meta model to clipboard");
+            copyToClipboard(JSON.stringify(metaModel, null, 2));
+            
+            log.info("Meta model generation complete");
+            console.log("Meta model has been generated, visualized in an Archi view, and copied to the clipboard.");
+        } else {
+            log.warn("No image uploaded");
+        }
+    } catch (error) {
+        log.error("Error in main execution", { error: error.toString() });
+    }
+})();

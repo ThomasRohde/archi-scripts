@@ -203,6 +203,7 @@ const modelManipulation = {
                                 .first();
     
                             if (!existingRelInView) {
+                                log.debug(`Attempting to add relationship ${relationship.type} to view: ${source.name} -> ${target.name}`)
                                 view.add(relationship, sourceInView, targetInView);
                                 addedRelationships.add(relationshipKey);
                                 log.debug(`Added relationship to view: ${source.name} -> ${target.name}`);
