@@ -28,7 +28,6 @@ const Display = Java.type("org.eclipse.swt.widgets.Display");
 const FileDialog = Java.type("org.eclipse.swt.widgets.FileDialog");
 const File = Java.type("java.io.File");
 const FileReader = Java.type("java.io.FileReader");
-const BufferedReader = Java.type("java.io.BufferedReader");
 const Combo = Java.type("org.eclipse.swt.widgets.Combo");
 const Label = Java.type("org.eclipse.swt.widgets.Label");
 const Text = Java.type("org.eclipse.swt.widgets.Text");
@@ -36,6 +35,11 @@ const Button = Java.type("org.eclipse.swt.widgets.Button");
 const GridData = Java.type("org.eclipse.swt.layout.GridData");
 const GridLayout = Java.type("org.eclipse.swt.layout.GridLayout");
 const MessageDialog = Java.type("org.eclipse.jface.dialogs.MessageDialog");
+const FileInputStream = Java.type('java.io.FileInputStream');
+const InputStreamReader = Java.type('java.io.InputStreamReader');
+const BufferedReader = Java.type('java.io.BufferedReader');
+const Files = Java.type('java.nio.file.Files');
+const Charset = Java.type('java.nio.charset.Charset');
 
 // Constants
 const MODEL = "gpt-4o-mini";
@@ -53,15 +57,49 @@ function loadSchemaFiles() {
 
 // Function to read JSON schema file
 function readSchemaFile(fileName) {
-    const file = new File(new File(__DIR__, "schemas"), fileName);
-    const reader = new BufferedReader(new FileReader(file));
-    let line;
-    let content = "";
-    while ((line = reader.readLine()) !== null) {
-        content += line;
+    try {
+        const file = new File(new File(__DIR__, "schemas"), fileName);
+        log.debug(`Attempting to read schema file: ${file.getAbsolutePath()}`);
+        
+        if (!file.exists()) {
+            log.error(`File does not exist: ${file.getAbsolutePath()}`);
+            throw new Error(`Schema file does not exist: ${fileName}`);
+        }
+        
+        if (!file.canRead()) {
+            log.error(`Cannot read file: ${file.getAbsolutePath()}`);
+            throw new Error(`Cannot read schema file: ${fileName}`);
+        }
+
+        // Read the entire file content as a string
+        let content = new String(Files.readAllBytes(file.toPath()), Charset.forName("UTF-8"));
+        
+        // Remove any BOM characters
+        content = content.replace(/^\uFEFF/, '');
+        
+        // Remove any leading non-printable characters, commas, and numbers
+        content = content.replace(/^[\s\S]*?(?={)/, '');
+        
+        log.debug(`First 100 characters of file ${fileName} after cleaning:`);
+        log.debug(content.substring(0, 100));
+        
+        if (content.trim().length === 0) {
+            log.error(`File is empty after cleaning: ${fileName}`);
+            throw new Error(`Schema file is empty after cleaning: ${fileName}`);
+        }
+        
+        try {
+            return JSON.parse(content);
+        } catch (parseError) {
+            log.error(`Error parsing JSON from file: ${fileName}`, { error: parseError.toString() });
+            log.debug(`Content causing parse error:`);
+            log.debug(content);
+            throw new Error(`Invalid JSON in schema file: ${fileName}. Error: ${parseError.message}`);
+        }
+    } catch (error) {
+        log.error(`Error reading schema file: ${fileName}`, { error: error.toString() });
+        throw error;
     }
-    reader.close();
-    return JSON.parse(content);
 }
 
 // JSON Schema for model generation
@@ -121,9 +159,11 @@ const getUserInputWithSchemaSelection = (function() {
 
             buttonPressed: function(buttonId) {
                 if (buttonId === IDialogConstants.OK_ID) {
-                    const selectedSchema = schemaCombo.getText();
+                    const selectedSchemaIndex = schemaCombo.getSelectionIndex();
                     const userInput = inputText.getText().trim();
-                    if (selectedSchema && userInput) {
+                    log.debug(selectedSchemaIndex,userInput);
+                    if (selectedSchemaIndex !== -1 && userInput) {
+                        const selectedSchema = schemaCombo.getItem(selectedSchemaIndex);
                         modelSchema.schema = readSchemaFile(selectedSchema);
                         result = { schema: selectedSchema, input: userInput };
                     } else {
