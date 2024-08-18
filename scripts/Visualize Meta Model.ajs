@@ -1,0 +1,138 @@
+/**
+ * @name Visualize Meta Model Schema
+ * @description This script visualizes an ArchiMate meta model schema by creating a view with elements and relationships defined in the schema.
+ * @version 1.0
+ * @author Claude AI Assistant
+ * @lastModifiedDate 2024-08-18
+ */
+
+console.clear();
+console.show();
+
+const modelManipulation = require("./lib/modelManipulation");
+
+// Initialize logger
+const jarchiLogger = require("./lib/jarchiLogger");
+const log = jarchiLogger.createLogger("VisualizeMetaModelSchema", __DIR__);
+
+// Import necessary Java types
+const File = Java.type("java.io.File");
+const Files = Java.type('java.nio.file.Files');
+const Charset = Java.type('java.nio.charset.Charset');
+const String = Java.type('java.lang.String');
+const FileDialog = Java.type("org.eclipse.swt.widgets.FileDialog");
+const SWT = Java.type("org.eclipse.swt.SWT");
+
+// Function to read JSON schema file
+function readSchemaFile(filePath) {
+    try {
+        const file = new File(filePath);
+        log.debug(`Attempting to read schema file: ${file.getAbsolutePath()}`);
+        
+        if (!file.exists()) {
+            log.error(`File does not exist: ${file.getAbsolutePath()}`);
+            throw new Error(`Schema file does not exist: ${filePath}`);
+        }
+        
+        if (!file.canRead()) {
+            log.error(`Cannot read file: ${file.getAbsolutePath()}`);
+            throw new Error(`Cannot read schema file: ${filePath}`);
+        }
+
+        const bytes = Files.readAllBytes(file.toPath());
+        let content = new String(bytes, Charset.forName("UTF-8"));
+        content = content.replace(/^\uFEFF/, '');
+        content = content.replace(/^[\s\S]*?(?={)/, '');
+        
+        if (content.trim().length === 0) {
+            log.error(`File is empty after cleaning: ${filePath}`);
+            throw new Error(`Schema file is empty after cleaning: ${filePath}`);
+        }
+        
+        try {
+            return JSON.parse(content);
+        } catch (parseError) {
+            log.error(`Error parsing JSON from file: ${filePath}`, { error: parseError.toString() });
+            log.debug(`Content causing parse error:`);
+            log.debug(content);
+            throw new Error(`Invalid JSON in schema file: ${filePath}. Error: ${parseError.message}`);
+        }
+    } catch (error) {
+        log.error(`Error reading schema file: ${filePath}`, { error: error.toString() });
+        throw error;
+    }
+}
+
+// Function to create elements from schema
+function createElementsFromSchema(schema, view) {
+    const elements = {};
+    const elementTypes = schema.properties.nodes.items.properties.type.enum;
+    
+    elementTypes.forEach((type, index) => {
+        const element = model.createElement(type, type);
+        const x = (index % 5) * 200 + 100;
+        const y = Math.floor(index / 5) * 100 + 100;
+        const elementRef = view.add(element, x, y, 150, 75);
+        elements[type] = elementRef;
+    });
+    
+    return elements;
+}
+
+// Function to create relationships from schema
+function createRelationshipsFromSchema(schema, view, elements) {
+    schema.properties.relationships.items.anyOf.forEach(relationshipDef => {
+        const relationType = relationshipDef.properties.type.enum[0];
+        const sourceTypes = relationshipDef.properties.source.enum;
+        const targetTypes = relationshipDef.properties.target.enum;
+        
+        sourceTypes.forEach(sourceType => {
+            targetTypes.forEach(targetType => {
+                if (sourceType !== targetType) {
+                    try {
+                    log.debug(`Creating ${relationType} (${sourceType} -> ${targetType})`)
+                    const sourceElement = elements[sourceType].concept;
+                    const targetElement = elements[targetType].concept;
+                    const relationship = model.createRelationship(relationType, `${relationType}`, sourceElement, targetElement);
+                    view.add(relationship, elements[sourceType], elements[targetType]);
+                    } catch {
+                        log.debug("invalid relationship!")
+                    }
+                }
+            });
+        });
+    });
+}
+// Main execution
+(function() {
+    try {
+        // Prompt user to select schema file
+        const fileDialog = new FileDialog(shell, SWT.OPEN);
+        fileDialog.setFilterExtensions(["*.json"]);
+        fileDialog.setText("Select Meta Model Schema JSON file");
+        const filePath = fileDialog.open();
+        
+        if (filePath) {
+            log.info("File selected: " + filePath);
+            
+            // Read and parse the schema
+            const schema = readSchemaFile(filePath);
+            
+            // Create a new view
+            const view = model.createArchimateView("Meta Model Schema Visualization");
+            
+            // Create elements
+            const elements = createElementsFromSchema(schema, view);
+            
+            // Create relationships
+            createRelationshipsFromSchema(schema, view, elements);
+            
+            log.info("Meta model schema visualization complete");
+        } else {
+            log.info("File selection cancelled");
+        }
+    } catch (error) {
+        log.error("Error in main execution", { error: error.toString() });
+        window.alert("An error occurred: " + error.toString());
+    }
+})();
