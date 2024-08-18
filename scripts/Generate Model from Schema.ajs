@@ -29,7 +29,8 @@ const SwingUtilities = Java.type('javax.swing.SwingUtilities');
 const TimeUnit = Java.type('java.util.concurrent.TimeUnit');
 
 // Constants
-const MODEL = "gpt-4o-mini";
+// const MODEL = "gpt-4o-mini";
+const MODEL = "gpt-4o-2024-08-06";
 const MAX_TOKENS = 4000;
 const TEMPERATURE = 0.7;
 
@@ -132,8 +133,8 @@ const getUserInputWithSchemaSelection = (function() {
                 inputText = new Text(container, SWT.MULTI | SWT.BORDER | SWT.WRAP | SWT.V_SCROLL);
                 const gd = new GridData(GridData.FILL_BOTH);
                 gd.horizontalSpan = 2;
-                gd.heightHint = 200;
-                gd.widthHint = 400;
+                gd.heightHint = 400;
+                gd.widthHint = 600;
                 inputText.setLayoutData(gd);
 
                 return container;
@@ -233,8 +234,8 @@ async function generateModelFromMetaModel(userInput, schema) {
             log.info("Generating model from meta model");
             const modelJson = await generateModelFromMetaModel(result.input, modelSchema.schema);
             log.info("Updating ArchiMate model", modelJson);
-            modelManipulation.updateView(selectedView, modelJson);
-            log.info("Strategy model generation and layout complete");
+            modelManipulation.updateModel(modelJson);
+            log.info("Strategy model generation complete");
         } else {
             log.warn("User cancelled or provided no input");
         }
