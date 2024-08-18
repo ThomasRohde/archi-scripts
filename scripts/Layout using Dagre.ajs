@@ -1,5 +1,3 @@
-// @ts-check
-
 /**
  * @module layoutDagreWithDialog
  * @description A script to layout a view using Dagre with a settings dialog
