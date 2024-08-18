@@ -19,6 +19,7 @@ This repository contains a collection of JArchi scripts designed to enhance and 
 - Node.js and npm (for managing dependencies and building the logger)
 - Ollama (for AI-powered scripts)
 - Anthropic API key (for AI-assisted modeling scripts)
+- OpenAI API key (for certain AI-assisted modeling scripts)
 
 ## Installation
 
@@ -77,15 +78,23 @@ You have two options for installing the scripts:
 - **Export View to Draw.io**: Export the currently selected ArchiMate view to a draw.io diagram file.
 - **Generate Model**: Create a complete ArchiMate model from a textual description using AI.
 - **Expand Model**: Expand an existing ArchiMate model based on a selected element and a textual description using AI.
+- **Generate Capability Model**: Create a hierarchical capability model based on a user-provided description, using an iterative AI-assisted approach.
+- **Generate Model from Schema**: Produce an ArchiMate model adhering to a selected meta-model schema, with support for custom schemas.
+- **Generate Meta Model**: Analyze an uploaded image of an ArchiMate model and generate a corresponding meta-model schema.
+- **Generate Strategy Model**: Create strategy and motivation elements focused models aligned with organizational goals.
 
 ## AI-Assisted Modeling
 
-The Generate Model and Expand Model scripts use the Anthropic API to provide AI-assisted modeling capabilities:
+The AI-assisted modeling scripts now include:
 
 - **Generate Model**: Creates a full ArchiMate model based on a textual description of a system or organization.
 - **Expand Model**: Allows you to select an existing element in your model and expand the architecture around it based on a description.
+- **Generate Capability Model**: Creates a hierarchical capability model through multiple iterations of AI-assisted generation.
+- **Generate Model from Schema**: Produces an ArchiMate model that conforms to a selected meta-model schema.
+- **Generate Meta Model**: Analyzes an image of an ArchiMate model to create a meta-model schema.
+- **Generate Strategy Model**: Focuses on creating strategy and motivation elements for strategic modeling.
 
-These scripts require a valid Anthropic API key to be configured in the Settings script.
+These scripts require a valid Anthropic or OpenAI API key to be configured in the Settings script.
 
 ## JArchi Logger
 
