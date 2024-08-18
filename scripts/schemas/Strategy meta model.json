@@ -64,11 +64,14 @@
         ],
         "additionalProperties": false,
         "anyOf": [
-          { "type" : "object",
+          {
+            "type": "object",
             "properties": {
               "type": {
-                "type" : "string",
-                "enum": ["realization-relationship"]
+                "type": "string",
+                "enum": [
+                  "realization-relationship"
+                ]
               },
               "source": {
                 "enum": [
@@ -91,15 +94,21 @@
                 ]
               }
             },
-            "required": ["type", "source", "target"],
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
             "additionalProperties": false
           },
           {
-            "type" : "object",
+            "type": "object",
             "properties": {
               "type": {
-                "type" : "string",
-                "enum": ["association-relationship"]
+                "type": "string",
+                "enum": [
+                  "association-relationship"
+                ]
               },
               "source": {
                 "enum": [
@@ -118,15 +127,21 @@
                 ]
               }
             },
-            "required": ["type", "source", "target"],
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
             "additionalProperties": false
           },
           {
-            "type" : "object",
+            "type": "object",
             "properties": {
               "type": {
-                "type" : "string",
-                "enum": ["assignment-relationship"]
+                "type": "string",
+                "enum": [
+                  "assignment-relationship"
+                ]
               },
               "source": {
                 "enum": [
@@ -139,15 +154,21 @@
                 ]
               }
             },
-            "required": ["type", "source", "target"],
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
             "additionalProperties": false
           },
           {
-            "type" : "object",
+            "type": "object",
             "properties": {
               "type": {
-                "type" : "string",
-                "enum": ["serving-relationship"]
+                "type": "string",
+                "enum": [
+                  "serving-relationship"
+                ]
               },
               "source": {
                 "enum": [
@@ -160,7 +181,11 @@
                 ]
               }
             },
-            "required": ["type", "source", "target"],
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
             "additionalProperties": false
           }
         ]

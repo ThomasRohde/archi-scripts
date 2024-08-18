@@ -10,7 +10,6 @@ console.clear();
 console.show();
 
 const { OpenAIClient, Message, GenerateOptions, ROLES } = require("./lib/openaiClient");
-const layoutDagre = require("./lib/layoutDagre");
 const modelManipulation = require("./lib/modelManipulation");
 const getUserPrompt = require('./lib/getUserPrompt');
 
@@ -22,24 +21,10 @@ const log = jarchiLogger.createLogger("GenerateModelFromMetaModel", __DIR__);
 const openaiClient = new OpenAIClient();
 
 // Import necessary Java types
-const SWT = Java.type("org.eclipse.swt.SWT");
-const Shell = Java.type("org.eclipse.swt.widgets.Shell");
-const Display = Java.type("org.eclipse.swt.widgets.Display");
-const FileDialog = Java.type("org.eclipse.swt.widgets.FileDialog");
 const File = Java.type("java.io.File");
-const FileReader = Java.type("java.io.FileReader");
-const Combo = Java.type("org.eclipse.swt.widgets.Combo");
-const Label = Java.type("org.eclipse.swt.widgets.Label");
-const Text = Java.type("org.eclipse.swt.widgets.Text");
-const Button = Java.type("org.eclipse.swt.widgets.Button");
-const GridData = Java.type("org.eclipse.swt.layout.GridData");
-const GridLayout = Java.type("org.eclipse.swt.layout.GridLayout");
-const MessageDialog = Java.type("org.eclipse.jface.dialogs.MessageDialog");
-const FileInputStream = Java.type('java.io.FileInputStream');
-const InputStreamReader = Java.type('java.io.InputStreamReader');
-const BufferedReader = Java.type('java.io.BufferedReader');
 const Files = Java.type('java.nio.file.Files');
 const Charset = Java.type('java.nio.charset.Charset');
+const String = Java.type('java.lang.String');
 
 // Constants
 const MODEL = "gpt-4o-mini";
@@ -71,17 +56,17 @@ function readSchemaFile(fileName) {
             throw new Error(`Cannot read schema file: ${fileName}`);
         }
 
-        // Read the entire file content as a string
-        let content = new String(Files.readAllBytes(file.toPath()), Charset.forName("UTF-8"));
+        // Read the file content as a byte array
+        const bytes = Files.readAllBytes(file.toPath());
+        
+        // Convert byte array to string
+        let content = new String(bytes, Charset.forName("UTF-8"));
         
         // Remove any BOM characters
         content = content.replace(/^\uFEFF/, '');
         
         // Remove any leading non-printable characters, commas, and numbers
         content = content.replace(/^[\s\S]*?(?={)/, '');
-        
-        log.debug(`First 100 characters of file ${fileName} after cleaning:`);
-        log.debug(content.substring(0, 100));
         
         if (content.trim().length === 0) {
             log.error(`File is empty after cleaning: ${fileName}`);
@@ -246,14 +231,10 @@ async function generateModelFromMetaModel(userInput, schema) {
         if (result && result.input) {
             log.info("Generating model from meta model", { schema: result.schema });
             const modelJson = await generateModelFromMetaModel(result.input, modelSchema.schema);
-
             log.info("Model generated successfully", modelJson);
-
             log.info("Updating ArchiMate model");
             modelManipulation.updateView(selectedView, modelJson);
-            log.info("Applying Dagre layout");
-            layoutDagre(selectedView);
-            log.info("Model generation and layout complete");
+            log.info("Model generation complete");
         } else {
             log.warn("User cancelled or provided no input");
         }
@@ -262,3 +243,4 @@ async function generateModelFromMetaModel(userInput, schema) {
         window.alert("An error occurred: " + error.toString());
     }
 })();
+
