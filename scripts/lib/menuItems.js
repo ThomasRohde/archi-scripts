@@ -535,5 +535,30 @@ const menuItems = [
         script: "Generate Meta Model from View.ajs",
         category: "Model Analysis",
         tutorial: "Generate Meta Model from View"
+    },
+    {
+        name: "Generate View from Meta Model",
+        description: `
+            <h2>Generate View from Meta Model</h2>
+            <p>This script generates an ArchiMate view based on a meta model schema JSON file.</p>
+            <h3>Features:</h3>
+            <ul>
+                <li>Loads a meta model schema from a JSON file</li>
+                <li>Creates a new view with all elements defined in the schema</li>
+                <li>Generates all possible relationships between elements as specified in the schema</li>
+                <li>Applies a simple layout based on ArchiMate layers</li>
+            </ul>
+            <h3>Usage:</h3>
+            <ol>
+                <li>Run the "Generate View from Meta Model" script</li>
+                <li>Select the meta model schema JSON file when prompted</li>
+                <li>The script will create a new view with all elements and relationships</li>
+                <li>Elements are organized by ArchiMate layers for better visualization</li>
+            </ol>
+            <p>This script is useful for quickly visualizing the structure and possibilities defined in an ArchiMate meta model schema.</p>
+        `,
+        script: "Generate View from Meta Model.ajs",
+        category: "Model Generation",
+        tutorial: "Generate View from Meta Model"
     }
 ];

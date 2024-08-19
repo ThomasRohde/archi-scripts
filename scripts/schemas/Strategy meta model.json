@@ -19,10 +19,10 @@
               "principle",
               "requirement",
               "constraint",
+              "value",
               "course-of-action",
               "capability",
               "resource",
-              "value",
               "value-stream"
             ]
           },
@@ -70,27 +70,17 @@
               "type": {
                 "type": "string",
                 "enum": [
-                  "realization-relationship"
+                  "association-relationship"
                 ]
               },
               "source": {
                 "enum": [
-                  "goal",
-                  "outcome",
-                  "course-of-action",
-                  "principle",
-                  "requirement",
-                  "constraint"
+                  "stakeholder"
                 ]
               },
               "target": {
                 "enum": [
-                  "goal",
-                  "outcome",
-                  "course-of-action",
-                  "principle",
-                  "requirement",
-                  "constraint"
+                  "value"
                 ]
               }
             },
@@ -112,18 +102,12 @@
               },
               "source": {
                 "enum": [
-                  "outcome",
-                  "value",
-                  "goal",
-                  "course-of-action"
+                  "stakeholder"
                 ]
               },
               "target": {
                 "enum": [
-                  "value",
-                  "goal",
-                  "outcome",
-                  "course-of-action"
+                  "driver"
                 ]
               }
             },
@@ -140,7 +124,520 @@
               "type": {
                 "type": "string",
                 "enum": [
-                  "assignment-relationship"
+                  "association-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "driver"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "assessment"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "association-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "driver"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "goal"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "association-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "assessment"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "goal"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "association-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "assessment"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "outcome"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "realization-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "outcome"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "goal"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "association-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "outcome"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "value"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "association-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "outcome"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "value-stream"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "realization-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "principle"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "goal"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "realization-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "principle"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "outcome"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "realization-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "requirement"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "goal"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "realization-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "requirement"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "outcome"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "realization-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "requirement"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "principle"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "realization-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "constraint"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "goal"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "realization-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "constraint"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "outcome"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "realization-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "constraint"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "principle"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "realization-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "course-of-action"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "outcome"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "realization-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "course-of-action"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "principle"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "realization-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "course-of-action"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "requirement"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "realization-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "course-of-action"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "constraint"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "realization-relationship"
                 ]
               },
               "source": {
@@ -150,7 +647,115 @@
               },
               "target": {
                 "enum": [
-                  "resource"
+                  "goal"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "realization-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "capability"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "outcome"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "realization-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "capability"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "principle"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "realization-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "capability"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "requirement"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "realization-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "capability"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "course-of-action"
                 ]
               }
             },
@@ -173,6 +778,87 @@
               "source": {
                 "enum": [
                   "capability"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "value-stream"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "assignment-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "resource"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "capability"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "association-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "value-stream"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "value"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "association-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "value-stream"
                 ]
               },
               "target": {

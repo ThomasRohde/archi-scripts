@@ -1,7 +1,7 @@
 /**
  * @name Generate View from Meta Model
- * @description This script loads a meta model schema, creates a view with all possible elements and relationships, and applies a Dagre layout.
- * @version 1.1
+ * @description This script loads a meta model schema, creates a view with all possible elements and relationships, and applies a simple layout based on ArchiMate layers.
+ * @version 1.3
  * @author Claude AI Assistant
  * @lastModifiedDate 2024-08-19
  */
@@ -17,9 +17,25 @@ const Charset = Java.type('java.nio.charset.Charset');
 const String = Java.type('java.lang.String');
 const Display = Java.type("org.eclipse.swt.widgets.Display");
 const MessageDialog = Java.type("org.eclipse.jface.dialogs.MessageDialog");
-const layoutDagre = require('./lib/layoutDagre');
 const jarchiLogger = require('./lib/jarchiLogger');
 const log = jarchiLogger.createLogger('GenerateViewFromMetaModel', __DIR__);
+
+// Layout constants
+const HORIZONTAL_SPACING = 250;
+const VERTICAL_SPACING = 200;
+const ELEMENT_WIDTH = 120;
+const ELEMENT_HEIGHT = 55;
+
+// ArchiMate layer definitions
+const LAYERS = {
+    STRATEGY: ["resource", "capability", "course-of-action", "value-stream"],
+    BUSINESS: ["business-actor", "business-role", "business-collaboration", "business-interface", "business-process", "business-function", "business-interaction", "business-event", "business-service", "business-object", "contract", "representation", "product"],
+    APPLICATION: ["application-component", "application-collaboration", "application-interface", "application-function", "application-process", "application-interaction", "application-event", "application-service", "data-object"],
+    TECHNOLOGY: ["node", "device", "system-software", "technology-collaboration", "technology-interface", "path", "communication-network", "technology-function", "technology-process", "technology-interaction", "technology-event", "technology-service", "artifact"],
+    PHYSICAL: ["equipment", "facility", "distribution-network", "material"],
+    MOTIVATION: ["stakeholder", "driver", "assessment", "goal", "outcome", "principle", "requirement", "constraint", "meaning", "value"],
+    IMPLEMENTATION: ["work-package", "deliverable", "implementation-event", "plateau", "gap"]
+};
 
 function loadMetaModelSchema() {
     const fileDialog = new FileDialog(shell, SWT.OPEN);
@@ -34,53 +50,129 @@ function loadMetaModelSchema() {
 
     try {
         const file = new File(filePath);
+        log.debug(`Attempting to read schema file: ${file.getAbsolutePath()}`);
+        
+        if (!file.exists()) {
+            log.error(`File does not exist: ${file.getAbsolutePath()}`);
+            throw new Error(`Schema file does not exist: ${filePath}`);
+        }
+        
+        if (!file.canRead()) {
+            log.error(`Cannot read file: ${file.getAbsolutePath()}`);
+            throw new Error(`Cannot read schema file: ${filePath}`);
+        }
+
         const bytes = Files.readAllBytes(file.toPath());
         let content = new String(bytes, Charset.forName("UTF-8"));
         content = content.replace(/^\uFEFF/, '');
         content = content.replace(/^[\s\S]*?(?={)/, '');
         
-        return JSON.parse(content);
+        if (content.trim().length === 0) {
+            log.error(`File is empty after cleaning: ${filePath}`);
+            throw new Error(`Schema file is empty after cleaning: ${filePath}`);
+        }
+        
+        try {
+            return JSON.parse(content);
+        } catch (parseError) {
+            log.error(`Error parsing JSON from file: ${filePath}`, { error: parseError.toString() });
+            log.debug(`Content causing parse error:`);
+            log.debug(content);
+            throw new Error(`Invalid JSON in schema file: ${filePath}. Error: ${parseError.message}`);
+        }
     } catch (error) {
-        log.error("Error reading schema file", { error: error.toString() });
-        MessageDialog.openError(shell, "Error", "Failed to read schema file: " + error.toString());
-        return null;
+        log.error(`Error reading schema file: ${filePath}`, { error: error.toString() });
+        throw error;
     }
+}
+
+function getColloquialName(fullName) {
+    const nameMap = {
+        "composition-relationship": "composed of",
+        "aggregation-relationship": "aggregates",
+        "assignment-relationship": "assigned to",
+        "realization-relationship": "realizes",
+        "serving-relationship": "serves",
+        "access-relationship": "accesses",
+        "influence-relationship": "influences",
+        "triggering-relationship": "triggers",
+        "flow-relationship": "flows to",
+        "specialization-relationship": "specializes",
+        "association-relationship": "associated with"
+    };
+    return nameMap[fullName] || fullName;
+}
+
+function getElementLayer(elementType) {
+    for (const [layer, elements] of Object.entries(LAYERS)) {
+        if (elements.includes(elementType)) {
+            return layer;
+        }
+    }
+    return "OTHER";
 }
 
 function createViewFromMetaModel(schema) {
     const view = model.createArchimateView("Generated from Meta Model");
-    const elementMap = new Map();
+    const elementRefMap = new Map();
+    const layerMap = new Map();
 
     view.openInUI();
 
-    // Create elements
+    // Create elements and organize them by layer
     schema.properties.nodes.items.properties.type.enum.forEach(elementType => {
         try {
             const element = model.createElement(elementType, elementType);
-            const elementRef = view.add(element, 0, 0, 120, 55);
-            elementMap.set(elementType, elementRef);
+            const layer = getElementLayer(elementType);
+            if (!layerMap.has(layer)) {
+                layerMap.set(layer, []);
+            }
+            layerMap.get(layer).push(element);
         } catch (error) {
             log.warn(`Failed to create element of type: ${elementType}`, { error: error.toString() });
         }
     });
 
+    // Layout elements
+    let yOffset = 50;
+    for (const [layer, elements] of layerMap) {
+        let xOffset = 50;
+        elements.forEach((element, index) => {
+            const elementRef = view.add(element, xOffset, yOffset, ELEMENT_WIDTH, ELEMENT_HEIGHT);
+            elementRefMap.set(element.type, elementRef);
+            xOffset += HORIZONTAL_SPACING;
+            if ((index + 1) % 5 === 0) {  // Start a new row after every 5 elements
+                xOffset = 50;
+                yOffset += VERTICAL_SPACING;
+            }
+        });
+        yOffset += VERTICAL_SPACING * 2;  // Extra space between layers
+    }
+
     // Create relationships
     schema.properties.relationships.items.anyOf.forEach(relationshipSchema => {
-        const relationType = relationshipSchema.properties.type.enum[0];
-        const sourceType = relationshipSchema.properties.source.enum[0];
-        const targetType = relationshipSchema.properties.target.enum[0];
-
-        const sourceElementRef = elementMap.get(sourceType);
-        const targetElementRef = elementMap.get(targetType);
-
-        if (sourceElementRef && targetElementRef) {
-            try {
-                const relationship = model.createRelationship(relationType, `${sourceType} to ${targetType}`, sourceElementRef.concept, targetElementRef.concept);
-                view.add(relationship, sourceElementRef, targetElementRef);
-            } catch (error) {
-                log.warn(`Failed to create relationship: ${relationType} from ${sourceType} to ${targetType}`, { error: error.toString() });
-            }
-        }
+        const relationTypes = relationshipSchema.properties.type.enum;
+        const sourceTypes = relationshipSchema.properties.source.enum;
+        const targetTypes = relationshipSchema.properties.target.enum;
+    
+        relationTypes.forEach(relationType => {
+            sourceTypes.forEach(sourceType => {
+                targetTypes.forEach(targetType => {
+                    const sourceElementRef = elementRefMap.get(sourceType);
+                    const targetElementRef = elementRefMap.get(targetType);
+        
+                    if (sourceElementRef && targetElementRef) {
+                        try {
+                            const colloquialName = getColloquialName(relationType);
+                            const relationship = model.createRelationship(relationType, `${colloquialName}`, sourceElementRef.concept, targetElementRef.concept);
+                            view.add(relationship, sourceElementRef, targetElementRef);
+                        } catch (error) {
+                            log.warn(`Failed to create relationship: ${relationType} from ${sourceType} to ${targetType}`, { error: error.toString() });
+                        }
+                    }
+                });
+            });
+        });
     });
 
     return view;
@@ -92,6 +184,6 @@ if (schema) {
     log.info("Meta model schema loaded successfully");
     const view = createViewFromMetaModel(schema);
     view.openInUI();
-    log.info("Dagre layout applied to the view");
-    window.alert("View created. Please run 'Layout using Dagre script'");
+    log.info("View created with simple layout applied");
+    MessageDialog.openInformation(shell, "Success", "View created with a simple layout based on ArchiMate layers.");
 }
