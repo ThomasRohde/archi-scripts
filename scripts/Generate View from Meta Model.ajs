@@ -1,0 +1,97 @@
+/**
+ * @name Generate View from Meta Model
+ * @description This script loads a meta model schema, creates a view with all possible elements and relationships, and applies a Dagre layout.
+ * @version 1.1
+ * @author Claude AI Assistant
+ * @lastModifiedDate 2024-08-19
+ */
+
+console.clear();
+console.show();
+
+const FileDialog = Java.type("org.eclipse.swt.widgets.FileDialog");
+const SWT = Java.type("org.eclipse.swt.SWT");
+const File = Java.type("java.io.File");
+const Files = Java.type('java.nio.file.Files');
+const Charset = Java.type('java.nio.charset.Charset');
+const String = Java.type('java.lang.String');
+const Display = Java.type("org.eclipse.swt.widgets.Display");
+const MessageDialog = Java.type("org.eclipse.jface.dialogs.MessageDialog");
+const layoutDagre = require('./lib/layoutDagre');
+const jarchiLogger = require('./lib/jarchiLogger');
+const log = jarchiLogger.createLogger('GenerateViewFromMetaModel', __DIR__);
+
+function loadMetaModelSchema() {
+    const fileDialog = new FileDialog(shell, SWT.OPEN);
+    fileDialog.setFilterExtensions(["*.json"]);
+    fileDialog.setText("Select Meta Model Schema");
+    const filePath = fileDialog.open();
+
+    if (!filePath) {
+        log.warn("No file selected");
+        return null;
+    }
+
+    try {
+        const file = new File(filePath);
+        const bytes = Files.readAllBytes(file.toPath());
+        let content = new String(bytes, Charset.forName("UTF-8"));
+        content = content.replace(/^\uFEFF/, '');
+        content = content.replace(/^[\s\S]*?(?={)/, '');
+        
+        return JSON.parse(content);
+    } catch (error) {
+        log.error("Error reading schema file", { error: error.toString() });
+        MessageDialog.openError(shell, "Error", "Failed to read schema file: " + error.toString());
+        return null;
+    }
+}
+
+function createViewFromMetaModel(schema) {
+    const view = model.createArchimateView("Generated from Meta Model");
+    const elementMap = new Map();
+
+    view.openInUI();
+
+    // Create elements
+    schema.properties.nodes.items.properties.type.enum.forEach(elementType => {
+        try {
+            const element = model.createElement(elementType, elementType);
+            const elementRef = view.add(element, 0, 0, 120, 55);
+            elementMap.set(elementType, elementRef);
+        } catch (error) {
+            log.warn(`Failed to create element of type: ${elementType}`, { error: error.toString() });
+        }
+    });
+
+    // Create relationships
+    schema.properties.relationships.items.anyOf.forEach(relationshipSchema => {
+        const relationType = relationshipSchema.properties.type.enum[0];
+        const sourceType = relationshipSchema.properties.source.enum[0];
+        const targetType = relationshipSchema.properties.target.enum[0];
+
+        const sourceElementRef = elementMap.get(sourceType);
+        const targetElementRef = elementMap.get(targetType);
+
+        if (sourceElementRef && targetElementRef) {
+            try {
+                const relationship = model.createRelationship(relationType, `${sourceType} to ${targetType}`, sourceElementRef.concept, targetElementRef.concept);
+                view.add(relationship, sourceElementRef, targetElementRef);
+            } catch (error) {
+                log.warn(`Failed to create relationship: ${relationType} from ${sourceType} to ${targetType}`, { error: error.toString() });
+            }
+        }
+    });
+
+    return view;
+}
+
+// Main execution
+const schema = loadMetaModelSchema();
+if (schema) {
+    log.info("Meta model schema loaded successfully");
+    const view = createViewFromMetaModel(schema);
+    view.openInUI();
+    log.info("Dagre layout applied to the view");
+    window.alert("View created. Please run 'Layout using Dagre script'");
+}

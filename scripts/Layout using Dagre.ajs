@@ -3,128 +3,130 @@
  * @description A script to layout a view using Dagre with a settings dialog
  */
 
-const layoutDagre = require('./lib/layoutDagre');
+(function() {
+    const layoutDagre = require('./lib/layoutDagre');
 
-// Import necessary Java types
-const SWT = Java.type('org.eclipse.swt.SWT');
-const GridDataFactory = Java.type('org.eclipse.jface.layout.GridDataFactory');
-const GridLayoutFactory = Java.type('org.eclipse.jface.layout.GridLayoutFactory');
-const LabelWidget = Java.type('org.eclipse.swt.widgets.Label');
-const ComboWidget = Java.type('org.eclipse.swt.widgets.Combo');
-const TextWidget = Java.type('org.eclipse.swt.widgets.Text');
-const ButtonWidget = Java.type('org.eclipse.swt.widgets.Button');
-const Dialog = Java.extend(Java.type('org.eclipse.jface.dialogs.Dialog'));
-const IDialogConstants = Java.type('org.eclipse.jface.dialogs.IDialogConstants');
+    // Import necessary Java types
+    const SWT = Java.type('org.eclipse.swt.SWT');
+    const GridDataFactory = Java.type('org.eclipse.jface.layout.GridDataFactory');
+    const GridLayoutFactory = Java.type('org.eclipse.jface.layout.GridLayoutFactory');
+    const LabelWidget = Java.type('org.eclipse.swt.widgets.Label');
+    const ComboWidget = Java.type('org.eclipse.swt.widgets.Combo');
+    const TextWidget = Java.type('org.eclipse.swt.widgets.Text');
+    const ButtonWidget = Java.type('org.eclipse.swt.widgets.Button');
+    const Dialog = Java.extend(Java.type('org.eclipse.jface.dialogs.Dialog'));
+    const IDialogConstants = Java.type('org.eclipse.jface.dialogs.IDialogConstants');
 
-const dagreSettingsDialog = {
-    settings: {
-        rankdir: 'TB',
-        align: 'UL',
-        nodesep: 50,
-        edgesep: 10,
-        ranksep: 50,
-        marginx: 0,
-        marginy: 0,
-        acyclicer: undefined,
-        ranker: 'network-simplex'
-    },
-
-    open: function() {
-        return this.dialog.open() === 0; // OK = 0, Cancel = 1
-    },
-
-    dialog: new Dialog(shell, {
-        configureShell: function(newShell) {
-            Java.super(dagreSettingsDialog.dialog).configureShell(newShell);
-            newShell.setText("Dagre Layout Settings");
+    const dagreSettingsDialog = {
+        settings: {
+            rankdir: 'TB',
+            align: 'UL',
+            nodesep: 50,
+            edgesep: 10,
+            ranksep: 50,
+            marginx: 0,
+            marginy: 0,
+            acyclicer: undefined,
+            ranker: 'network-simplex'
         },
 
-        createDialogArea: function(parent) {
-            const area = Java.super(dagreSettingsDialog.dialog).createDialogArea(parent);
-            GridLayoutFactory.swtDefaults().numColumns(2).applyTo(area);
-
-            this.createComboSetting(area, "Rank Direction", "rankdir", ["TB", "BT", "LR", "RL"]);
-            this.createComboSetting(area, "Alignment", "align", ["UL", "UR", "DL", "DR"]);
-            this.createNumberSetting(area, "Node Separation", "nodesep");
-            this.createNumberSetting(area, "Edge Separation", "edgesep");
-            this.createNumberSetting(area, "Rank Separation", "ranksep");
-            this.createNumberSetting(area, "Margin X", "marginx");
-            this.createNumberSetting(area, "Margin Y", "marginy");
-            this.createComboSetting(area, "Acyclicer", "acyclicer", ["undefined", "greedy"]);
-            this.createComboSetting(area, "Ranker", "ranker", ["network-simplex", "tight-tree", "longest-path"]);
-
-            return area;
+        open: function() {
+            return this.dialog.open() === 0; // OK = 0, Cancel = 1
         },
 
-        createComboSetting: function(parent, label, setting, options) {
-            new LabelWidget(parent, SWT.NONE).setText(label);
-            const combo = new ComboWidget(parent, SWT.READ_ONLY);
-            combo.setItems(options);
-            combo.setText(dagreSettingsDialog.settings[setting] || options[0]);
-            combo.addSelectionListener({
-                widgetSelected: function(e) {
-                    dagreSettingsDialog.settings[setting] = combo.getText();
-                }
-            });
-            GridDataFactory.fillDefaults().grab(true, false).applyTo(combo);
-        },
+        dialog: new Dialog(shell, {
+            configureShell: function(newShell) {
+                Java.super(dagreSettingsDialog.dialog).configureShell(newShell);
+                newShell.setText("Dagre Layout Settings");
+            },
 
-        createNumberSetting: function(parent, label, setting) {
-            new LabelWidget(parent, SWT.NONE).setText(label);
-            const text = new TextWidget(parent, SWT.BORDER);
-            text.setText(dagreSettingsDialog.settings[setting].toString());
-            text.addModifyListener(function(e) {
-                const value = parseInt(text.getText());
-                if (!isNaN(value)) {
-                    dagreSettingsDialog.settings[setting] = value;
-                }
-            });
-            GridDataFactory.fillDefaults().grab(true, false).applyTo(text);
-        },
+            createDialogArea: function(parent) {
+                const area = Java.super(dagreSettingsDialog.dialog).createDialogArea(parent);
+                GridLayoutFactory.swtDefaults().numColumns(2).applyTo(area);
 
-        createButtonsForButtonBar: function(parent) {
-            // Create "Layout" button
-            const layoutButton = Java.super(dagreSettingsDialog.dialog).createButton(
-                parent, 
-                IDialogConstants.CLIENT_ID,
-                "Layout",
-                false
-            );
-            layoutButton.addSelectionListener({
-                widgetSelected: function(e) {
-                    dagreSettingsDialog.applyLayout();
-                }
-            });
+                this.createComboSetting(area, "Rank Direction", "rankdir", ["TB", "BT", "LR", "RL"]);
+                this.createComboSetting(area, "Alignment", "align", ["UL", "UR", "DL", "DR"]);
+                this.createNumberSetting(area, "Node Separation", "nodesep");
+                this.createNumberSetting(area, "Edge Separation", "edgesep");
+                this.createNumberSetting(area, "Rank Separation", "ranksep");
+                this.createNumberSetting(area, "Margin X", "marginx");
+                this.createNumberSetting(area, "Margin Y", "marginy");
+                this.createComboSetting(area, "Acyclicer", "acyclicer", ["undefined", "greedy"]);
+                this.createComboSetting(area, "Ranker", "ranker", ["network-simplex", "tight-tree", "longest-path"]);
 
-            // Create "Cancel" button
-            Java.super(dagreSettingsDialog.dialog).createButton(
-                parent, 
-                IDialogConstants.CANCEL_ID, 
-                IDialogConstants.CANCEL_LABEL, 
-                false
-            );
-        },
+                return area;
+            },
 
-        cancelPressed: function() {
-            Java.super(dagreSettingsDialog.dialog).cancelPressed();
+            createComboSetting: function(parent, label, setting, options) {
+                new LabelWidget(parent, SWT.NONE).setText(label);
+                const combo = new ComboWidget(parent, SWT.READ_ONLY);
+                combo.setItems(options);
+                combo.setText(dagreSettingsDialog.settings[setting] || options[0]);
+                combo.addSelectionListener({
+                    widgetSelected: function(e) {
+                        dagreSettingsDialog.settings[setting] = combo.getText();
+                    }
+                });
+                GridDataFactory.fillDefaults().grab(true, false).applyTo(combo);
+            },
+
+            createNumberSetting: function(parent, label, setting) {
+                new LabelWidget(parent, SWT.NONE).setText(label);
+                const text = new TextWidget(parent, SWT.BORDER);
+                text.setText(dagreSettingsDialog.settings[setting].toString());
+                text.addModifyListener(function(e) {
+                    const value = parseInt(text.getText());
+                    if (!isNaN(value)) {
+                        dagreSettingsDialog.settings[setting] = value;
+                    }
+                });
+                GridDataFactory.fillDefaults().grab(true, false).applyTo(text);
+            },
+
+            createButtonsForButtonBar: function(parent) {
+                // Create "Layout" button
+                const layoutButton = Java.super(dagreSettingsDialog.dialog).createButton(
+                    parent, 
+                    IDialogConstants.CLIENT_ID,
+                    "Layout",
+                    false
+                );
+                layoutButton.addSelectionListener({
+                    widgetSelected: function(e) {
+                        dagreSettingsDialog.applyLayout();
+                    }
+                });
+
+                // Create "Cancel" button
+                Java.super(dagreSettingsDialog.dialog).createButton(
+                    parent, 
+                    IDialogConstants.CANCEL_ID, 
+                    IDialogConstants.CANCEL_LABEL, 
+                    false
+                );
+            },
+
+            cancelPressed: function() {
+                Java.super(dagreSettingsDialog.dialog).cancelPressed();
+            }
+        }),
+
+        applyLayout: function() {
+            const selectedView = $(selection).filter("archimate-diagram-model").first();
+            if (selectedView) {
+                layoutDagre(selectedView, this.settings);
+                console.log("View layout applied with current settings!");
+            } else {
+                console.log("No view selected. Please select a view and try again.");
+            }
         }
-    }),
+    };
 
-    applyLayout: function() {
-        const selectedView = $(selection).filter("archimate-diagram-model").first();
-        if (selectedView) {
-            layoutDagre(selectedView, this.settings);
-            console.log("View layout applied with current settings!");
-        } else {
-            console.log("No view selected. Please select a view and try again.");
-        }
+    // Main script execution
+    const selectedView = $(selection).filter("archimate-diagram-model").first();
+    if (selectedView) {
+        dagreSettingsDialog.open();
+    } else {
+        console.log("No view selected. Please select a view and run the script again.");
     }
-};
-
-// Main script execution
-const selectedView = $(selection).filter("archimate-diagram-model").first();
-if (selectedView) {
-    dagreSettingsDialog.open();
-} else {
-    console.log("No view selected. Please select a view and run the script again.");
-}
+})();
