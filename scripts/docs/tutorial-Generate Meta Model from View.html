@@ -1,0 +1,196 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Tutorial: Generate Meta Model from View</title>
+            
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.3;
+        color: #333;
+        margin: 0;
+        padding: 10px;
+    }
+    h1 {
+        color: #2c3e50;
+        font-size: 20px;
+        margin: 10px 0 5px 0;
+    }
+    h2 {
+        color: #3498db;
+        font-size: 16px;
+        margin: 8px 0 4px 0;
+    }
+    p {
+        margin: 0 0 5px 0;
+    }
+    ul,
+    ol {
+        margin: 0 0 5px 0;
+        padding-left: 20px;
+    }
+    li {
+        margin-bottom: 2px;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 5px 0;
+    }
+    table,
+    th,
+    td {
+        border: 1px solid black;
+        font-size: 12px;
+        padding: 2px;
+    }
+</style>
+
+        </head>
+        <body>
+            <h1>Tutorial: Generate Meta Model from View</h1>
+            <p>The &quot;Generate Meta Model from View&quot; script is a powerful tool for ArchiMate modelers using Archi with jArchi scripts. It analyzes a selected ArchiMate view and generates a meta model in JSON schema format, capturing the structure and relationships of the elements in your view.</p>
+<h2>Features</h2>
+<ul>
+<li>Analyzes the currently selected ArchiMate view</li>
+<li>Generates a JSON schema representing the meta model</li>
+<li>Excludes non-standard ArchiMate elements for a focused meta model</li>
+<li>Ensures unique entries for element types and relationships</li>
+<li>Saves the generated meta model as a JSON file</li>
+</ul>
+<h2>Prerequisites</h2>
+<ul>
+<li>Archi with jArchi scripts installed</li>
+<li>Basic understanding of ArchiMate modeling</li>
+<li>Familiarity with JSON schema structure (for interpreting the output)</li>
+</ul>
+<h2>Step-by-Step Guide</h2>
+<ol>
+<li><p><strong>Prepare Your ArchiMate View</strong></p>
+<ul>
+<li>Open your ArchiMate model in Archi</li>
+<li>Create or select the view you want to generate a meta model from</li>
+<li>Ensure your view contains the elements and relationships you want to include in the meta model</li>
+</ul>
+</li>
+<li><p><strong>Run the Script</strong></p>
+<ul>
+<li>In Archi, select the view you want to analyze</li>
+<li>Open the jArchi Scripts menu</li>
+<li>Locate and click on &quot;Generate Meta Model from View&quot;</li>
+</ul>
+</li>
+<li><p><strong>Save the Meta Model</strong></p>
+<ul>
+<li>After the script runs, a file dialog will appear</li>
+<li>Choose a location on your computer to save the JSON file</li>
+<li>Give the file a meaningful name (e.g., &quot;MyProjectMetaModel.json&quot;)</li>
+<li>Click &quot;Save&quot;</li>
+</ul>
+</li>
+<li><p><strong>Review the Generated Meta Model</strong></p>
+<ul>
+<li>Open the saved JSON file in a text editor or JSON viewer</li>
+<li>The meta model will have two main sections:<ul>
+<li><code>nodes</code>: Lists all unique ArchiMate element types found in the view</li>
+<li><code>relationships</code>: Lists all unique relationships between element types</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>Interpret the Meta Model</strong></p>
+<ul>
+<li>The <code>nodes</code> section shows all element types used in your view</li>
+<li>The <code>relationships</code> section shows allowed connections between elements</li>
+<li>Each relationship entry specifies:<ul>
+<li><code>type</code>: The type of relationship</li>
+<li><code>source</code>: The type of element where the relationship starts</li>
+<li><code>target</code>: The type of element where the relationship ends</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<h2>Example Output</h2>
+<pre><code class="language-json">{
+  &quot;type&quot;: &quot;object&quot;,
+  &quot;properties&quot;: {
+    &quot;nodes&quot;: {
+      &quot;type&quot;: &quot;array&quot;,
+      &quot;items&quot;: {
+        &quot;type&quot;: &quot;object&quot;,
+        &quot;properties&quot;: {
+          &quot;id&quot;: { &quot;type&quot;: &quot;string&quot; },
+          &quot;type&quot;: { 
+            &quot;enum&quot;: [&quot;business-actor&quot;, &quot;business-role&quot;, &quot;business-process&quot;]
+          },
+          &quot;name&quot;: { &quot;type&quot;: &quot;string&quot; },
+          &quot;description&quot;: { &quot;type&quot;: &quot;string&quot; }
+        },
+        &quot;required&quot;: [&quot;id&quot;, &quot;type&quot;, &quot;name&quot;, &quot;description&quot;],
+        &quot;additionalProperties&quot;: false
+      }
+    },
+    &quot;relationships&quot;: {
+      &quot;type&quot;: &quot;array&quot;,
+      &quot;items&quot;: {
+        &quot;type&quot;: &quot;object&quot;,
+        &quot;properties&quot;: {
+          &quot;type&quot;: { &quot;type&quot;: &quot;string&quot; },
+          &quot;source&quot;: { &quot;type&quot;: &quot;string&quot; },
+          &quot;target&quot;: { &quot;type&quot;: &quot;string&quot; }
+        },
+        &quot;required&quot;: [&quot;type&quot;, &quot;source&quot;, &quot;target&quot;],
+        &quot;additionalProperties&quot;: false,
+        &quot;anyOf&quot;: [
+          {
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;properties&quot;: {
+              &quot;type&quot;: { &quot;type&quot;: &quot;string&quot;, &quot;enum&quot;: [&quot;assignment-relationship&quot;] },
+              &quot;source&quot;: { &quot;enum&quot;: [&quot;business-actor&quot;] },
+              &quot;target&quot;: { &quot;enum&quot;: [&quot;business-role&quot;] }
+            },
+            &quot;required&quot;: [&quot;type&quot;, &quot;source&quot;, &quot;target&quot;],
+            &quot;additionalProperties&quot;: false
+          },
+          {
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;properties&quot;: {
+              &quot;type&quot;: { &quot;type&quot;: &quot;string&quot;, &quot;enum&quot;: [&quot;triggering-relationship&quot;] },
+              &quot;source&quot;: { &quot;enum&quot;: [&quot;business-process&quot;] },
+              &quot;target&quot;: { &quot;enum&quot;: [&quot;business-process&quot;] }
+            },
+            &quot;required&quot;: [&quot;type&quot;, &quot;source&quot;, &quot;target&quot;],
+            &quot;additionalProperties&quot;: false
+          }
+        ]
+      }
+    }
+  },
+  &quot;required&quot;: [&quot;nodes&quot;, &quot;relationships&quot;],
+  &quot;additionalProperties&quot;: false
+}
+</code></pre>
+<h2>Use Cases</h2>
+<ol>
+<li><strong>Model Validation</strong>: Use the meta model to validate other ArchiMate models for consistency.</li>
+<li><strong>Documentation</strong>: Generate documentation about the structure of your ArchiMate models.</li>
+<li><strong>Analysis</strong>: Analyze the complexity and structure of your architecture models.</li>
+<li><strong>Tool Integration</strong>: Use the meta model to integrate ArchiMate data with other tools or scripts.</li>
+</ol>
+<h2>Troubleshooting</h2>
+<ul>
+<li>If the script doesn&#39;t run, ensure you have a view selected in Archi.</li>
+<li>If the meta model is empty, check if your view contains standard ArchiMate elements and relationships.</li>
+<li>For any errors, check the console output for error messages and details.</li>
+</ul>
+<h2>Conclusion</h2>
+<p>The &quot;Generate Meta Model from View&quot; script provides a quick and easy way to extract the underlying structure of your ArchiMate models. By generating a JSON schema representation, it opens up possibilities for further analysis, validation, and integration of your architectural models.</p>
+
+        </body>
+        </html>
+    

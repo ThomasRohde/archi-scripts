@@ -509,5 +509,31 @@ const menuItems = [
         script: "Generate Meta Model.ajs",
         category: "AI-Assisted Modeling",
         tutorial: "Generate Meta Model"
+    },
+    {
+        name: "Generate Meta Model from View",
+        description: `
+        <h2>Generate Meta Model from View</h2>
+        <p>This script generates an ArchiMate meta model based on the currently selected view and saves it as a JSON file.</p>
+        <h3>Features:</h3>
+        <ul>
+            <li>Analyzes the selected ArchiMate view</li>
+            <li>Generates a meta model JSON schema</li>
+            <li>Excludes non-standard ArchiMate elements</li>
+            <li>Ensures unique entries for element types and relationships</li>
+            <li>Saves the generated meta model to a user-specified JSON file</li>
+        </ul>
+        <h3>Usage:</h3>
+        <ol>
+            <li>Select an ArchiMate view in your model</li>
+            <li>Run the "Generate Meta Model from View" script</li>
+            <li>Choose a location to save the generated meta model JSON file</li>
+            <li>Review the generated meta model for your ArchiMate view</li>
+        </ol>
+        <p>This script is particularly useful for understanding the structure of your ArchiMate models, generating documentation, or creating validation schemas for model consistency checks.</p>
+    `,
+        script: "Generate Meta Model from View.ajs",
+        category: "Model Analysis",
+        tutorial: "Generate Meta Model from View"
     }
 ];
