@@ -1,0 +1,167 @@
+/**
+ * @name Generate Meta Model from View
+ * @description This script generates an ArchiMate meta model based on the currently selected view, excluding non-standard ArchiMate elements, and saves it as a JSON file.
+ * @version 1.2
+ * @author Claude AI Assistant
+ * @lastModifiedDate 2024-08-19
+ */
+
+console.clear();
+console.show();
+
+// Import necessary Java types
+const FileDialog = Java.type("org.eclipse.swt.widgets.FileDialog");
+const SWT = Java.type("org.eclipse.swt.SWT");
+const File = Java.type("java.io.File");
+const FileWriter = Java.type("java.io.FileWriter");
+const MessageDialog = Java.type("org.eclipse.jface.dialogs.MessageDialog");
+
+// Initialize logger
+const jarchiLogger = require('./lib/jarchiLogger');
+const log = jarchiLogger.createLogger('GenerateMetaModelFromView', __DIR__);
+
+// List of non-standard ArchiMate elements to exclude
+const nonStandardElements = [
+    "diagram-model-note",
+    "archimate-diagram-model",
+    "diagram-model-group",
+    "sketch-model",
+    "diagram-model-connection",
+    "canvas-model",
+    "diagram-model-image",
+    "diagram-model-reference",
+    "sketch-model-sticky",
+    "sketch-model-actor",
+    "canvas-model-block",
+    "canvas-model-sticky",
+    "canvas-model-image"
+];
+
+function generateMetaModelFromView(view) {
+    const metaModel = {
+        type: "object",
+        properties: {
+            nodes: {
+                type: "array",
+                items: {
+                    type: "object",
+                    properties: {
+                        id: { type: "string" },
+                        type: { enum: [] },
+                        name: { type: "string" },
+                        description: { type: "string" }
+                    },
+                    required: ["id", "type", "name", "description"],
+                    additionalProperties: false
+                }
+            },
+            relationships: {
+                type: "array",
+                items: {
+                    type: "object",
+                    properties: {
+                        type: { type: "string" },
+                        source: { type: "string" },
+                        target: { type: "string" }
+                    },
+                    required: ["type", "source", "target"],
+                    additionalProperties: false,
+                    anyOf: []
+                }
+            }
+        },
+        required: ["nodes", "relationships"],
+        additionalProperties: false
+    };
+
+    const nodeTypes = new Set();
+    const relationshipTypes = new Set();
+
+    // Function to recursively process nested elements
+    function processElement(element) {
+        if (!nonStandardElements.includes(element.type)) {
+            if (!element.type.includes("relationship")) {
+                nodeTypes.add(element.type);
+            } else {
+                const sourceType = element.source.type;
+                const targetType = element.target.type;
+                if (!nonStandardElements.includes(sourceType) && !nonStandardElements.includes(targetType)) {
+                    relationshipTypes.add(JSON.stringify({
+                        type: element.type,
+                        source: sourceType,
+                        target: targetType
+                    }));
+                }
+            }
+        }
+
+        // Process children recursively
+        $(element).children().each(child => processElement(child));
+    }
+
+    // Start processing from the view
+    processElement(view);
+
+    metaModel.properties.nodes.items.properties.type.enum = Array.from(nodeTypes);
+
+    metaModel.properties.relationships.items.anyOf = Array.from(relationshipTypes).map(relString => {
+        const rel = JSON.parse(relString);
+        return {
+            type: "object",
+            properties: {
+                type: { type: "string", enum: [rel.type] },
+                source: { enum: [rel.source] },
+                target: { enum: [rel.target] }
+            },
+            required: ["type", "source", "target"],
+            additionalProperties: false
+        };
+    });
+
+    return metaModel;
+}
+
+function saveMetaModelToFile(metaModel) {
+    const fileDialog = new FileDialog(shell, SWT.SAVE);
+    fileDialog.setFilterExtensions(["*.json"]);
+    fileDialog.setText("Save Meta Model");
+    const filePath = fileDialog.open();
+
+    if (filePath) {
+        try {
+            const writer = new FileWriter(filePath);
+            writer.write(JSON.stringify(metaModel, null, 2));
+            writer.close();
+            log.info("Meta model saved successfully", { path: filePath });
+            MessageDialog.openInformation(
+                shell,
+                "Success",
+                "Meta model saved successfully."
+            );
+        } catch (error) {
+            log.error("Error saving meta model", { error: error.toString() });
+            MessageDialog.openError(
+                shell,
+                "Error",
+                "Failed to save meta model: " + error.toString()
+            );
+        }
+    } else {
+        log.debug("File save cancelled");
+    }
+}
+
+// Main execution
+const selectedView = $(selection).filter("archimate-diagram-model").first();
+if (selectedView) {
+    log.info("Generating meta model from selected view");
+    const metaModel = generateMetaModelFromView(selectedView);
+    saveMetaModelToFile(metaModel);
+} else {
+    log.warn("No view selected. Please select a view and run the script again.");
+    MessageDialog.openWarning(
+        shell,
+        "Warning",
+        "No view selected. Please select a view and run the script again."
+    );
+}
