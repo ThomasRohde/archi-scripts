@@ -335,80 +335,108 @@ const resultDialog = new ResultDialog(shell, {
 });
 
 function sanitizeMetaModel(metaModel) {
-  const validNodes = new Set();
-  const validRelationships = new Set();
+    const validNodes = new Set();
+    const validRelationships = new Set();
 
-  // Test nodes
-  metaModel.properties.nodes.items.properties.type.enum.forEach(nodeType => {
-      try {
-          const testElement = model.createElement(nodeType, "Test " + nodeType);
-          validNodes.add(nodeType);
-          testElement.delete();
-      } catch (error) {
-          log.warn(`Invalid node type: ${nodeType}`, { error: error.toString() });
-      }
-  });
+    // Test nodes
+    metaModel.properties.nodes.items.properties.type.enum.forEach((nodeType) => {
+        try {
+            const testElement = model.createElement(nodeType, "Test " + nodeType);
+            validNodes.add(nodeType);
+            testElement.delete();
+        } catch (error) {
+            log.warn(`Invalid node type: ${nodeType}`, { error: error.toString() });
+        }
+    });
 
-  // Update valid node types in the schema
-  metaModel.properties.nodes.items.properties.type.enum = Array.from(validNodes);
+    // Update valid node types in the schema
+    metaModel.properties.nodes.items.properties.type.enum = Array.from(validNodes);
 
-  // Test relationships
-  metaModel.properties.relationships.items.anyOf.forEach(relation => {
-      const relationType = relation.properties.type.enum[0];
-      const sources = relation.properties.source.enum;
-      const targets = relation.properties.target.enum;
+    // Test relationships
+    metaModel.properties.relationships.items.anyOf.forEach((relation) => {
+        const relationType = relation.properties.type.enum[0];
+        const sources = relation.properties.source.enum;
+        const targets = relation.properties.target.enum;
+        const elements = new Map();
+        sources.forEach((source) => {
+            targets.forEach((target) => {
+                if (validNodes.has(source) && validNodes.has(target)) {
+                    try {
+                        const sourceElement = model.createElement(source, "Test Source");
+                        const targetElement = model.createElement(target, "Test Target");
+                        elements.set(sourceElement.id, sourceElement);
+                        elements.set(targetElement.id, targetElement);
+                        let testRelationship = model.createRelationship(
+                            relationType,
+                            "Test Relationship",
+                            sourceElement,
+                            targetElement
+                        );
+                        validRelationships.add(JSON.stringify({ type: relationType, source, target }));
+                    } catch (error) {
+                        // If creation fails, try reversing source and target
+                        try {
+                            log.debug(
+                                `Trying reversing relationship: ${relationType} between ${source} and ${target}`,
+                                { error: error.toString() }
+                            );
+                            const sourceElement = model.createElement(target, "Test Source");
+                            const targetElement = model.createElement(source, "Test Target");
+                            elements.set(sourceElement.id, sourceElement);
+                            elements.set(targetElement.id, targetElement);
+                            let testRelationship = model.createRelationship(
+                                relationType,
+                                "Test Relationship",
+                                sourceElement,
+                                targetElement
+                            );
+                            validRelationships.add(
+                                JSON.stringify({ type: relationType, source: target, target: source })
+                            );
+                            log.debug(
+                                `Reversing relationship worked: ${relationType} between ${target} and ${source}`,
+                                { error: error.toString() }
+                            );
+                        } catch (reverseError) {
+                            log.warn(`Invalid relationship: ${relationType} between ${source} and ${target}`, {
+                                error: reverseError.toString(),
+                            });
+                        }
+                    }
+                }
+            });
+        });
+        elements.forEach((value, key) => {
+            try {
+                value.delete();
+            } catch {}
+        });
+    });
 
-      sources.forEach(source => {
-          targets.forEach(target => {
-              if (validNodes.has(source) && validNodes.has(target)) {
-                  try {
-                      const sourceElement = model.createElement(source, "Test Source");
-                      const targetElement = model.createElement(target, "Test Target");
-                      let testRelationship = model.createRelationship(relationType, "Test Relationship", sourceElement, targetElement);
-                      validRelationships.add(JSON.stringify({type: relationType, source, target}));
-                  } catch (error) {
-                      // If creation fails, try reversing source and target
-                      try {
-                          log.debug(`Trying reversing relationship: ${relationType} between ${source} and ${target}`, { error: error.toString() })
-                          const sourceElement = model.createElement(target, "Test Source");
-                          const targetElement = model.createElement(source, "Test Target");
-                          let testRelationship = model.createRelationship(relationType, "Test Relationship", sourceElement, targetElement);
-                          validRelationships.add(JSON.stringify({type: relationType, source: target, target: source}));
-                          log.debug(`Reversing relationship worked: ${relationType} between ${target} and ${source}`, { error: error.toString() })
-                      } catch (reverseError) {
-                          log.warn(`Invalid relationship: ${relationType} between ${source} and ${target}`, { error: reverseError.toString() });
-                      }
-                  }
-              }
-          });
-      });
-  });
+    // Update valid relationships in the schema
+    metaModel.properties.relationships.items.anyOf = Array.from(validRelationships).map((rel) => {
+        const { type, source, target } = JSON.parse(rel);
+        return {
+            type: "object",
+            properties: {
+                type: {
+                    type: "string",
+                    enum: [type],
+                },
+                source: {
+                    enum: [source],
+                },
+                target: {
+                    enum: [target],
+                },
+            },
+            required: ["type", "source", "target"],
+            additionalProperties: false,
+        };
+    });
 
-  // Update valid relationships in the schema
-  metaModel.properties.relationships.items.anyOf = Array.from(validRelationships).map(rel => {
-      const {type, source, target} = JSON.parse(rel);
-      return {
-          type: "object",
-          properties: {
-              type: {
-                  type: "string",
-                  enum: [type]
-              },
-              source: {
-                  enum: [source]
-              },
-              target: {
-                  enum: [target]
-              }
-          },
-          required: ["type", "source", "target"],
-          additionalProperties: false
-      };
-  });
-
-  return metaModel;
+    return metaModel;
 }
-
 
 // Main execution
 (function () {
