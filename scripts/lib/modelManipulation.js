@@ -424,37 +424,45 @@ const modelManipulation = {
             log.warn("Invalid view provided. Please provide a valid ArchiMate view.");
             return;
         }
-
-        function updateElement(element, data, parentX = 0, parentY = 0) {
+    
+        function updateElement(element, data) {
             if (element && element.bounds) {
+                // Update the element's bounds
                 element.bounds = {
-                    x: data.x - parentX,
-                    y: data.y - parentY,
+                    x: data.x,
+                    y: data.y,
                     width: data.width,
-                    height: data.height,
+                    height: data.height
                 };
                 log.debug(`Updated element: ${element.name} (${element.id})`);
+    
+                // Update child elements
+                if (data.children && data.children.length > 0) {
+                    data.children.forEach(childData => {
+                        const childElement = $(element).children(`#${childData.id}`).first();
+                        if (childElement) {
+                            // Calculate child's position relative to its parent
+                            childElement.bounds = {
+                                x: childData.x - data.x,
+                                y: childData.y - data.y,
+                                width: childData.width,
+                                height: childData.height
+                            };
+                        }
+                    });
+                }
             } else {
                 log.warn(`Element not found or invalid: ${data.id}`);
             }
-
-            if (data.children && data.children.length > 0) {
-                data.children.forEach((childData) => {
-                    const childElement = $(element).children(`#${childData.id}`).first();
-                    if (childElement) {
-                        updateElement(childElement, childData, data.x, data.y);
-                    }
-                });
-            }
         }
-
-        viewJson.nodes.forEach((nodeData) => {
+    
+        viewJson.nodes.forEach(nodeData => {
             const element = $(view).find(`#${nodeData.id}`).first();
             updateElement(element, nodeData);
         });
-
+    
         log.info(`Updated ${viewJson.nodes.length} elements in the view`);
-    },
+    }
 };
 
 module.exports = modelManipulation;

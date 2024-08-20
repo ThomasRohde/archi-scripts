@@ -1,13 +1,11 @@
 /**
  * @name Animate View Elements
- * @version 1.5
+ * @version 1.6
  * @description Animates elements in a view by slightly changing their position and size over multiple iterations
  */
 
 console.clear();
 console.show();
-
-const Display = Java.type("org.eclipse.swt.widgets.Display");
 
 const modelManipulation = require("./lib/modelManipulation");
 const jarchiLogger = require('./lib/jarchiLogger');
@@ -29,21 +27,22 @@ function animateViewElements(iterations = 30, delay = 100) {
         java.lang.Thread.sleep(ms);
     }
 
-    function modifyNodeRecursively(node) {
+    function modifyNodeRecursively(node, parentDx = 0, parentDy = 0) {
         // Generate random changes between -5 and 5
         const dx = Math.floor(Math.random() * 11) - 5;
         const dy = Math.floor(Math.random() * 11) - 5;
         const dw = Math.floor(Math.random() * 11) - 5;
         const dh = Math.floor(Math.random() * 11) - 5;
 
-        node.x += dx;
-        node.y += dy;
+        // Apply changes, including parent's changes
+        node.x += dx + parentDx;
+        node.y += dy + parentDy;
         node.width = Math.max(node.width + dw, 10);  // Ensure width doesn't go below 10
         node.height = Math.max(node.height + dh, 10);  // Ensure height doesn't go below 10
 
         // Recursively modify children
         if (node.children && node.children.length > 0) {
-            node.children.forEach(child => modifyNodeRecursively(child));
+            node.children.forEach(child => modifyNodeRecursively(child, dx, dy));
         }
     }
 
@@ -59,9 +58,7 @@ function animateViewElements(iterations = 30, delay = 100) {
                 viewJson.nodes.forEach(node => modifyNodeRecursively(node));
 
                 // Update the view from the modified JSON
-                Display.getDefault().syncExec(() => {
-                    modelManipulation.updateViewFromJSON(selectedView, viewJson);
-                });
+                modelManipulation.updateViewFromJSON(selectedView, viewJson);
 
                 // Wait for a short delay to create animation effect
                 sleep(delay);
@@ -78,7 +75,8 @@ function animateViewElements(iterations = 30, delay = 100) {
 }
 
 try {
-    animateViewElements(2, 100);
+    // Run the animation with 30 iterations and 100ms delay
+    animateViewElements(30, 100);
 } catch (error) {
     log.error("An error occurred during the animation", { error: error.toString(), stack: error.stack });
 }
