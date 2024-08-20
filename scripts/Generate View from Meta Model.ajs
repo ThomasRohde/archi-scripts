@@ -22,7 +22,7 @@ const log = jarchiLogger.createLogger('GenerateViewFromMetaModel', __DIR__);
 
 // Layout constants
 const HORIZONTAL_SPACING = 250;
-const VERTICAL_SPACING = 200;
+const VERTICAL_SPACING = 100;
 const ELEMENT_WIDTH = 120;
 const ELEMENT_HEIGHT = 55;
 

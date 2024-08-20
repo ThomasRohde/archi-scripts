@@ -49,7 +49,7 @@ function generateMetaModel(base64Image) {
         const prompt = `Analyze this ArchiMate model image and provide a structured output of the allowed elements and relationships. Format the response as a JSON schema that can be used for validating ArchiMate models. 
         The schema must precisely encode which source and target types are allowed for each allowed relationship type. If the label of an element does not match a valid ArchiMate, use the visual shape and the icon to make a judgement as to which element it is.
         
-        Remember that in ArchiMate names SPACE is replaced with UNDERSCORE, and are always in small caps. Names of relationships always end with "-relationship".
+        Remember that in ArchiMate names SPACE is replaced with HYPHEN (-), and are always in small caps. Names of relationships always end with "-relationship".
 
         IMPORTANT! Only include combinations of relationships that are valid according the supplied image! In the AnyOf section, ONLY include 1 combination of type, source, and target!
         NOTE! Aggregation and composition relationships have the relationship reversed regarding source and target. The empty and filled diamonds are at the source NOT the target!

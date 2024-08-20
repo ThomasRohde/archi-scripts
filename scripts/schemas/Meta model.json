@@ -11,13 +11,20 @@
           },
           "type": {
             "enum": [
-              "application-interaction",
+              "business-object",
+              "business-service",
+              "business-interface",
+              "business-process",
+              "business-role",
+              "business-actor",
+              "location",
               "application-service",
               "application-interface",
               "application-function",
               "application-component",
-              "application-collaboration",
-              "data-object"
+              "data-object",
+              "artifact",
+              "node"
             ]
           },
           "name": {
@@ -64,17 +71,17 @@
               "type": {
                 "type": "string",
                 "enum": [
-                  "realization-relationship"
+                  "association-relationship"
                 ]
               },
               "source": {
                 "enum": [
-                  "application-interaction"
+                  "business-service"
                 ]
               },
               "target": {
                 "enum": [
-                  "application-service"
+                  "business-interface"
                 ]
               }
             },
@@ -91,152 +98,44 @@
               "type": {
                 "type": "string",
                 "enum": [
-                  "realization-relationship"
+                  "association-relationship"
                 ]
               },
               "source": {
                 "enum": [
-                  "application-component"
+                  "business-service"
                 ]
               },
               "target": {
-                "enum": [
-                  "application-interaction"
-                ]
-              }
-            },
-            "required": [
-              "type",
-              "source",
-              "target"
-            ],
-            "additionalProperties": false
-          },
-          {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "realization-relationship"
-                ]
-              },
-              "source": {
-                "enum": [
-                  "application-collaboration"
-                ]
-              },
-              "target": {
-                "enum": [
-                  "application-service"
-                ]
-              }
-            },
-            "required": [
-              "type",
-              "source",
-              "target"
-            ],
-            "additionalProperties": false
-          },
-          {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "realization-relationship"
-                ]
-              },
-              "source": {
-                "enum": [
-                  "application-collaboration"
-                ]
-              },
-              "target": {
-                "enum": [
-                  "application-component"
-                ]
-              }
-            },
-            "required": [
-              "type",
-              "source",
-              "target"
-            ],
-            "additionalProperties": false
-          },
-          {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "serving-relationship"
-                ]
-              },
-              "source": {
-                "enum": [
-                  "application-service"
-                ]
-              },
-              "target": {
-                "enum": [
-                  "application-function"
-                ]
-              }
-            },
-            "required": [
-              "type",
-              "source",
-              "target"
-            ],
-            "additionalProperties": false
-          },
-          {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "serving-relationship"
-                ]
-              },
-              "source": {
-                "enum": [
-                  "application-service"
-                ]
-              },
-              "target": {
-                "enum": [
-                  "application-component"
-                ]
-              }
-            },
-            "required": [
-              "type",
-              "source",
-              "target"
-            ],
-            "additionalProperties": false
-          },
-          {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "serving-relationship"
-                ]
-              },
-              "source": {
                 "enum": [
                   "application-interface"
                 ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "association-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "application-service"
+                ]
               },
               "target": {
                 "enum": [
-                  "application-function"
+                  "business-interface"
                 ]
               }
             },
@@ -253,17 +152,17 @@
               "type": {
                 "type": "string",
                 "enum": [
-                  "serving-relationship"
+                  "association-relationship"
                 ]
               },
               "source": {
                 "enum": [
-                  "application-interface"
+                  "application-service"
                 ]
               },
               "target": {
                 "enum": [
-                  "application-component"
+                  "application-interface"
                 ]
               }
             },
@@ -285,39 +184,12 @@
               },
               "source": {
                 "enum": [
-                  "application-interface"
+                  "business-role"
                 ]
               },
               "target": {
                 "enum": [
-                  "application-service"
-                ]
-              }
-            },
-            "required": [
-              "type",
-              "source",
-              "target"
-            ],
-            "additionalProperties": false
-          },
-          {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "assignment-relationship"
-                ]
-              },
-              "source": {
-                "enum": [
-                  "application-component"
-                ]
-              },
-              "target": {
-                "enum": [
-                  "application-service"
+                  "business-process"
                 ]
               }
             },
@@ -361,17 +233,17 @@
               "type": {
                 "type": "string",
                 "enum": [
-                  "access-relationship"
+                  "assignment-relationship"
                 ]
               },
               "source": {
                 "enum": [
-                  "application-service"
+                  "node"
                 ]
               },
               "target": {
                 "enum": [
-                  "data-object"
+                  "business-process"
                 ]
               }
             },
@@ -388,7 +260,34 @@
               "type": {
                 "type": "string",
                 "enum": [
-                  "access-relationship"
+                  "realization-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "business-process"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "business-service"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "realization-relationship"
                 ]
               },
               "source": {
@@ -398,7 +297,34 @@
               },
               "target": {
                 "enum": [
-                  "data-object"
+                  "business-service"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "realization-relationship"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "application-function"
+                ]
+              },
+              "target": {
+                "enum": [
+                  "application-service"
                 ]
               }
             },
@@ -426,60 +352,6 @@
               "target": {
                 "enum": [
                   "application-interface"
-                ]
-              }
-            },
-            "required": [
-              "type",
-              "source",
-              "target"
-            ],
-            "additionalProperties": false
-          },
-          {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "aggregation-relationship"
-                ]
-              },
-              "source": {
-                "enum": [
-                  "application-collaboration"
-                ]
-              },
-              "target": {
-                "enum": [
-                  "application-component"
-                ]
-              }
-            },
-            "required": [
-              "type",
-              "source",
-              "target"
-            ],
-            "additionalProperties": false
-          },
-          {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "triggering-relationship"
-                ]
-              },
-              "source": {
-                "enum": [
-                  "application-function"
-                ]
-              },
-              "target": {
-                "enum": [
-                  "application-function"
                 ]
               }
             },
