@@ -1,0 +1,53 @@
+/**
+ * @name Layout
+ * @version 1.2
+ * @description Applies a force-directed layout to the currently selected ArchiMate view
+ * @author Claude AI Assistant
+ * @lastModifiedDate 2024-08-15
+ */
+
+console.clear();
+console.show();
+
+const layoutAlgorithms = require('./lib/layoutAlgorithms');
+const modelManipulation = require('./lib/modelManipulation');
+
+// Initialize logger
+const jarchiLogger = require('./lib/jarchiLogger');
+const log = jarchiLogger.createLogger('Layout', __DIR__);
+
+// Get the currently selected view
+const selectedView = $(selection).filter("archimate-diagram-model").first();
+
+if (!selectedView) {
+    log.error("No view selected. Please select an ArchiMate view and run the script again.");
+    exit();
+}
+
+log.info(`Applying layout to view: ${selectedView.name}`);
+
+// Define layout options
+const layoutOptions = {
+    width: 2000,
+    height: 2000,
+    iterations: 100,
+    k: 50,
+    gravity: 0.1,
+    cooling: 0.95
+};
+
+try {
+    // Apply the layout
+    log.debug("Applying Fruchterman-Reingold layout algorithm");
+    const layoutedJson = layoutAlgorithms.applyLayout(selectedView, 'fruchtermanReingold', layoutOptions);
+
+    // Update the view with the new layout
+    log.debug("Updating view with new layout");
+    modelManipulation.updateViewFromJSON(selectedView, layoutedJson);
+
+    log.info("Layout applied successfully");
+} catch (error) {
+    log.error("An error occurred while applying the layout", { error: error.toString() });
+}
+
+log.info("Layout script completed");

@@ -1,6 +1,6 @@
 /**
  * @name Animate View Elements
- * @version 1.6
+ * @version 1.7
  * @description Animates elements in a view by slightly changing their position and size over multiple iterations
  */
 
@@ -27,22 +27,26 @@ function animateViewElements(iterations = 30, delay = 100) {
         java.lang.Thread.sleep(ms);
     }
 
-    function modifyNodeRecursively(node, parentDx = 0, parentDy = 0) {
+    function modifyNodeRecursively(node) {
         // Generate random changes between -5 and 5
         const dx = Math.floor(Math.random() * 11) - 5;
         const dy = Math.floor(Math.random() * 11) - 5;
         const dw = Math.floor(Math.random() * 11) - 5;
         const dh = Math.floor(Math.random() * 11) - 5;
 
-        // Apply changes, including parent's changes
-        node.x += dx + parentDx;
-        node.y += dy + parentDy;
+        node.x += dx;
+        node.y += dy;
         node.width = Math.max(node.width + dw, 10);  // Ensure width doesn't go below 10
         node.height = Math.max(node.height + dh, 10);  // Ensure height doesn't go below 10
 
         // Recursively modify children
         if (node.children && node.children.length > 0) {
-            node.children.forEach(child => modifyNodeRecursively(child, dx, dy));
+            node.children.forEach(child => {
+                modifyNodeRecursively(child);
+                // Adjust child position relative to parent's new position
+                child.x += dx;
+                child.y += dy;
+            });
         }
     }
 

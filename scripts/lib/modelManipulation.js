@@ -333,10 +333,6 @@ const modelManipulation = {
     },
 
     /**
-     * Creates a JSON representation of the current view.
-     * @returns {Object} A JSON object representing the view structure.
-     */
-    /**
      * Creates a JSON representation of the given view.
      * @param {Object} view - The ArchiMate view to process.
      * @returns {Object} A JSON object representing the view structure.
@@ -344,7 +340,7 @@ const modelManipulation = {
     createViewJSON: function (view) {
         const viewJson = {
             nodes: [],
-            relationships: [],
+            relationships: []
         };
 
         if (!view || view.type !== "archimate-diagram-model") {
@@ -352,64 +348,41 @@ const modelManipulation = {
             return viewJson;
         }
 
-        function getAbsolutePosition(element) {
-            let x = element.bounds.x;
-            let y = element.bounds.y;
-            $(element)
-                .parents()
-                .each(function (parent) {
-                    if (parent.bounds) {
-                        x += parent.bounds.x;
-                        y += parent.bounds.y;
-                    }
-                });
-            return { x, y };
-        }
-
-        function processElement(element) {
-            const position = getAbsolutePosition(element);
+        function processElement(element, parentX = 0, parentY = 0) {
+            const bounds = element.bounds;
             const nodeData = {
                 id: element.id,
                 type: element.type,
                 name: element.name,
-                x: position.x,
-                y: position.y,
-                width: element.bounds.width,
-                height: element.bounds.height,
-                children: [],
+                x: parentX + bounds.x,
+                y: parentY + bounds.y,
+                width: bounds.width,
+                height: bounds.height,
+                children: []
             };
 
-            $(element)
-                .children("element")
-                .each((childElement) => {
-                    const childData = processElement(childElement);
-                    nodeData.children.push(childData);
-                });
+            $(element).children("element").each((childElement) => {
+                const childData = processElement(childElement, nodeData.x, nodeData.y);
+                nodeData.children.push(childData);
+            });
 
             viewJson.nodes.push(nodeData);
             return nodeData;
         }
 
-        $(view)
-            .children()
-            .not("relationship")
-            .not("diagram-model-connection")
-            .each((element) => {
-                processElement(element);
-            });
+        $(view).children().not("relationship").not("diagram-model-connection").each((element) => {
+            processElement(element);
+        });
 
-        $(view)
-            .children("relationship")
-            .add($(view).children("diagram-model-connection"))
-            .each((relationship) => {
-                viewJson.relationships.push({
-                    id: relationship.id,
-                    type: relationship.type,
-                    name: relationship.name,
-                    source: relationship.source.id,
-                    target: relationship.target.id,
-                });
+        $(view).children("relationship").add($(view).children("diagram-model-connection")).each((relationship) => {
+            viewJson.relationships.push({
+                id: relationship.id,
+                type: relationship.type,
+                name: relationship.name,
+                source: relationship.source.id,
+                target: relationship.target.id
             });
+        });
 
         return viewJson;
     },
@@ -424,30 +397,22 @@ const modelManipulation = {
             log.warn("Invalid view provided. Please provide a valid ArchiMate view.");
             return;
         }
-    
-        function updateElement(element, data) {
+
+        function updateElement(element, data, parentX = 0, parentY = 0) {
             if (element && element.bounds) {
-                // Update the element's bounds
                 element.bounds = {
-                    x: data.x,
-                    y: data.y,
+                    x: data.x - parentX,
+                    y: data.y - parentY,
                     width: data.width,
                     height: data.height
                 };
                 log.debug(`Updated element: ${element.name} (${element.id})`);
-    
-                // Update child elements
+
                 if (data.children && data.children.length > 0) {
                     data.children.forEach(childData => {
                         const childElement = $(element).children(`#${childData.id}`).first();
                         if (childElement) {
-                            // Calculate child's position relative to its parent
-                            childElement.bounds = {
-                                x: childData.x - data.x,
-                                y: childData.y - data.y,
-                                width: childData.width,
-                                height: childData.height
-                            };
+                            updateElement(childElement, childData, data.x, data.y);
                         }
                     });
                 }
@@ -455,12 +420,12 @@ const modelManipulation = {
                 log.warn(`Element not found or invalid: ${data.id}`);
             }
         }
-    
+
         viewJson.nodes.forEach(nodeData => {
             const element = $(view).find(`#${nodeData.id}`).first();
             updateElement(element, nodeData);
         });
-    
+
         log.info(`Updated ${viewJson.nodes.length} elements in the view`);
     }
 };
