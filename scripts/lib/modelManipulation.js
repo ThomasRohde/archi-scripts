@@ -16,7 +16,7 @@ const modelManipulation = {
      * @param {Object} newElement - The element description from the JSON model.
      * @returns {Object} The Archi element object.
      */
-    getOrCreateElement: function(newElement) {
+    getOrCreateElement: function (newElement) {
         let element = $("*")
             .filter(function (o) {
                 return o.name.toLowerCase() === newElement.name.toLowerCase();
@@ -41,25 +41,36 @@ const modelManipulation = {
      * @param {Object} target - The target element.
      * @returns {Object} The Archi relationship object or null if creation fails.
      */
-    getOrCreateRelationship: function(newRelationship, source, target) {
+    getOrCreateRelationship: function (newRelationship, source, target) {
         let relationship = $("relationship")
-            .filter(function(r) {
-                return (r.source.id === source.id &&
-                       r.target.id === target.id);
+            .filter(function (r) {
+                return r.source.id === source.id && r.target.id === target.id;
             })
             .first();
 
         if (!relationship) {
-            log.debug(`Attempting to create relationship: ${newRelationship.type} from ${source.name} to ${target.name}`);
+            log.debug(
+                `Attempting to create relationship: ${newRelationship.type} from ${source.name} to ${target.name}`
+            );
             try {
                 relationship = model.createRelationship(newRelationship.type, newRelationship.name, source, target);
             } catch (error) {
-                log.warn(`Failed to create ${newRelationship.type} relationship. Falling back to association-relationship.`, { error: error.toString() });
+                log.warn(
+                    `Failed to create ${newRelationship.type} relationship. Falling back to association-relationship.`,
+                    { error: error.toString() }
+                );
                 try {
-                    relationship = model.createRelationship("association-relationship", newRelationship.name, source, target);
+                    relationship = model.createRelationship(
+                        "association-relationship",
+                        newRelationship.name,
+                        source,
+                        target
+                    );
                     log.info(`Created fallback association-relationship from ${source.name} to ${target.name}`);
                 } catch (fallbackError) {
-                    log.error(`Failed to create fallback association-relationship`, { error: fallbackError.toString() });
+                    log.error(`Failed to create fallback association-relationship`, {
+                        error: fallbackError.toString(),
+                    });
                     return null; // Return null instead of throwing an error
                 }
             }
@@ -70,11 +81,18 @@ const modelManipulation = {
         if (relationship) {
             relationship.name = newRelationship.name || relationship.name;
             // Only attempt to change the type if it's different and not a fallback association
-            if (newRelationship.type && newRelationship.type !== relationship.type && relationship.type !== "association-relationship") {
+            if (
+                newRelationship.type &&
+                newRelationship.type !== relationship.type &&
+                relationship.type !== "association-relationship"
+            ) {
                 try {
                     relationship.type = newRelationship.type;
                 } catch (typeChangeError) {
-                    log.warn(`Failed to change relationship type to ${newRelationship.type}. Keeping existing type ${relationship.type}.`, { error: typeChangeError.toString() });
+                    log.warn(
+                        `Failed to change relationship type to ${newRelationship.type}. Keeping existing type ${relationship.type}.`,
+                        { error: typeChangeError.toString() }
+                    );
                 }
             }
         }
@@ -197,13 +215,15 @@ const modelManipulation = {
                             // Check if the relationship already exists in the view
                             const existingRelInView = $(view)
                                 .find("relationship")
-                                .filter(function(r) {
+                                .filter(function (r) {
                                     return r.source.concept.id === sourceId && r.target.concept.id === targetId;
                                 })
                                 .first();
-    
+
                             if (!existingRelInView) {
-                                log.debug(`Attempting to add relationship ${relationship.type} to view: ${source.name} -> ${target.name}`)
+                                log.debug(
+                                    `Attempting to add relationship ${relationship.type} to view: ${source.name} -> ${target.name}`
+                                );
                                 view.add(relationship, sourceInView, targetInView);
                                 addedRelationships.add(relationshipKey);
                                 log.debug(`Added relationship to view: ${source.name} -> ${target.name}`);
@@ -214,7 +234,9 @@ const modelManipulation = {
                             log.debug(`Relationship already processed: ${source.name} -> ${target.name}`);
                         }
                     } else {
-                        log.debug(`Source or target not found in view for relationship: ${source.name} -> ${target.name}`);
+                        log.debug(
+                            `Source or target not found in view for relationship: ${source.name} -> ${target.name}`
+                        );
                     }
                 } else {
                     log.warn(`Failed to create or retrieve relationship: ${rel.source} -> ${rel.target}`);
@@ -308,6 +330,130 @@ const modelManipulation = {
         });
 
         return modelJson;
+    },
+
+    /**
+     * Creates a JSON representation of the current view.
+     * @returns {Object} A JSON object representing the view structure.
+     */
+    /**
+     * Creates a JSON representation of the given view.
+     * @param {Object} view - The ArchiMate view to process.
+     * @returns {Object} A JSON object representing the view structure.
+     */
+    createViewJSON: function (view) {
+        const viewJson = {
+            nodes: [],
+            relationships: [],
+        };
+
+        if (!view || view.type !== "archimate-diagram-model") {
+            log.warn("Invalid view provided. Please provide a valid ArchiMate view.");
+            return viewJson;
+        }
+
+        function getAbsolutePosition(element) {
+            let x = element.bounds.x;
+            let y = element.bounds.y;
+            $(element)
+                .parents()
+                .each(function (parent) {
+                    if (parent.bounds) {
+                        x += parent.bounds.x;
+                        y += parent.bounds.y;
+                    }
+                });
+            return { x, y };
+        }
+
+        function processElement(element) {
+            const position = getAbsolutePosition(element);
+            const nodeData = {
+                id: element.id,
+                type: element.type,
+                name: element.name,
+                x: position.x,
+                y: position.y,
+                width: element.bounds.width,
+                height: element.bounds.height,
+                children: [],
+            };
+
+            $(element)
+                .children("element")
+                .each((childElement) => {
+                    const childData = processElement(childElement);
+                    nodeData.children.push(childData);
+                });
+
+            viewJson.nodes.push(nodeData);
+            return nodeData;
+        }
+
+        $(view)
+            .children()
+            .not("relationship")
+            .not("diagram-model-connection")
+            .each((element) => {
+                processElement(element);
+            });
+
+        $(view)
+            .children("relationship")
+            .add($(view).children("diagram-model-connection"))
+            .each((relationship) => {
+                viewJson.relationships.push({
+                    id: relationship.id,
+                    type: relationship.type,
+                    name: relationship.name,
+                    source: relationship.source.id,
+                    target: relationship.target.id,
+                });
+            });
+
+        return viewJson;
+    },
+
+    /**
+     * Updates the view elements based on the provided JSON.
+     * @param {Object} view - The ArchiMate view to update.
+     * @param {Object} viewJson - The JSON object containing updated element data.
+     */
+    updateViewFromJSON: function (view, viewJson) {
+        if (!view || view.type !== "archimate-diagram-model") {
+            log.warn("Invalid view provided. Please provide a valid ArchiMate view.");
+            return;
+        }
+
+        function updateElement(element, data, parentX = 0, parentY = 0) {
+            if (element && element.bounds) {
+                element.bounds = {
+                    x: data.x - parentX,
+                    y: data.y - parentY,
+                    width: data.width,
+                    height: data.height,
+                };
+                log.debug(`Updated element: ${element.name} (${element.id})`);
+            } else {
+                log.warn(`Element not found or invalid: ${data.id}`);
+            }
+
+            if (data.children && data.children.length > 0) {
+                data.children.forEach((childData) => {
+                    const childElement = $(element).children(`#${childData.id}`).first();
+                    if (childElement) {
+                        updateElement(childElement, childData, data.x, data.y);
+                    }
+                });
+            }
+        }
+
+        viewJson.nodes.forEach((nodeData) => {
+            const element = $(view).find(`#${nodeData.id}`).first();
+            updateElement(element, nodeData);
+        });
+
+        log.info(`Updated ${viewJson.nodes.length} elements in the view`);
     },
 };
 

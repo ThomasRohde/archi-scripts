@@ -1,0 +1,84 @@
+/**
+ * @name Animate View Elements
+ * @version 1.5
+ * @description Animates elements in a view by slightly changing their position and size over multiple iterations
+ */
+
+console.clear();
+console.show();
+
+const Display = Java.type("org.eclipse.swt.widgets.Display");
+
+const modelManipulation = require("./lib/modelManipulation");
+const jarchiLogger = require('./lib/jarchiLogger');
+const log = jarchiLogger.createLogger('AnimateViewElements', __DIR__);
+
+function animateViewElements(iterations = 30, delay = 100) {
+    log.info("Starting View animation");
+
+    const selectedView = $(selection).filter("archimate-diagram-model").first();
+    
+    if (!selectedView) {
+        log.warn("No view selected. Please select an ArchiMate view and run the script again.");
+        return;
+    }
+
+    log.info(`Selected view: ${selectedView.name}`);
+
+    function sleep(ms) {
+        java.lang.Thread.sleep(ms);
+    }
+
+    function modifyNodeRecursively(node) {
+        // Generate random changes between -5 and 5
+        const dx = Math.floor(Math.random() * 11) - 5;
+        const dy = Math.floor(Math.random() * 11) - 5;
+        const dw = Math.floor(Math.random() * 11) - 5;
+        const dh = Math.floor(Math.random() * 11) - 5;
+
+        node.x += dx;
+        node.y += dy;
+        node.width = Math.max(node.width + dw, 10);  // Ensure width doesn't go below 10
+        node.height = Math.max(node.height + dh, 10);  // Ensure height doesn't go below 10
+
+        // Recursively modify children
+        if (node.children && node.children.length > 0) {
+            node.children.forEach(child => modifyNodeRecursively(child));
+        }
+    }
+
+    function animate() {
+        for (let i = 0; i < iterations; i++) {
+            try {
+                log.info(`Animation iteration: ${i + 1}`);
+
+                // Create JSON from the view
+                let viewJson = modelManipulation.createViewJSON(selectedView);
+
+                // Modify positions and sizes
+                viewJson.nodes.forEach(node => modifyNodeRecursively(node));
+
+                // Update the view from the modified JSON
+                Display.getDefault().syncExec(() => {
+                    modelManipulation.updateViewFromJSON(selectedView, viewJson);
+                });
+
+                // Wait for a short delay to create animation effect
+                sleep(delay);
+            } catch (error) {
+                log.error(`Error in iteration ${i + 1}`, { error: error.toString(), stack: error.stack });
+                break;  // Exit the loop if an error occurs
+            }
+        }
+
+        log.info("Animation completed");
+    }
+
+    animate();
+}
+
+try {
+    animateViewElements(2, 100);
+} catch (error) {
+    log.error("An error occurred during the animation", { error: error.toString(), stack: error.stack });
+}
