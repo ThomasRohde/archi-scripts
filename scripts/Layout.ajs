@@ -31,7 +31,7 @@ const layoutOptions = {
     width: 2000,
     height: 2000,
     iterations: 100,
-    k: 50,
+    k: 1,
     gravity: 0.1,
     cooling: 0.95
 };
